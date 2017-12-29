@@ -30,7 +30,7 @@ def test_generate_correct_sq_piece_data(state_gen):
     df = pd.DataFrame(state_gen.get_square_piece_data(g))
     assert df.shape == (57, 8*8*(6+6))
 
-    # make sure the initial board configuration is correct
+    # make sure the initial board position is correct
     # Kings
     check_square(df, ('e1',), ('e8',), ('K', 'k'), 0)
 
@@ -55,7 +55,7 @@ def test_generate_correct_sq_piece_data(state_gen):
         0
     )
 
-    # Board configuration after one move e2e4 (white pawn to e4)
+    # Board position after one move e2e4 (white pawn to e4)
     # Kings
     check_square(df, ('e1',), ('e8',), ('K', 'k'), 1)
 
