@@ -1,7 +1,9 @@
 import attr
+import collections
 import chess
 import chess.pgn
 import pandas as pd
+import numpy as np
 
 
 pieces = [
@@ -18,6 +20,9 @@ pieces = [
     chess.Piece(chess.QUEEN, chess.BLACK),
     chess.Piece(chess.KING, chess.BLACK),
 ]
+
+
+BOARD_SIZE = (len(chess.FILE_NAMES), len(chess.RANK_NAMES))
 
 
 @attr.s
@@ -51,6 +56,27 @@ class StateGenerator():
                     val = self.get_square_piece_value(piece_map, sq, piece)
                     data_dict[f'{sq_name}-{piece.symbol()}'] = val
             yield data_dict
+            board.push(move)
+
+    def get_repetition_data(self, game):
+        board = game.board()
+        transpositions = collections.Counter()
+        for move in game.main_line():
+            key = board._transposition_key()
+            transpositions.update((key, ))
+            if transpositions[key] >= 3:
+                # this position repeated at least three times
+                rep_2 = np.full(BOARD_SIZE, 1)
+                rep_3 = np.full(BOARD_SIZE, 1)
+            elif transpositions[key] >= 2:
+                # this position repeated at least twice
+                rep_2 = np.full(BOARD_SIZE, 1)
+                rep_3 = np.full(BOARD_SIZE, 0)
+            else:
+                # this position has not been repeated enough
+                rep_2 = np.full(BOARD_SIZE, 0)
+                rep_3 = np.full(BOARD_SIZE, 0)
+            yield np.stack((rep_2, rep_3))
             board.push(move)
 
     def generate(self):
