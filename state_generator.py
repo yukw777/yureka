@@ -1,6 +1,7 @@
 import attr
 import chess
 import chess.pgn
+import pandas as pd
 
 
 pieces = [
@@ -40,16 +41,29 @@ class StateGenerator():
         else:
             return 0
 
-    def generate(self):
-        for game in self.get_game():
-            board = game.board()
+    def get_square_piece_data(self, game):
+        board = game.board()
+        for move in game.main_line():
             piece_map = board.piece_map()
+            data_dict = {}
             for sq, sq_name in enumerate(chess.SQUARE_NAMES):
                 for piece in pieces:
                     val = self.get_square_piece_value(piece_map, sq, piece)
-                    print(f'{sq_name}-{piece.symbol()}: {val}')
+                    data_dict[f'{sq_name}-{piece.symbol()}'] = val
+            yield data_dict
+            board.push(move)
+
+    def generate(self):
+        df = pd.DataFrame()
+        for game in self.get_game():
+            sq_piece_df = pd.DataFrame(self.get_square_piece_data(game))
+            df = pd.concat([df, sq_piece_df])
+
+        return df
 
 
 if __name__ == '__main__':
     s = StateGenerator('tests/test.pgn')
-    s.generate()
+    df = s.generate()
+    print(df.head())
+    print(df.shape)
