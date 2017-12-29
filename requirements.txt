@@ -20,6 +20,8 @@ mistune==0.8.3
 nbconvert==5.3.1
 nbformat==4.4.0
 notebook==5.2.2
+numpy==1.13.3
+pandas==0.21.1
 pandocfilters==1.4.2
 parso==0.1.1
 pexpect==4.3.1
@@ -32,6 +34,7 @@ Pygments==2.2.0
 pytest==3.3.1
 python-chess==0.22.0
 python-dateutil==2.6.1
+pytz==2017.3
 pyzmq==16.0.3
 qtconsole==4.3.1
 simplegeneric==0.8.1
