@@ -3,7 +3,6 @@ import collections
 import chess
 import chess.pgn
 import pandas as pd
-import numpy as np
 
 
 pieces = [
@@ -64,19 +63,18 @@ class StateGenerator():
         for move in game.main_line():
             key = board._transposition_key()
             transpositions.update((key, ))
+            data_dict = {
+                'rep_2': 0,
+                'rep_3': 0,
+            }
             if transpositions[key] >= 3:
                 # this position repeated at least three times
-                rep_2 = np.full(BOARD_SIZE, 1)
-                rep_3 = np.full(BOARD_SIZE, 1)
+                data_dict['rep_2'] = 1
+                data_dict['rep_3'] = 1
             elif transpositions[key] >= 2:
                 # this position repeated at least twice
-                rep_2 = np.full(BOARD_SIZE, 1)
-                rep_3 = np.full(BOARD_SIZE, 0)
-            else:
-                # this position has not been repeated enough
-                rep_2 = np.full(BOARD_SIZE, 0)
-                rep_3 = np.full(BOARD_SIZE, 0)
-            yield np.stack((rep_2, rep_3))
+                data_dict['rep_2'] = 1
+            yield data_dict
             board.push(move)
 
     def generate(self):

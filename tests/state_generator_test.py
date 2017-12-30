@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 import chess
 import chess.pgn
 from state_generator import StateGenerator, pieces
@@ -28,7 +27,7 @@ def test_generate_correct_sq_piece_data():
     df = pd.DataFrame(state_gen.get_square_piece_data(g))
     assert df.shape == (57, 8*8*(6+6))
 
-    # make sure the initial board position is correct
+    # make sure the initial board configuration is correct
     # Kings
     check_square(df, ('e1',), ('e8',), ('K', 'k'), 0)
 
@@ -53,7 +52,7 @@ def test_generate_correct_sq_piece_data():
         0
     )
 
-    # Board position after one move e2e4 (white pawn to e4)
+    # Board configuration after one move e2e4 (white pawn to e4)
     # Kings
     check_square(df, ('e1',), ('e8',), ('K', 'k'), 1)
 
@@ -94,14 +93,18 @@ def test_repetition_data():
     game = chess.pgn.Game.from_board(b)
     state_gen = StateGenerator("tests/test.pgn")  # file not used
 
-    for i, data in enumerate(state_gen.get_repetition_data(game)):
+    df = pd.DataFrame(state_gen.get_repetition_data(game))
+
+    for i, data in df.iterrows():
         if i < 4:
             # no transpositions yet
-            assert np.array_equal(data, np.full((2, 8, 8), 0))
+            assert data['rep_2'] == 0
+            assert data['rep_3'] == 0
         elif i < 8:
             # twofold transpositions
-            assert np.array_equal(data[0], np.full((8, 8), 1))
-            assert np.array_equal(data[1], np.full((8, 8), 0))
+            assert data['rep_2'] == 1
+            assert data['rep_3'] == 0
         else:
             # threefold transpositions
-            assert np.array_equal(data, np.full((2, 8, 8), 1))
+            assert data['rep_2'] == 1
+            assert data['rep_3'] == 1
