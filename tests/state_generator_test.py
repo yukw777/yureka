@@ -108,3 +108,21 @@ def test_repetition_data():
             # threefold transpositions
             assert data['rep_2'] == 1
             assert data['rep_3'] == 1
+
+
+def test_turn_data():
+    b = chess.Board(fen='4k3/8/8/8/8/8/8/4K3 w - - 0 1')
+    b.push(chess.Move.from_uci('e1e2'))
+    b.push(chess.Move.from_uci('e8e7'))
+    b.push(chess.Move.from_uci('e2e1'))
+    b.push(chess.Move.from_uci('e7e8'))
+
+    game = chess.pgn.Game.from_board(b)
+    state_gen = StateGenerator("tests/test.pgn")  # file not used
+
+    df = pd.DataFrame(state_gen.get_turn_data(game))
+    for i, data in df.iterrows():
+        if i % 2 == 0:
+            assert data['turn'] == 1
+        else:
+            assert data['turn'] == 0

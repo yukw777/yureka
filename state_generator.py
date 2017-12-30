@@ -77,6 +77,12 @@ class StateGenerator():
             yield data_dict
             board.push(move)
 
+    def get_turn_data(self, game):
+        board = game.board()
+        for move in game.main_line():
+            yield {'turn': 1 if board.turn else 0}  # 1 if white else 0
+            board.push(move)
+
     def generate(self):
         df = pd.DataFrame()
         for game in self.get_game():
