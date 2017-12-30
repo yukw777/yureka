@@ -83,6 +83,12 @@ class StateGenerator():
             yield {'turn': 1 if board.turn else 0}  # 1 if white else 0
             board.push(move)
 
+    def get_move_count_data(self, game):
+        board = game.board()
+        for move in game.main_line():
+            yield {'move_count': board.fullmove_number}
+            board.push(move)
+
     def generate(self):
         df = pd.DataFrame()
         for game in self.get_game():

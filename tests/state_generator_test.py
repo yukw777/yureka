@@ -126,3 +126,12 @@ def test_turn_data():
             assert data['turn'] == 1
         else:
             assert data['turn'] == 0
+
+
+def test_move_count_data():
+    state_gen = StateGenerator("tests/test.pgn")  # file not used
+    game = next(state_gen.get_game())
+
+    df = pd.DataFrame(state_gen.get_move_count_data(game))
+    for i, data in df.iterrows():
+        assert int(i / 2) + 1 == data['move_count']
