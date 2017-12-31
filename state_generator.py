@@ -117,8 +117,15 @@ class StateGenerator():
     def generate(self):
         df = pd.DataFrame()
         for game in self.get_game():
-            sq_piece_df = pd.DataFrame(self.get_square_piece_data(game))
-            df = pd.concat([df, sq_piece_df])
+            combined_df = pd.concat([
+                pd.DataFrame(self.get_square_piece_data(game)),
+                pd.DataFrame(self.get_repetition_data(game)),
+                pd.DataFrame(self.get_turn_data(game)),
+                pd.DataFrame(self.get_move_count_data(game)),
+                pd.DataFrame(self.get_castling_data(game)),
+                pd.DataFrame(self.get_no_progress_data(game)),
+            ], axis=1)
+            df = pd.concat([df, combined_df])
 
         return df
 

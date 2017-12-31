@@ -229,3 +229,16 @@ def test_no_progress_count_data():
 
     for i, data in df.iterrows():
         assert data['no_progress'] == int(i / 2)
+
+
+def test_generate():
+    state_gen = StateGenerator("tests/test.pgn")
+    df = state_gen.generate()
+
+    # for each square, each piece and each color = 8*8*6*2
+    # repetition = 2
+    # turn (color) = 1
+    # move count = 1
+    # for each color, king/queen castling = 2 + 2
+    # no progress count = 1
+    assert df.shape == (165, 8*8*6*2+2+1+1+2+2+1)
