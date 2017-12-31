@@ -135,3 +135,76 @@ def test_move_count_data():
     df = pd.DataFrame(state_gen.get_move_count_data(game))
     for i, data in df.iterrows():
         assert int(i / 2) + 1 == data['move_count']
+
+
+def test_castling_data():
+    state_gen = StateGenerator("tests/test.pgn")  # file not used
+
+    def get_castling_game(king_side=True):
+        b = chess.Board(fen='r3k2r/8/8/8/8/8/8/R3K2R w - - 0 1')
+        # hack to reset the castling rights
+        b.castling_rights = chess.BB_CORNERS
+        if king_side:
+            b.push(chess.Move.from_uci('e1g1'))
+            b.push(chess.Move.from_uci('e8g8'))
+            b.push(chess.Move.from_uci('g1g2'))
+        else:
+            b.push(chess.Move.from_uci('e1c1'))
+            b.push(chess.Move.from_uci('e8c8'))
+            b.push(chess.Move.from_uci('c1c2'))
+        return chess.pgn.Game.from_board(b)
+
+    test_cases = [
+        {
+            'name': 'Kingside',
+            'game': get_castling_game(),
+            'expected_data': pd.DataFrame([
+                {
+                    'w_kingside_castling': 1,
+                    'w_queenside_castling': 1,
+                    'b_kingside_castling': 1,
+                    'b_queenside_castling': 1,
+                },
+                {
+                    'w_kingside_castling': 0,
+                    'w_queenside_castling': 0,
+                    'b_kingside_castling': 1,
+                    'b_queenside_castling': 1,
+                },
+                {
+                    'w_kingside_castling': 0,
+                    'w_queenside_castling': 0,
+                    'b_kingside_castling': 0,
+                    'b_queenside_castling': 0,
+                },
+            ]),
+        },
+        {
+            'name': 'Queenside',
+            'game': get_castling_game(king_side=False),
+            'expected_data': pd.DataFrame([
+                {
+                    'w_kingside_castling': 1,
+                    'w_queenside_castling': 1,
+                    'b_kingside_castling': 1,
+                    'b_queenside_castling': 1,
+                },
+                {
+                    'w_kingside_castling': 0,
+                    'w_queenside_castling': 0,
+                    'b_kingside_castling': 1,
+                    'b_queenside_castling': 1,
+                },
+                {
+                    'w_kingside_castling': 0,
+                    'w_queenside_castling': 0,
+                    'b_kingside_castling': 0,
+                    'b_queenside_castling': 0,
+                },
+            ]),
+        },
+    ]
+
+    for tc in test_cases:
+        df = pd.DataFrame(state_gen.get_castling_data(tc['game']))
+        assert df.equals(tc['expected_data'])

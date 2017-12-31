@@ -89,6 +89,25 @@ class StateGenerator():
             yield {'move_count': board.fullmove_number}
             board.push(move)
 
+    def get_castling_data(self, game):
+        board = game.board()
+        for move in game.main_line():
+            w_kingside = 1 if board.has_kingside_castling_rights(
+                chess.WHITE) else 0
+            w_queenside = 1 if board.has_queenside_castling_rights(
+                chess.WHITE) else 0
+            b_kingside = 1 if board.has_kingside_castling_rights(
+                chess.BLACK) else 0
+            b_queenside = 1 if board.has_queenside_castling_rights(
+                chess.BLACK) else 0
+            yield {
+                'w_kingside_castling': w_kingside,
+                'w_queenside_castling': w_queenside,
+                'b_kingside_castling': b_kingside,
+                'b_queenside_castling': b_queenside,
+            }
+            board.push(move)
+
     def generate(self):
         df = pd.DataFrame()
         for game in self.get_game():
