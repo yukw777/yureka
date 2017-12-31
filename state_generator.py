@@ -108,6 +108,12 @@ class StateGenerator():
             }
             board.push(move)
 
+    def get_no_progress_data(self, game):
+        board = game.board()
+        for move in game.main_line():
+            yield {'no_progress': int(board.halfmove_clock / 2)}
+            board.push(move)
+
     def generate(self):
         df = pd.DataFrame()
         for game in self.get_game():

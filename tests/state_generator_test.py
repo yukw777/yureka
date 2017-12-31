@@ -208,3 +208,24 @@ def test_castling_data():
     for tc in test_cases:
         df = pd.DataFrame(state_gen.get_castling_data(tc['game']))
         assert df.equals(tc['expected_data'])
+
+
+def test_no_progress_count_data():
+    b = chess.Board(fen='4k3/8/8/8/8/8/8/4K3 w - - 0 1')
+
+    # no progress moves
+    def move(b):
+        b.push(chess.Move.from_uci('e1e2'))
+        b.push(chess.Move.from_uci('e8e7'))
+        b.push(chess.Move.from_uci('e2e1'))
+        b.push(chess.Move.from_uci('e7e8'))
+    for i in range(50):
+        move(b)
+
+    game = chess.pgn.Game.from_board(b)
+    state_gen = StateGenerator("tests/test.pgn")  # file not used
+
+    df = pd.DataFrame(state_gen.get_no_progress_data(game))
+
+    for i, data in df.iterrows():
+        assert data['no_progress'] == int(i / 2)
