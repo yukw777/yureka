@@ -44,16 +44,9 @@ UNDERPROMOTION_PIECE_MAP = {
     chess.ROOK: UNDERPROMOTION_ROOK,
 }
 UNDERPROMOTION_DIRECTION_MAP = {
-    chess.WHITE: {
-        QUEEN_MOVE_DIRECTION_N: UNDERPROMOTION_PAWN_MOVE,
-        QUEEN_MOVE_DIRECTION_NE: UNDERPROMOTION_PAWN_RIGHT_CAPTURE,
-        QUEEN_MOVE_DIRECTION_NW: UNDERPROMOTION_PAWN_LEFT_CAPTURE,
-    },
-    chess.BLACK: {
-        QUEEN_MOVE_DIRECTION_S: UNDERPROMOTION_PAWN_MOVE,
-        QUEEN_MOVE_DIRECTION_SW: UNDERPROMOTION_PAWN_RIGHT_CAPTURE,
-        QUEEN_MOVE_DIRECTION_SE: UNDERPROMOTION_PAWN_LEFT_CAPTURE,
-    },
+    QUEEN_MOVE_DIRECTION_N: UNDERPROMOTION_PAWN_MOVE,
+    QUEEN_MOVE_DIRECTION_NE: UNDERPROMOTION_PAWN_RIGHT_CAPTURE,
+    QUEEN_MOVE_DIRECTION_NW: UNDERPROMOTION_PAWN_LEFT_CAPTURE,
 }
 
 
@@ -75,12 +68,12 @@ def translate_to_engine_move(move, color):
 
 
 def get_underpromotion_move(move, color):
-    direction = get_queen_move_direction(move)
+    direction = get_queen_move_direction(move, color)
     return '_'.join([
         MOVE_COLOR_MAP[color],
         chess.SQUARE_NAMES[get_from_square(move, color)],
         UNDERPROMOTION_PREFIX,
-        UNDERPROMOTION_DIRECTION_MAP[color][direction],
+        UNDERPROMOTION_DIRECTION_MAP[direction],
         UNDERPROMOTION_PIECE_MAP[move.promotion],
     ])
 
@@ -89,7 +82,7 @@ def get_from_square(move, color):
     from_square = move.from_square
     if color == chess.BLACK:
         # always from the perspective of the current player
-        from_square = chess.square_mirror(from_square)
+        from_square = square_invert(from_square)
 
     return from_square
 
@@ -99,20 +92,26 @@ def get_queen_move(move, color):
         MOVE_COLOR_MAP[color],
         chess.SQUARE_NAMES[get_from_square(move, color)],
         QUEEN_MOVE_PREFIX,
-        chess.square_distance(move.from_square, move.to_square),
+        str(chess.square_distance(move.from_square, move.to_square)),
         get_queen_move_direction(move, color),
     ])
 
 
-def get_queen_move_direction(move):
+def get_queen_move_direction(move, color):
     if is_knight_move(move):
         raise Exception(
             'Cannot figure out queen move direction of a knight move')
 
-    from_rank = chess.square_rank(move.from_square)
-    from_file = chess.square_file(move.from_square)
-    to_rank = chess.square_rank(move.to_square)
-    to_file = chess.square_file(move.to_square)
+    from_square = move.from_square
+    to_square = move.to_square
+    if color == chess.BLACK:
+        from_square = square_invert(from_square)
+        to_square = square_invert(to_square)
+
+    from_rank = chess.square_rank(from_square)
+    from_file = chess.square_file(from_square)
+    to_rank = chess.square_rank(to_square)
+    to_file = chess.square_file(to_square)
 
     if from_rank == to_rank:
         if from_file > to_file:
@@ -155,3 +154,7 @@ def is_knight_move(move):
             return True
 
     return False
+
+
+def square_invert(square):
+    return square ^ 0x3f

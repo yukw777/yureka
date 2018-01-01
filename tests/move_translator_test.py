@@ -52,47 +52,47 @@ def test_underpromotion():
         {
             'move': chess.Move(chess.D2, chess.D1, promotion=chess.KNIGHT),
             'color': chess.BLACK,
-            'expected': 'b_d7_u_m_n',
+            'expected': 'b_e7_u_m_n',
         },
         {
             'move': chess.Move(chess.D2, chess.D1, promotion=chess.BISHOP),
             'color': chess.BLACK,
-            'expected': 'b_d7_u_m_b',
+            'expected': 'b_e7_u_m_b',
         },
         {
             'move': chess.Move(chess.D2, chess.D1, promotion=chess.ROOK),
             'color': chess.BLACK,
-            'expected': 'b_d7_u_m_r',
+            'expected': 'b_e7_u_m_r',
         },
         {
             'move': chess.Move(chess.D2, chess.C1, promotion=chess.KNIGHT),
             'color': chess.BLACK,
-            'expected': 'b_d7_u_rc_n',
+            'expected': 'b_e7_u_rc_n',
         },
         {
             'move': chess.Move(chess.D2, chess.C1, promotion=chess.BISHOP),
             'color': chess.BLACK,
-            'expected': 'b_d7_u_rc_b',
+            'expected': 'b_e7_u_rc_b',
         },
         {
             'move': chess.Move(chess.D2, chess.C1, promotion=chess.ROOK),
             'color': chess.BLACK,
-            'expected': 'b_d7_u_rc_r',
+            'expected': 'b_e7_u_rc_r',
         },
         {
             'move': chess.Move(chess.D2, chess.E1, promotion=chess.KNIGHT),
             'color': chess.BLACK,
-            'expected': 'b_d7_u_lc_n',
+            'expected': 'b_e7_u_lc_n',
         },
         {
             'move': chess.Move(chess.D2, chess.E1, promotion=chess.BISHOP),
             'color': chess.BLACK,
-            'expected': 'b_d7_u_lc_b',
+            'expected': 'b_e7_u_lc_b',
         },
         {
             'move': chess.Move(chess.D2, chess.E1, promotion=chess.ROOK),
             'color': chess.BLACK,
-            'expected': 'b_d7_u_lc_r',
+            'expected': 'b_e7_u_lc_r',
         },
     ]
     for tc in test_cases:
@@ -106,32 +106,32 @@ def test_promotion_queens_move():
         {
             'move': chess.Move(chess.C7, chess.C8, promotion=chess.QUEEN),
             'color': chess.WHITE,
-            'expected': 'c7_q_1_n',
+            'expected': 'w_c7_q_1_n',
         },
         {
             'move': chess.Move(chess.C7, chess.B8, promotion=chess.QUEEN),
             'color': chess.WHITE,
-            'expected': 'd7_q_1_nw',
+            'expected': 'w_c7_q_1_nw',
         },
         {
             'move': chess.Move(chess.C7, chess.D8, promotion=chess.QUEEN),
             'color': chess.WHITE,
-            'expected': 'd7_q_1_ne',
+            'expected': 'w_c7_q_1_ne',
         },
         {
             'move': chess.Move(chess.C2, chess.C1, promotion=chess.QUEEN),
             'color': chess.BLACK,
-            'expected': 'c7_q_1_n',
+            'expected': 'b_f7_q_1_n',
         },
         {
             'move': chess.Move(chess.C2, chess.B1, promotion=chess.QUEEN),
             'color': chess.BLACK,
-            'expected': 'c7_q_1_ne',
+            'expected': 'b_f7_q_1_ne',
         },
         {
             'move': chess.Move(chess.C2, chess.D1, promotion=chess.QUEEN),
             'color': chess.BLACK,
-            'expected': 'c7_q_1_nw',
+            'expected': 'b_f7_q_1_nw',
         },
     ]
     for tc in test_cases:
