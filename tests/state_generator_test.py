@@ -231,6 +231,21 @@ def test_no_progress_count_data():
         assert data['no_progress'] == int(i / 2)
 
 
+def test_move_data():
+    b = chess.Board(fen='4k3/8/8/8/8/8/8/4K3 w - - 0 1')
+    b.push(chess.Move.from_uci('e1e2'))
+    b.push(chess.Move.from_uci('e8e7'))
+
+    game = chess.pgn.Game.from_board(b)
+    state_gen = StateGenerator("tests/test.pgn")  # file not used
+
+    df = pd.DataFrame(state_gen.get_move_data(game))
+    assert df.equals(pd.DataFrame([
+        {'move': 'e1_q_1_n'},
+        {'move': 'd1_q_1_n'},
+    ]))
+
+
 def test_generate():
     state_gen = StateGenerator("tests/test.pgn")
     df = state_gen.generate()
@@ -241,4 +256,5 @@ def test_generate():
     # move count = 1
     # for each color, king/queen castling = 2 + 2
     # no progress count = 1
-    assert df.shape == (165, 8*8*6*2+2+1+1+2+2+1)
+    # move = 1
+    assert df.shape == (165, 8*8*6*2+2+1+1+2+2+1+1)

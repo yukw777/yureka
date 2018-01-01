@@ -118,7 +118,8 @@ class StateGenerator():
     def get_move_data(self, game):
         board = game.board()
         for move in game.main_line():
-            yield {'move': move_translator.translate_to_engine_move(move)}
+            yield {'move': move_translator.translate_to_engine_move(
+                move, board.turn)}
             board.push(move)
 
     def generate(self):
@@ -131,6 +132,7 @@ class StateGenerator():
                 pd.DataFrame(self.get_move_count_data(game)),
                 pd.DataFrame(self.get_castling_data(game)),
                 pd.DataFrame(self.get_no_progress_data(game)),
+                pd.DataFrame(self.get_move_data(game))
             ], axis=1)
             df = pd.concat([df, combined_df])
 
