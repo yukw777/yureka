@@ -64,7 +64,7 @@ def translate_to_engine_move(move, color):
             return
         else:
             # queen's move
-            return
+            return get_queen_move(move, color)
 
 
 def get_underpromotion_move(move, color):
