@@ -1,14 +1,6 @@
 import chess
 
 
-MOVE_COLOR_WHITE = 'w'
-MOVE_COLOR_BLACK = 'b'
-MOVE_COLOR_MAP = {
-    chess.WHITE: MOVE_COLOR_WHITE,
-    chess.BLACK: MOVE_COLOR_BLACK,
-}
-
-
 QUEEN_MOVE_PREFIX = 'q'
 QUEEN_MOVE_DIRECTION_N = 'n'
 QUEEN_MOVE_DIRECTION_NE = 'ne'
@@ -94,7 +86,6 @@ def get_knight_move(move, color):
             knight_move = KNIGHT_MOVE_DOWN_RIGHT
 
     return '_'.join([
-        MOVE_COLOR_MAP[color],
         chess.SQUARE_NAMES[get_from_square(move, color)],
         KNIGHT_MOVE_PREFIX,
         knight_move,
@@ -104,7 +95,6 @@ def get_knight_move(move, color):
 def get_underpromotion_move(move, color):
     direction = get_queen_move_direction(move, color)
     return '_'.join([
-        MOVE_COLOR_MAP[color],
         chess.SQUARE_NAMES[get_from_square(move, color)],
         UNDERPROMOTION_PREFIX,
         UNDERPROMOTION_DIRECTION_MAP[direction],
@@ -123,7 +113,6 @@ def get_from_square(move, color):
 
 def get_queen_move(move, color):
     return '_'.join([
-        MOVE_COLOR_MAP[color],
         chess.SQUARE_NAMES[get_from_square(move, color)],
         QUEEN_MOVE_PREFIX,
         str(chess.square_distance(move.from_square, move.to_square)),
