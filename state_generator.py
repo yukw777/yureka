@@ -3,6 +3,7 @@ import collections
 import chess
 import chess.pgn
 import pandas as pd
+import move_translator
 
 
 pieces = [
@@ -112,6 +113,12 @@ class StateGenerator():
         board = game.board()
         for move in game.main_line():
             yield {'no_progress': int(board.halfmove_clock / 2)}
+            board.push(move)
+
+    def get_move_data(self, game):
+        board = game.board()
+        for move in game.main_line():
+            yield {'move': move_translator.translate_to_engine_move(move)}
             board.push(move)
 
     def generate(self):
