@@ -307,3 +307,92 @@ def test_queens_move():
         translated = move_translator.translate_to_engine_move(
             tc['move'], tc['color'])
         assert translated == tc['expected']
+
+
+def test_knights_move():
+    test_cases = [
+        {
+            'move': chess.Move(chess.D4, chess.E6),
+            'color': chess.WHITE,
+            'expected': 'w_d4_n_ur',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.F5),
+            'color': chess.WHITE,
+            'expected': 'w_d4_n_ru',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.F3),
+            'color': chess.WHITE,
+            'expected': 'w_d4_n_rd',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.E2),
+            'color': chess.WHITE,
+            'expected': 'w_d4_n_dr',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.C2),
+            'color': chess.WHITE,
+            'expected': 'w_d4_n_dl',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.B3),
+            'color': chess.WHITE,
+            'expected': 'w_d4_n_ld',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.B5),
+            'color': chess.WHITE,
+            'expected': 'w_d4_n_lu',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.C6),
+            'color': chess.WHITE,
+            'expected': 'w_d4_n_ul',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.E6),
+            'color': chess.BLACK,
+            'expected': 'b_e5_n_dl',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.F5),
+            'color': chess.BLACK,
+            'expected': 'b_e5_n_ld',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.F3),
+            'color': chess.BLACK,
+            'expected': 'b_e5_n_lu',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.E2),
+            'color': chess.BLACK,
+            'expected': 'b_e5_n_ul',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.C2),
+            'color': chess.BLACK,
+            'expected': 'b_e5_n_ur',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.B3),
+            'color': chess.BLACK,
+            'expected': 'b_e5_n_ru',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.B5),
+            'color': chess.BLACK,
+            'expected': 'b_e5_n_rd',
+        },
+        {
+            'move': chess.Move(chess.D4, chess.C6),
+            'color': chess.BLACK,
+            'expected': 'b_e5_n_dr',
+        },
+    ]
+    for tc in test_cases:
+        translated = move_translator.translate_to_engine_move(
+            tc['move'], tc['color'])
+        assert translated == tc['expected']

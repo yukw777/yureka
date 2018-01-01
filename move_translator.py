@@ -61,10 +61,44 @@ def translate_to_engine_move(move, color):
     else:
         if is_knight_move(move):
             # knight's move
-            return
+            return get_knight_move(move, color)
         else:
             # queen's move
             return get_queen_move(move, color)
+
+
+def get_knight_move(move, color):
+    if not is_knight_move(move):
+        raise Exception('Trying to get a knight move for a non knight move')
+
+    from_rank, from_file, to_rank, to_file = get_ranks_files(move, color)
+    if to_rank - from_rank == 2:
+        if from_file > to_file:
+            knight_move = KNIGHT_MOVE_UP_LEFT
+        else:
+            knight_move = KNIGHT_MOVE_UP_RIGHT
+    elif to_rank - from_rank == 1:
+        if from_file > to_file:
+            knight_move = KNIGHT_MOVE_LEFT_UP
+        else:
+            knight_move = KNIGHT_MOVE_RIGHT_UP
+    elif to_rank - from_rank == -1:
+        if from_file > to_file:
+            knight_move = KNIGHT_MOVE_LEFT_DOWN
+        else:
+            knight_move = KNIGHT_MOVE_RIGHT_DOWN
+    else:
+        if from_file > to_file:
+            knight_move = KNIGHT_MOVE_DOWN_LEFT
+        else:
+            knight_move = KNIGHT_MOVE_DOWN_RIGHT
+
+    return '_'.join([
+        MOVE_COLOR_MAP[color],
+        chess.SQUARE_NAMES[get_from_square(move, color)],
+        KNIGHT_MOVE_PREFIX,
+        knight_move,
+    ])
 
 
 def get_underpromotion_move(move, color):
@@ -97,11 +131,7 @@ def get_queen_move(move, color):
     ])
 
 
-def get_queen_move_direction(move, color):
-    if is_knight_move(move):
-        raise Exception(
-            'Cannot figure out queen move direction of a knight move')
-
+def get_ranks_files(move, color):
     from_square = move.from_square
     to_square = move.to_square
     if color == chess.BLACK:
@@ -112,6 +142,16 @@ def get_queen_move_direction(move, color):
     from_file = chess.square_file(from_square)
     to_rank = chess.square_rank(to_square)
     to_file = chess.square_file(to_square)
+
+    return from_rank, from_file, to_rank, to_file
+
+
+def get_queen_move_direction(move, color):
+    if is_knight_move(move):
+        raise Exception(
+            'Cannot figure out queen move direction of a knight move')
+
+    from_rank, from_file, to_rank, to_file = get_ranks_files(move, color)
 
     if from_rank == to_rank:
         if from_file > to_file:
