@@ -9,11 +9,13 @@ def test_generate_correct_num_games():
     assert len(list(state_gen.get_game())) == 2
 
 
-def check_square(df, w_sq, b_sq, symbols_to_check, step):
+def check_square(df, player_sq, opponent_sq, symbols_to_check, step, turn):
     for p in pieces:
         expected_val = 0
         symbol = p.symbol()
-        squares = w_sq if p.color == chess.WHITE else b_sq
+        if turn == chess.BLACK:
+            symbol = symbol.swapcase()
+        squares = player_sq if p.color == turn else opponent_sq
         if symbol in symbols_to_check:
             expected_val = 1
 
@@ -29,19 +31,19 @@ def test_generate_correct_sq_piece_data():
 
     # make sure the initial board configuration is correct
     # Kings
-    check_square(df, ('e1',), ('e8',), ('K', 'k'), 0)
+    check_square(df, ('e1',), ('e8',), ('K', 'k'), 0, chess.WHITE)
 
     # Queens
-    check_square(df, ('d1',), ('d8',), ('Q', 'q'), 0)
+    check_square(df, ('d1',), ('d8',), ('Q', 'q'), 0, chess.WHITE)
 
     # Rooks
-    check_square(df, ('a1', 'h1'), ('a8', 'h8'), ('R', 'r'), 0)
+    check_square(df, ('a1', 'h1'), ('a8', 'h8'), ('R', 'r'), 0, chess.WHITE)
 
     # Bishops
-    check_square(df, ('a1', 'h1'), ('a8', 'h8'), ('R', 'r'), 0)
+    check_square(df, ('c1', 'f1'), ('c8', 'f8'), ('B', 'b'), 0, chess.WHITE)
 
     # Knights
-    check_square(df, ('b1', 'g1'), ('b8', 'g8'), ('N', 'n'), 0)
+    check_square(df, ('b1', 'g1'), ('b8', 'g8'), ('N', 'n'), 0, chess.WHITE)
 
     # Pawns
     check_square(
@@ -49,32 +51,34 @@ def test_generate_correct_sq_piece_data():
         ('a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2'),
         ('a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7'),
         ('P', 'p'),
-        0
+        0,
+        chess.WHITE
     )
 
     # Board configuration after one move e2e4 (white pawn to e4)
     # Kings
-    check_square(df, ('e1',), ('e8',), ('K', 'k'), 1)
+    check_square(df, ('d1',), ('d8',), ('k', 'K'), 1, chess.BLACK)
 
     # Queens
-    check_square(df, ('d1',), ('d8',), ('Q', 'q'), 1)
+    check_square(df, ('e1',), ('e8',), ('q', 'Q'), 1, chess.BLACK)
 
     # Rooks
-    check_square(df, ('a1', 'h1'), ('a8', 'h8'), ('R', 'r'), 1)
+    check_square(df, ('a1', 'h1'), ('a8', 'h8'), ('r', 'R'), 1, chess.BLACK)
 
     # Bishops
-    check_square(df, ('a1', 'h1'), ('a8', 'h8'), ('R', 'r'), 1)
+    check_square(df, ('c1', 'f1'), ('c8', 'f8'), ('b', 'B'), 1, chess.BLACK)
 
     # Knights
-    check_square(df, ('b1', 'g1'), ('b8', 'g8'), ('N', 'n'), 1)
+    check_square(df, ('b1', 'g1'), ('b8', 'g8'), ('n', 'N'), 1, chess.BLACK)
 
     # Pawns
     check_square(
         df,
-        ('a2', 'b2', 'c2', 'd2', 'e4', 'f2', 'g2', 'h2'),
-        ('a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7'),
-        ('P', 'p'),
-        1
+        ('a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2'),
+        ('a7', 'b7', 'c7', 'd5', 'e7', 'f7', 'g7', 'h7'),
+        ('p', 'P'),
+        1,
+        chess.BLACK
     )
 
 

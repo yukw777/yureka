@@ -52,9 +52,20 @@ class StateGenerator():
             piece_map = board.piece_map()
             data_dict = {}
             for sq, sq_name in enumerate(chess.SQUARE_NAMES):
+                if board.turn == chess.WHITE:
+                    sq_name_for_player = sq_name
+                else:
+                    inv_square = move_translator.square_invert(sq)
+                    sq_name_for_player = chess.SQUARE_NAMES[inv_square]
                 for piece in pieces:
                     val = self.get_square_piece_value(piece_map, sq, piece)
-                    data_dict[f'{sq_name}-{piece.symbol()}'] = val
+                    if board.turn == chess.WHITE:
+                        piece_name_for_player = piece.symbol()
+                    else:
+                        piece_name_for_player = piece.symbol().swapcase()
+
+                    key = f'{sq_name_for_player}-{piece_name_for_player}'
+                    data_dict[key] = val
             yield data_dict
             board.push(move)
 
