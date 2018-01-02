@@ -1,7 +1,7 @@
 import pandas as pd
 import chess
 import chess.pgn
-from state_generator import StateGenerator, pieces
+from state_generator import StateGenerator
 
 
 def test_generate_correct_num_games():
@@ -9,76 +9,19 @@ def test_generate_correct_num_games():
     assert len(list(state_gen.get_game())) == 2
 
 
-def check_square(df, player_sq, opponent_sq, symbols_to_check, step, turn):
-    for p in pieces:
-        expected_val = 0
-        symbol = p.symbol()
-        if turn == chess.BLACK:
-            symbol = symbol.swapcase()
-        squares = player_sq if p.color == turn else opponent_sq
-        if symbol in symbols_to_check:
-            expected_val = 1
-
-        for sq in squares:
-            assert df.loc[step, f'{sq}-{symbol}'] == expected_val
-
-
 def test_generate_correct_sq_piece_data():
     state_gen = StateGenerator("tests/test.pgn", "bogus")
     g = next(state_gen.get_game())
     df = pd.DataFrame(state_gen.get_square_piece_data(g))
-    assert df.shape == (57, 8*8*(6+6))
-
-    # make sure the initial board configuration is correct
-    # Kings
-    check_square(df, ('e1',), ('e8',), ('K', 'k'), 0, chess.WHITE)
-
-    # Queens
-    check_square(df, ('d1',), ('d8',), ('Q', 'q'), 0, chess.WHITE)
-
-    # Rooks
-    check_square(df, ('a1', 'h1'), ('a8', 'h8'), ('R', 'r'), 0, chess.WHITE)
-
-    # Bishops
-    check_square(df, ('c1', 'f1'), ('c8', 'f8'), ('B', 'b'), 0, chess.WHITE)
-
-    # Knights
-    check_square(df, ('b1', 'g1'), ('b8', 'g8'), ('N', 'n'), 0, chess.WHITE)
-
-    # Pawns
-    check_square(
-        df,
-        ('a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2'),
-        ('a7', 'b7', 'c7', 'd7', 'e7', 'f7', 'g7', 'h7'),
-        ('P', 'p'),
-        0,
-        chess.WHITE
+    assert df.loc[0, 'square_piece'] == (
+        'a1-R,b1-N,c1-B,d1-Q,e1-K,f1-B,g1-N,h1-R,a2-P,b2-P,'
+        'c2-P,d2-P,e2-P,f2-P,g2-P,h2-P,a7-p,b7-p,c7-p,d7-p,e7-p,'
+        'f7-p,g7-p,h7-p,a8-r,b8-n,c8-b,d8-q,e8-k,f8-b,g8-n,h8-r'
     )
-
-    # Board configuration after one move e2e4 (white pawn to e4)
-    # Kings
-    check_square(df, ('d1',), ('d8',), ('k', 'K'), 1, chess.BLACK)
-
-    # Queens
-    check_square(df, ('e1',), ('e8',), ('q', 'Q'), 1, chess.BLACK)
-
-    # Rooks
-    check_square(df, ('a1', 'h1'), ('a8', 'h8'), ('r', 'R'), 1, chess.BLACK)
-
-    # Bishops
-    check_square(df, ('c1', 'f1'), ('c8', 'f8'), ('b', 'B'), 1, chess.BLACK)
-
-    # Knights
-    check_square(df, ('b1', 'g1'), ('b8', 'g8'), ('n', 'N'), 1, chess.BLACK)
-
-    # Pawns
-    check_square(
-        df,
-        ('a2', 'b2', 'c2', 'd2', 'e2', 'f2', 'g2', 'h2'),
-        ('a7', 'b7', 'c7', 'd5', 'e7', 'f7', 'g7', 'h7'),
-        ('p', 'P'),
-        1,
-        chess.BLACK
+    assert df.loc[1, 'square_piece'] == (
+        'h8-r,g8-n,f8-b,e8-q,d8-k,c8-b,b8-n,a8-r,h7-p,g7-p,'
+        'f7-p,e7-p,c7-p,b7-p,a7-p,d5-p,h2-P,g2-P,f2-P,e2-P,d2-P,'
+        'c2-P,b2-P,a2-P,h1-R,g1-N,f1-B,e1-Q,d1-K,c1-B,b1-N,a1-R'
     )
 
 
@@ -254,11 +197,11 @@ def test_generate():
     state_gen = StateGenerator("tests/test.pgn", "bogus")
     df = state_gen.generate()
 
-    # for each square, each piece and each color = 8*8*6*2
+    # square piece data = 1
     # repetition = 2
     # turn (color) = 1
     # move count = 1
     # for each color, king/queen castling = 2 + 2
     # no progress count = 1
     # move = 1
-    assert df.shape == (165, 8*8*6*2+2+1+1+2+2+1+1)
+    assert df.shape == (165, 1+2+1+1+2+2+1+1)
