@@ -28,6 +28,7 @@ BOARD_SIZE = (len(chess.FILE_NAMES), len(chess.RANK_NAMES))
 @attr.s
 class StateGenerator():
     game_file_name = attr.ib()
+    out_csv_file = attr.ib()
 
     def __attrs_post_init__(self):
         self.game_file = open(self.game_file_name, 'r')
@@ -133,9 +134,11 @@ class StateGenerator():
                 move, board.turn)}
             board.push(move)
 
-    def generate(self):
+    def generate(self, write=False):
+        count = 0
         df = pd.DataFrame()
         for game in self.get_game():
+            count += 1
             combined_df = pd.concat([
                 pd.DataFrame(self.get_square_piece_data(game)),
                 pd.DataFrame(self.get_repetition_data(game)),
@@ -146,12 +149,29 @@ class StateGenerator():
                 pd.DataFrame(self.get_move_data(game))
             ], axis=1)
             df = pd.concat([df, combined_df])
+            if count % 100 == 0:
+                if write:
+                    header = False
+                    if count == 100:
+                        # first write so include header
+                        header = True
+                    df.to_csv(
+                        self.out_csv_file,
+                        index=False,
+                        header=header,
+                        mode='a'
+                    )
+                    df = pd.DataFrame()
+                print(f'{count} games processed...')
 
         return df
 
 
 if __name__ == '__main__':
-    s = StateGenerator('tests/test.pgn')
-    df = s.generate()
-    print(df.head())
-    print(df.shape)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('pgn_file')
+    parser.add_argument('out_csv_file')
+    args = parser.parse_args()
+    s = StateGenerator(args.pgn_file, args.out_csv_file)
+    s.generate(write=True)

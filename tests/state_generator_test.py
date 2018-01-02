@@ -5,7 +5,7 @@ from state_generator import StateGenerator, pieces
 
 
 def test_generate_correct_num_games():
-    state_gen = StateGenerator("tests/test.pgn")
+    state_gen = StateGenerator("tests/test.pgn", "bogus")
     assert len(list(state_gen.get_game())) == 2
 
 
@@ -24,7 +24,7 @@ def check_square(df, player_sq, opponent_sq, symbols_to_check, step, turn):
 
 
 def test_generate_correct_sq_piece_data():
-    state_gen = StateGenerator("tests/test.pgn")
+    state_gen = StateGenerator("tests/test.pgn", "bogus")
     g = next(state_gen.get_game())
     df = pd.DataFrame(state_gen.get_square_piece_data(g))
     assert df.shape == (57, 8*8*(6+6))
@@ -95,7 +95,7 @@ def test_repetition_data():
         move(b)
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = StateGenerator("tests/test.pgn")  # file not used
+    state_gen = StateGenerator("tests/test.pgn", "bogus")  # file not used
 
     df = pd.DataFrame(state_gen.get_repetition_data(game))
 
@@ -122,7 +122,7 @@ def test_turn_data():
     b.push(chess.Move.from_uci('e7e8'))
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = StateGenerator("tests/test.pgn")  # file not used
+    state_gen = StateGenerator("tests/test.pgn", "bogus")  # file not used
 
     df = pd.DataFrame(state_gen.get_turn_data(game))
     for i, data in df.iterrows():
@@ -133,7 +133,7 @@ def test_turn_data():
 
 
 def test_move_count_data():
-    state_gen = StateGenerator("tests/test.pgn")  # file not used
+    state_gen = StateGenerator("tests/test.pgn", "bogus")  # file not used
     game = next(state_gen.get_game())
 
     df = pd.DataFrame(state_gen.get_move_count_data(game))
@@ -142,7 +142,7 @@ def test_move_count_data():
 
 
 def test_castling_data():
-    state_gen = StateGenerator("tests/test.pgn")  # file not used
+    state_gen = StateGenerator("tests/test.pgn", "bogus")  # file not used
 
     def get_castling_game(king_side=True):
         b = chess.Board(fen='r3k2r/8/8/8/8/8/8/R3K2R w - - 0 1')
@@ -227,7 +227,7 @@ def test_no_progress_count_data():
         move(b)
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = StateGenerator("tests/test.pgn")  # file not used
+    state_gen = StateGenerator("tests/test.pgn", "bogus")  # file not used
 
     df = pd.DataFrame(state_gen.get_no_progress_data(game))
 
@@ -241,7 +241,7 @@ def test_move_data():
     b.push(chess.Move.from_uci('e8e7'))
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = StateGenerator("tests/test.pgn")  # file not used
+    state_gen = StateGenerator("tests/test.pgn", "bogus")  # file not used
 
     df = pd.DataFrame(state_gen.get_move_data(game))
     assert df.equals(pd.DataFrame([
@@ -251,7 +251,7 @@ def test_move_data():
 
 
 def test_generate():
-    state_gen = StateGenerator("tests/test.pgn")
+    state_gen = StateGenerator("tests/test.pgn", "bogus")
     df = state_gen.generate()
 
     # for each square, each piece and each color = 8*8*6*2
