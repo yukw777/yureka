@@ -51,7 +51,8 @@ class StateGenerator():
         board = game.board()
         for move in game.main_line():
             piece_map = board.piece_map()
-            data = []
+            white_data = []
+            black_data = []
             for sq, sq_name in enumerate(chess.SQUARE_NAMES):
                 if board.turn == chess.WHITE:
                     sq_name_for_player = sq_name
@@ -61,15 +62,17 @@ class StateGenerator():
                 for piece in pieces:
                     occupied = self.get_square_piece_value(
                         piece_map, sq, piece)
-                    if board.turn == chess.WHITE:
-                        piece_name_for_player = piece.symbol()
-                    else:
-                        piece_name_for_player = piece.symbol().swapcase()
 
-                    key = f'{sq_name_for_player}-{piece_name_for_player}'
+                    key = f'{sq_name_for_player}-{piece.symbol()}'
                     if occupied:
-                        data.append(key)
-            yield {'square_piece': ','.join(data)}
+                        if piece.color == chess.WHITE:
+                            white_data.append(key)
+                        else:
+                            black_data.append(key)
+            yield {
+                'white_square_piece': ','.join(white_data),
+                'black_square_piece': ','.join(black_data),
+            }
             board.push(move)
 
     def get_repetition_data(self, game):

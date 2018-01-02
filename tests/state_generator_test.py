@@ -13,15 +13,21 @@ def test_generate_correct_sq_piece_data():
     state_gen = StateGenerator("tests/test.pgn", "bogus")
     g = next(state_gen.get_game())
     df = pd.DataFrame(state_gen.get_square_piece_data(g))
-    assert df.loc[0, 'square_piece'] == (
-        'a1-R,b1-N,c1-B,d1-Q,e1-K,f1-B,g1-N,h1-R,a2-P,b2-P,'
-        'c2-P,d2-P,e2-P,f2-P,g2-P,h2-P,a7-p,b7-p,c7-p,d7-p,e7-p,'
-        'f7-p,g7-p,h7-p,a8-r,b8-n,c8-b,d8-q,e8-k,f8-b,g8-n,h8-r'
+    assert df.loc[0, 'white_square_piece'] == (
+        'a1-R,b1-N,c1-B,d1-Q,e1-K,f1-B,g1-N,h1-R,a2-P,b2-P,c2-P,'
+        'd2-P,e2-P,f2-P,g2-P,h2-P'
     )
-    assert df.loc[1, 'square_piece'] == (
-        'h8-r,g8-n,f8-b,e8-q,d8-k,c8-b,b8-n,a8-r,h7-p,g7-p,'
-        'f7-p,e7-p,c7-p,b7-p,a7-p,d5-p,h2-P,g2-P,f2-P,e2-P,d2-P,'
-        'c2-P,b2-P,a2-P,h1-R,g1-N,f1-B,e1-Q,d1-K,c1-B,b1-N,a1-R'
+    assert df.loc[0, 'black_square_piece'] == (
+        'a7-p,b7-p,c7-p,d7-p,e7-p,f7-p,g7-p,h7-p,a8-r,b8-n,c8-b,'
+        'd8-q,e8-k,f8-b,g8-n,h8-r'
+    )
+    assert df.loc[1, 'white_square_piece'] == (
+        'h8-R,g8-N,f8-B,e8-Q,d8-K,c8-B,b8-N,a8-R,h7-P,g7-P,f7-P,'
+        'e7-P,c7-P,b7-P,a7-P,d5-P'
+    )
+    assert df.loc[1, 'black_square_piece'] == (
+        'h2-p,g2-p,f2-p,e2-p,d2-p,c2-p,b2-p,a2-p,h1-r,g1-n,f1-b,'
+        'e1-q,d1-k,c1-b,b1-n,a1-r'
     )
 
 
@@ -197,11 +203,11 @@ def test_generate():
     state_gen = StateGenerator("tests/test.pgn", "bogus")
     df = state_gen.generate()
 
-    # square piece data = 1
+    # square piece data = 2
     # repetition = 2
     # turn (color) = 1
     # move count = 1
     # for each color, king/queen castling = 2 + 2
     # no progress count = 1
     # move = 1
-    assert df.shape == (165, 1+2+1+1+2+2+1+1)
+    assert df.shape == (165, 2+2+1+1+2+2+1+1)
