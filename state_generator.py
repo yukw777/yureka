@@ -142,6 +142,7 @@ class StateGenerator():
     def generate(self, write=False):
         count = 0
         df = pd.DataFrame()
+        header = True
         for game in self.get_game():
             count += 1
             combined_df = pd.concat([
@@ -156,18 +157,22 @@ class StateGenerator():
             df = pd.concat([df, combined_df])
             if count % 100 == 0:
                 if write:
-                    header = False
-                    if count == 100:
-                        # first write so include header
-                        header = True
                     df.to_csv(
                         self.out_csv_file,
                         index=False,
                         header=header,
                         mode='a'
                     )
+                    header = False
                     df = pd.DataFrame()
                 print(f'{count} games processed...')
+        if write:
+            df.to_csv(
+                self.out_csv_file,
+                index=False,
+                header=header,
+                mode='a'
+            )
 
         return df
 
