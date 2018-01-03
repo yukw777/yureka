@@ -20,16 +20,19 @@ class ChessDataset(Dataset):
 
     def __getitem__(self, index):
         row = self.df.iloc[index]
-        return torch.from_numpy(np.vstack((
-            self.get_board_data(row, bool(row['turn'])),
-            np.full((1, ) + BOARD_SIZE, row['turn']),
-            np.full((1, ) + BOARD_SIZE, row['move_count']),
-            np.full((1, ) + BOARD_SIZE, row['b_kingside_castling']),
-            np.full((1, ) + BOARD_SIZE, row['b_queenside_castling']),
-            np.full((1, ) + BOARD_SIZE, row['w_kingside_castling']),
-            np.full((1, ) + BOARD_SIZE, row['w_queenside_castling']),
-            np.full((1, ) + BOARD_SIZE, row['no_progress']),
-        ))), torch.Tensor([move_translator.get_engine_move_index(row['move'])])
+        return (
+            torch.from_numpy(np.vstack((
+                self.get_board_data(row, bool(row['turn'])),
+                np.full((1, ) + BOARD_SIZE, row['turn']),
+                np.full((1, ) + BOARD_SIZE, row['move_count']),
+                np.full((1, ) + BOARD_SIZE, row['b_kingside_castling']),
+                np.full((1, ) + BOARD_SIZE, row['b_queenside_castling']),
+                np.full((1, ) + BOARD_SIZE, row['w_kingside_castling']),
+                np.full((1, ) + BOARD_SIZE, row['w_queenside_castling']),
+                np.full((1, ) + BOARD_SIZE, row['no_progress']),
+            ))).float(),
+            torch.Tensor([move_translator.get_engine_move_index(row['move'])]),
+        )
 
     def get_square_piece_data(self, data):
         board_data = np.full(
