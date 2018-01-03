@@ -10,7 +10,8 @@ def test_chess_dataset():
 
     test_cases = [
         {
-            'data': dataset[0],
+            'data': dataset[0][0],
+            'move': dataset[0][1],
             'curr_p': np.array([[0, 0, 0, 0, 0, 0, 0, 0],
                                 [1, 1, 1, 1, 1, 1, 1, 1],
                                 [0, 0, 0, 0, 0, 0, 0, 0],
@@ -116,9 +117,11 @@ def test_chess_dataset():
             'w_k_castling': 1,
             'w_q_castling': 1,
             'no_progress': 0,
+            'expected_move': 524,
         },
         {
-            'data': dataset[1],
+            'data': dataset[1][0],
+            'move': dataset[1][1],
             'curr_p': np.array([[0, 0, 0, 0, 0, 0, 0, 0],
                                 [1, 1, 1, 1, 1, 1, 1, 1],
                                 [0, 0, 0, 0, 0, 0, 0, 0],
@@ -224,6 +227,7 @@ def test_chess_dataset():
             'w_k_castling': 1,
             'w_q_castling': 1,
             'no_progress': 0,
+            'expected_move': 525,
         },
     ]
 
@@ -271,3 +275,5 @@ def test_chess_dataset():
             torch.from_numpy(np.full(BOARD_SIZE, tc['w_q_castling'])))
         assert tc['data'][20].equal(
             torch.from_numpy(np.full(BOARD_SIZE, tc['no_progress'])))
+
+        assert tc['move'].equal(torch.Tensor([tc['expected_move']]))

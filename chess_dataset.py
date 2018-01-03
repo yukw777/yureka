@@ -3,7 +3,7 @@ import chess
 import pandas as pd
 import numpy as np
 import torch
-from move_translator import square_name_to_square
+import move_translator
 from state_generator import BOARD_SIZE
 from torch.utils.data import Dataset
 
@@ -29,7 +29,7 @@ class ChessDataset(Dataset):
             np.full((1, ) + BOARD_SIZE, row['w_kingside_castling']),
             np.full((1, ) + BOARD_SIZE, row['w_queenside_castling']),
             np.full((1, ) + BOARD_SIZE, row['no_progress']),
-        )))
+        ))), torch.Tensor([move_translator.get_engine_move_index(row['move'])])
 
     def get_square_piece_data(self, data):
         board_data = np.full(
@@ -38,7 +38,8 @@ class ChessDataset(Dataset):
         for sq_symbol in data.split(','):
             sq, symbol = sq_symbol.split('-')
             piece = chess.Piece.from_symbol(symbol)
-            board_data[piece.piece_type - 1][square_name_to_square(sq)] = 1
+            square = move_translator.square_name_to_square(sq)
+            board_data[piece.piece_type - chess.PAWN][square] = 1
 
         return board_data.reshape((len(chess.PIECE_TYPES), ) + BOARD_SIZE)
 
