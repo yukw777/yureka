@@ -10,6 +10,16 @@ QUEEN_MOVE_DIRECTION_S = 's'
 QUEEN_MOVE_DIRECTION_SW = 'sw'
 QUEEN_MOVE_DIRECTION_W = 'w'
 QUEEN_MOVE_DIRECTION_NW = 'nw'
+QUEEN_MOVE_DIRECTIONS = [
+    QUEEN_MOVE_DIRECTION_N,
+    QUEEN_MOVE_DIRECTION_NE,
+    QUEEN_MOVE_DIRECTION_E,
+    QUEEN_MOVE_DIRECTION_SE,
+    QUEEN_MOVE_DIRECTION_S,
+    QUEEN_MOVE_DIRECTION_SW,
+    QUEEN_MOVE_DIRECTION_W,
+    QUEEN_MOVE_DIRECTION_NW,
+]
 
 
 KNIGHT_MOVE_PREFIX = 'n'
@@ -21,6 +31,16 @@ KNIGHT_MOVE_DOWN_LEFT = 'dl'
 KNIGHT_MOVE_LEFT_DOWN = 'ld'
 KNIGHT_MOVE_LEFT_UP = 'lu'
 KNIGHT_MOVE_UP_LEFT = 'ul'
+KNIGHT_MOVE_DIRECTIONS = [
+    KNIGHT_MOVE_UP_RIGHT,
+    KNIGHT_MOVE_RIGHT_UP,
+    KNIGHT_MOVE_RIGHT_DOWN,
+    KNIGHT_MOVE_DOWN_RIGHT,
+    KNIGHT_MOVE_DOWN_LEFT,
+    KNIGHT_MOVE_LEFT_DOWN,
+    KNIGHT_MOVE_LEFT_UP,
+    KNIGHT_MOVE_UP_LEFT,
+]
 
 
 UNDERPROMOTION_PREFIX = 'u'
@@ -40,6 +60,63 @@ UNDERPROMOTION_DIRECTION_MAP = {
     QUEEN_MOVE_DIRECTION_NE: UNDERPROMOTION_PAWN_RIGHT_CAPTURE,
     QUEEN_MOVE_DIRECTION_NW: UNDERPROMOTION_PAWN_LEFT_CAPTURE,
 }
+UNDERPROMOTION_DIRECTIONS = [
+    UNDERPROMOTION_PAWN_MOVE,
+    UNDERPROMOTION_PAWN_LEFT_CAPTURE,
+    UNDERPROMOTION_PAWN_RIGHT_CAPTURE,
+]
+
+
+BOARD_OFFSET = len(chess.FILE_NAMES) * len(chess.RANK_NAMES)
+QUEEN_MOVE_OFFSET = 0
+KNIGHT_MOVE_OFFSET = QUEEN_MOVE_OFFSET + len(QUEEN_MOVE_DIRECTIONS) * 7
+UNDERPROMOTION_OFFSET = KNIGHT_MOVE_OFFSET + len(KNIGHT_MOVE_DIRECTIONS)
+
+
+def square_name_to_square(name):
+    f = chess.FILE_NAMES.index(name[0])
+    r = chess.RANK_NAMES.index(name[1])
+    return chess.square(f, r)
+
+
+def get_engine_move_index(move):
+    sq, move_type, move_data = move.split('_', 2)
+    sq_offset = square_name_to_square(sq)
+    if move_type == QUEEN_MOVE_PREFIX:
+        move_offset = QUEEN_MOVE_OFFSET
+        move_offset += get_queen_move_offset(move_data)
+    elif move_type == KNIGHT_MOVE_PREFIX:
+        move_offset = KNIGHT_MOVE_OFFSET
+        move_offset += get_knight_move_offset(move_data)
+    elif move_type == UNDERPROMOTION_PREFIX:
+        move_offset = UNDERPROMOTION_OFFSET
+        move_offset += get_underpromotion_move_offset(move_data)
+    else:
+        raise Exception(f'Unknown move type: {move_type}')
+
+    return move_offset * BOARD_OFFSET + sq_offset
+
+
+def get_queen_move_offset(move_data):
+    steps, direction = move_data.split('_')
+    steps = int(steps) - 1
+    direction = QUEEN_MOVE_DIRECTIONS.index(direction)
+
+    # steps X direction
+    return steps * len(QUEEN_MOVE_DIRECTIONS) + direction
+
+
+def get_knight_move_offset(move_data):
+    return KNIGHT_MOVE_DIRECTIONS.index(move_data)
+
+
+def get_underpromotion_move_offset(move_data):
+    direction, piece = move_data.split('_')
+    direction = UNDERPROMOTION_DIRECTIONS.index(direction)
+    piece = chess.PIECE_SYMBOLS.index(piece) - chess.KNIGHT
+
+    # piece X direction
+    return piece * len(UNDERPROMOTION_PIECE_MAP) + direction
 
 
 def translate_to_engine_move(move, color):

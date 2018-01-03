@@ -396,3 +396,60 @@ def test_knights_move():
         translated = move_translator.translate_to_engine_move(
             tc['move'], tc['color'])
         assert translated == tc['expected']
+
+
+def test_get_engine_move_index():
+    test_cases = [
+        {
+            'move': 'a1_q_1_n',
+            'expected': 0,
+        },
+        {
+            'move': 'e2_q_2_n',
+            'expected': 524,
+        },
+        {
+            'move': 'd4_q_5_se',
+            'expected': 2267,
+        },
+        {
+            'move': 'h8_q_7_nw',
+            'expected': 3583,
+        },
+        {
+            'move': 'a1_n_ur',
+            'expected': 3584,
+        },
+        {
+            'move': 'e2_n_rd',
+            'expected': 3724,
+        },
+        {
+            'move': 'd4_n_ld',
+            'expected': 3931,
+        },
+        {
+            'move': 'h8_n_ul',
+            'expected': 4095,
+        },
+        {
+            'move': 'a1_u_m_n',
+            'expected': 4096,
+        },
+        {
+            'move': 'e2_u_lc_b',
+            'expected': 4364,
+        },
+        {
+            'move': 'd4_u_rc_r',
+            'expected': 4635,
+        },
+        {
+            'move': 'h8_u_rc_r',
+            'expected': 4671,
+        },
+    ]
+
+    for tc in test_cases:
+        translated = move_translator.get_engine_move_index(tc['move'])
+        assert translated == tc['expected']

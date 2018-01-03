@@ -3,6 +3,7 @@ import chess
 import pandas as pd
 import numpy as np
 import torch
+from move_translator import square_name_to_square
 from state_generator import BOARD_SIZE
 from torch.utils.data import Dataset
 
@@ -37,9 +38,7 @@ class ChessDataset(Dataset):
         for sq_symbol in data.split(','):
             sq, symbol = sq_symbol.split('-')
             piece = chess.Piece.from_symbol(symbol)
-            f = chess.FILE_NAMES.index(sq[0])
-            r = chess.RANK_NAMES.index(sq[1])
-            board_data[piece.piece_type - 1][chess.square(f, r)] = 1
+            board_data[piece.piece_type - 1][square_name_to_square(sq)] = 1
 
         return board_data.reshape((len(chess.PIECE_TYPES), ) + BOARD_SIZE)
 
