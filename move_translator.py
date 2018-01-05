@@ -1,6 +1,9 @@
 import chess
 
 
+TOTAL_MOVES = 4672
+
+
 QUEEN_MOVE_PREFIX = 'q'
 QUEEN_MOVE_DIRECTION_N = 'n'
 QUEEN_MOVE_DIRECTION_NE = 'ne'
