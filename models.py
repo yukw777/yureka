@@ -28,7 +28,7 @@ class ChessEngine(nn.Module):
             padding=2
         ) for _ in range(hidden_conv_layers)))
         self.fc = nn.Linear(BOARD_SIZE[0] * BOARD_SIZE[1], TOTAL_MOVES)
-        self.softmax = nn.SoftMax()
+        self.softmax = nn.Softmax()
         self.initialize_weights()
 
     def initialize_weights(self):
