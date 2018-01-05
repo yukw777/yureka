@@ -8,6 +8,9 @@ from state_generator import BOARD_SIZE
 from torch.utils.data import Dataset
 
 
+SIZE = (1, ) + BOARD_SIZE
+
+
 @attr.s
 class ChessDataset(Dataset):
     data_file = attr.ib()
@@ -23,13 +26,14 @@ class ChessDataset(Dataset):
         return (
             torch.from_numpy(np.vstack((
                 self.get_board_data(row, bool(row['turn'])),
-                np.full((1, ) + BOARD_SIZE, row['turn']),
-                np.full((1, ) + BOARD_SIZE, row['move_count']),
-                np.full((1, ) + BOARD_SIZE, row['b_kingside_castling']),
-                np.full((1, ) + BOARD_SIZE, row['b_queenside_castling']),
-                np.full((1, ) + BOARD_SIZE, row['w_kingside_castling']),
-                np.full((1, ) + BOARD_SIZE, row['w_queenside_castling']),
-                np.full((1, ) + BOARD_SIZE, row['no_progress']),
+                np.full(SIZE, row['turn']),
+                np.full(SIZE, row['move_count']),
+                np.full(SIZE, row['b_kingside_castling']),
+                np.full(SIZE, row['b_queenside_castling']),
+                np.full(SIZE, row['w_kingside_castling']),
+                np.full(SIZE, row['w_queenside_castling']),
+                np.full(SIZE, row['no_progress']),
+                np.full(SIZE, 0),
             ))).float(),
             torch.Tensor([move_translator.get_engine_move_index(row['move'])]),
         )
@@ -56,6 +60,7 @@ class ChessDataset(Dataset):
 
         return np.vstack((
             piece_data,
-            np.full((1, ) + BOARD_SIZE, row['rep_2']),
-            np.full((1, ) + BOARD_SIZE, row['rep_3']),
+            np.full(SIZE, 1),
+            np.full(SIZE, row['rep_2']),
+            np.full(SIZE, row['rep_3']),
         ))
