@@ -1,6 +1,8 @@
 import logging
 import attr
 import argparse
+import datetime
+import os
 import torch
 import torch.utils.data as data
 import torch.optim as optim
@@ -64,11 +66,21 @@ class SupervisedTrainer():
         for epoch in range(self.num_epochs):
             self.logger.info(f'Epoch {epoch}')
             self.train(epoch)
-            self.save()
+            self.save(epoch)
             self.test(epoch)
 
-    def save(self):
-        self.logger.info('Saving not yet implemented')
+    def save(self, epoch):
+        filename = self.model.__class__.__name__
+        filename += f"_{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}"
+        filename += f"_{epoch}.model"
+        filepath = os.path.join(
+            os.getcwd(),
+            'saved_models',
+            filename
+        )
+        self.logger.info(f'Saving: {filepath}')
+        torch.save(self.model.state_dict(), filepath)
+        self.logger.info('Done saving')
 
     def test(self, epoch):
         self.logger.info('Testing...')
