@@ -54,3 +54,12 @@ class ChessEngine(nn.Module):
         x = self.final_conv_layer(x)
         # x.shape = (batch_size, out_channels, 8, 8)
         return x
+
+
+models = {
+    'ChessEngine.v0': {
+        'class': ChessEngine,
+        'args': (23, 128, 11),
+        'kwargs': {},
+    },
+}
