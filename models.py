@@ -63,3 +63,11 @@ models = {
         'kwargs': {},
     },
 }
+
+
+def create(model_name):
+    model_setting = models[model_name]
+    return model_setting['class'](
+        *model_setting['args'],
+        **model_setting['kwargs'],
+    )
