@@ -35,7 +35,7 @@ class ChessDataset(Dataset):
                 np.full(SIZE, row['no_progress']),
                 np.full(SIZE, 0),
             ))).float(),
-            torch.Tensor([move_translator.get_engine_move_index(row['move'])]),
+            move_translator.get_engine_move_index(row['move']),
         )
 
     def get_square_piece_data(self, data):

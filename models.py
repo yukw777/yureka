@@ -1,8 +1,6 @@
 import torch.nn as nn
 import torch.nn.init as init
-
-from move_translator import TOTAL_MOVES
-from state_generator import BOARD_SIZE
+from move_translator import NUM_MOVE_PLANES
 
 
 class ChessEngine(nn.Module):
@@ -19,16 +17,19 @@ class ChessEngine(nn.Module):
             in_channels,
             out_channels,
             5,
-            padding=4
+            padding=2
         )
         self.hidden_conv_layers = nn.Sequential(*(self.create_conv_layer(
             out_channels,
             out_channels,
             3,
-            padding=2
+            padding=1
         ) for _ in range(hidden_conv_layers)))
-        self.fc = nn.Linear(BOARD_SIZE[0] * BOARD_SIZE[1], TOTAL_MOVES)
-        self.softmax = nn.Softmax()
+        self.final_conv_layer = self.create_conv_layer(
+            out_channels,
+            NUM_MOVE_PLANES,
+            1
+        )
         self.initialize_weights()
 
     def initialize_weights(self):
@@ -47,6 +48,9 @@ class ChessEngine(nn.Module):
     def forward(self, x):
         # x.shape = (batch_size, in_channels, 8, 8)
         x = self.conv1(x)
+        # x.shape = (batch_size, out_channels, 8, 8)
         x = self.hidden_conv_layers(x)
-        x = self.fc(x)
-        return self.softmax(x)
+        # x.shape = (batch_size, out_channels, 8, 8)
+        x = self.final_conv_layer(x)
+        # x.shape = (batch_size, out_channels, 8, 8)
+        return x
