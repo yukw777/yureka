@@ -5,6 +5,8 @@ import torch
 import torch.utils.data as data
 import torch.optim as optim
 import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
 import models
 from torch.autograd import Variable
 from chess_dataset import ChessDataset
@@ -13,7 +15,8 @@ from chess_dataset import ChessDataset
 @attr.s
 class SupervisedTrainer():
     model = attr.ib()
-    data = attr.ib()
+    train_data = attr.ib()
+    test_data = attr.ib()
     logger = attr.ib(default=logging.getLogger(__name__))
     log_interval = attr.ib(default=2000)
     batch_size = attr.ib(default=16)
@@ -25,15 +28,66 @@ class SupervisedTrainer():
         if self.cuda:
             self.logger.info('Using CUDA')
             self.model.cuda()
+        self.train_data = self.get_data_loader(self.train_data)
+        self.test_data = self.get_data_loader(self.test_data)
 
-    def train(self):
-        self.model.train(mode=True)
-        dataset = ChessDataset(self.data)
-        data_loader = data.DataLoader(
+    def get_data_loader(self, data_file):
+        dataset = ChessDataset(data_file)
+        return data.DataLoader(
             dataset,
             batch_size=self.batch_size,
             shuffle=True
         )
+
+    def get_variables_from_inputs(self, row):
+        # get the inputs
+        inputs, labels = row
+
+        volatile = not self.model.training
+
+        # wrap them in Variable
+        if self.cuda:
+            inputs = Variable(inputs.cuda(), volatile=volatile)
+            labels = Variable(labels.cuda(), volatile=volatile)
+        else:
+            inputs = Variable(inputs, volatile=volatile)
+            labels = Variable(labels, volatile=volatile)
+
+        return inputs, labels
+
+    def predict(self, inputs):
+        outputs = self.model(inputs)
+        return outputs.view(outputs.shape[0], -1)
+
+    def run(self):
+        for epoch in range(self.num_epochs):
+            self.logger.info(f'Epoch {epoch}')
+            self.train(epoch)
+            self.save()
+            self.test(epoch)
+
+    def save(self):
+        self.logger.info('Saving not yet implemented')
+
+    def test(self, epoch):
+        self.logger.info('Testing...')
+        self.model.eval()
+
+        losses = []
+        for i, row in enumerate(self.test_data):
+            inputs, labels = self.get_variables_from_inputs(row)
+
+            outputs = self.predict(inputs)
+            loss = F.cross_entropy(outputs, labels)
+            losses.append(loss.data)
+
+        avg_loss = np.average(losses)
+        self.logger.info(f'Average loss at epoch {epoch}: {avg_loss}')
+        self.logger.info('Testing finished')
+
+    def train(self, epoch):
+        self.logger.info('Training...')
+        self.model.train()
 
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.SGD(
@@ -43,39 +97,28 @@ class SupervisedTrainer():
             nesterov=True
         )
 
-        for epoch in range(self.num_epochs):
-            self.logger.info(f'Epoch {epoch}')
+        running_loss = 0.0
+        for i, row in enumerate(self.train_data):
+            # get the inputs and labels
+            inputs, labels = self.get_variables_from_inputs(row)
 
-            running_loss = 0.0
-            for i, d in enumerate(data_loader):
-                # get the inputs
-                inputs, labels = d
+            # zero the parameter gradients
+            optimizer.zero_grad()
 
-                # wrap them in Variable
-                if self.cuda:
-                    inputs = Variable(inputs.cuda())
-                    labels = Variable(labels.cuda())
-                else:
-                    inputs = Variable(inputs)
-                    labels = Variable(labels)
+            # forward + backward + optimize
+            outputs = self.model(inputs)
+            outputs = outputs.view(outputs.shape[0], -1)
 
-                # zero the parameter gradients
-                optimizer.zero_grad()
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
 
-                # forward + backward + optimize
-                outputs = self.model(inputs)
-                outputs = outputs.view(outputs.shape[0], -1)
-
-                loss = criterion(outputs, labels)
-                loss.backward()
-                optimizer.step()
-
-                running_loss += loss.data[0]
-                if i % self.log_interval == self.log_interval - 1:
-                    avg_loss = running_loss / self.log_interval
-                    self.logger.info('[%d, %5d] loss: %.3f' %
-                                     (epoch, i, avg_loss))
-                    running_loss = 0.0
+            running_loss += loss.data[0]
+            if i % self.log_interval == self.log_interval - 1:
+                avg_loss = running_loss / self.log_interval
+                self.logger.info('[%d, %5d] loss: %.3f' %
+                                 (epoch, i, avg_loss))
+                running_loss = 0.0
 
         self.logger.info('Training finished')
 
@@ -83,7 +126,8 @@ class SupervisedTrainer():
 def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('model')
-    parser.add_argument('data')
+    parser.add_argument('train_data')
+    parser.add_argument('test_data')
     parser.add_argument('-i', '--log-interval', type=int)
     parser.add_argument('-b', '--batch-size', type=int)
     parser.add_argument('-e', '--num-epochs', type=int)
@@ -104,7 +148,8 @@ def run():
     model = models.create(args.model)
     trainer_setting = {
         'model': model,
-        'data': args.data,
+        'train_data': args.train_data,
+        'test_data': args.test_data,
         'logger': logger,
     }
     if args.log_interval:
@@ -116,7 +161,7 @@ def run():
     if args.cuda:
         trainer_setting['cuda'] = args.cuda
     trainer = SupervisedTrainer(**trainer_setting)
-    trainer.train()
+    trainer.run()
 
 
 if __name__ == '__main__':
