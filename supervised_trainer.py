@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 import models
+import sklearn.metrics as metrics
 from torch.autograd import Variable
 from chess_dataset import ChessDataset
 
@@ -74,15 +75,32 @@ class SupervisedTrainer():
         self.model.eval()
 
         losses = []
+        predictions = np.array([])
+        answers = np.array([])
         for i, row in enumerate(self.test_data):
             inputs, labels = self.get_variables_from_inputs(row)
 
+            # loss
             outputs = self.predict(inputs)
             loss = F.cross_entropy(outputs, labels)
             losses.append(loss.data)
 
+            _, prediction = outputs.max(1)
+            predictions = np.append(predictions, prediction.data)
+            answers = np.append(answers, labels.data)
+
         avg_loss = np.average(losses)
-        self.logger.info(f'Average loss at epoch {epoch}: {avg_loss}')
+        precision = metrics.precision_score(
+            answers,
+            predictions,
+            average='micro'
+        )
+        recall = metrics.recall_score(answers, predictions, average='micro')
+        f1_score = metrics.f1_score(answers, predictions, average='micro')
+        self.logger.info(f'Avg. loss at epoch {epoch}: {avg_loss}')
+        self.logger.info(f'Precision at epoch {epoch}: {precision}')
+        self.logger.info(f'Recall at epoch {epoch}: {recall}')
+        self.logger.info(f'F1 score at epoch {epoch}: {f1_score}')
         self.logger.info('Testing finished')
 
     def train(self, epoch):
