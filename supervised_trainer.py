@@ -163,6 +163,7 @@ def run():
     parser.add_argument('-e', '--num-epochs', type=int)
     parser.add_argument('-c', '--cuda', type=bool)
     parser.add_argument('-l', '--log-file')
+    parser.add_argument('-s', '--saved-model')
 
     args = parser.parse_args()
 
@@ -176,6 +177,10 @@ def run():
     logging.basicConfig(**logging_config)
 
     model = models.create(args.model)
+    if args.saved_model:
+        logger.info(f'Loading saved model: {args.saved_model}')
+        model.load_state_dict(torch.load(args.saved_model))
+
     trainer_setting = {
         'model': model,
         'train_data': args.train_data,
