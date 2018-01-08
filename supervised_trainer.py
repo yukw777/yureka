@@ -33,7 +33,7 @@ class SupervisedTrainer():
     batch_size = attr.ib(default=16)
     num_epochs = attr.ib(default=100)
     cuda = attr.ib(default=True)
-    learning_rate = 1e-4
+    learning_rate = 1e-3
 
     def __attrs_post_init__(self):
         self.cuda = self.cuda and torch.cuda.is_available()
