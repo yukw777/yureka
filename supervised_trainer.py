@@ -46,6 +46,9 @@ class SupervisedTrainer():
         self.train_data = self.get_data_loader(self.train_data)
         self.test_data = self.get_data_loader(self.test_data)
 
+        self.lr_reduced = False
+        self.original_learning_rate = self.learning_rate
+
     def print_summary(self):
         self.logger.info(f'Train data: {self.train_data}')
         self.logger.info(f'Test data: {self.test_data}')
@@ -86,7 +89,27 @@ class SupervisedTrainer():
     def run(self):
         for epoch in range(self.num_epochs):
             self.logger.info(f'Epoch {epoch}')
-            self.train(epoch)
+            if self.lr_reduced:
+                self.logger.info('Restoring reduced learning rate')
+                self.learning_rate = self.original_learning_rate
+                self.lr_reduced = False
+            while True:
+                try:
+                    self.train(epoch)
+                except LossIsNan:
+                    if self.learning_rate <= 1e-6:
+                        self.logger.error(
+                            'Loss is nan, and learning rate is below 1e-6')
+                        raise
+                    # loss is nan, try again with a reduced learning rate
+                    self.logger.info('Loss is nan. Reducing learning rate')
+                    self.logger.info(
+                        f'Current learning rate: {self.learning_rate}')
+                    self.learning_rate /= 10
+                    self.logger.info(
+                        f'Reduced learning rate: {self.learning_rate}')
+                    self.lr_reduced = True
+                break
             self.save(epoch)
             self.test(epoch)
 
