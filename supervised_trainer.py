@@ -41,7 +41,6 @@ class SupervisedTrainer():
         self.print_summary()
 
         if self.cuda:
-            self.logger.info('Using CUDA')
             self.model.cuda()
         self.train_data = self.get_data_loader(self.train_data)
         self.test_data = self.get_data_loader(self.test_data)
