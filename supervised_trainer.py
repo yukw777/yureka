@@ -16,6 +16,14 @@ from chess_dataset import ChessDataset
 
 
 @attr.s
+class LossIsNan(Exception):
+    inputs = attr.ib()
+    outputs = attr.ib()
+    labels = attr.ib()
+    loss = attr.ib()
+
+
+@attr.s
 class SupervisedTrainer():
     model = attr.ib()
     train_data = attr.ib()
@@ -25,6 +33,7 @@ class SupervisedTrainer():
     batch_size = attr.ib(default=16)
     num_epochs = attr.ib(default=100)
     cuda = attr.ib(default=True)
+    learning_rate = 1e-4
 
     def __attrs_post_init__(self):
         self.cuda = self.cuda and torch.cuda.is_available()
@@ -122,7 +131,7 @@ class SupervisedTrainer():
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.SGD(
             self.model.parameters(),
-            lr=0.001,
+            lr=self.learning_rate,
             momentum=0.9,
             nesterov=True
         )
@@ -140,6 +149,10 @@ class SupervisedTrainer():
             outputs = outputs.view(outputs.shape[0], -1)
 
             loss = criterion(outputs, labels)
+            if np.isnan(loss.data[0]):
+                # oops, loss is nan, probably means gradient exploded
+                # let's try again with a lower learning rate
+                raise LossIsNan(inputs, outputs, labels, loss)
             loss.backward()
             optimizer.step()
 
@@ -164,6 +177,7 @@ def run():
     parser.add_argument('-c', '--cuda', type=bool)
     parser.add_argument('-l', '--log-file')
     parser.add_argument('-s', '--saved-model')
+    parser.add_argument('-r', '--learning-rate', type=float)
 
     args = parser.parse_args()
 
@@ -195,6 +209,8 @@ def run():
         trainer_setting['num_epochs'] = args.num_epochs
     if args.cuda:
         trainer_setting['cuda'] = args.cuda
+    if args.learning_rate:
+        trainer_setting['learning_rate'] = args.learning_rate
     trainer = SupervisedTrainer(**trainer_setting)
     trainer.run()
 
