@@ -37,11 +37,23 @@ class SupervisedTrainer():
 
     def __attrs_post_init__(self):
         self.cuda = self.cuda and torch.cuda.is_available()
+        # summary
+        self.print_summary()
+
         if self.cuda:
             self.logger.info('Using CUDA')
             self.model.cuda()
         self.train_data = self.get_data_loader(self.train_data)
         self.test_data = self.get_data_loader(self.test_data)
+
+    def print_summary(self):
+        self.logger.info(f'Train data: {self.train_data}')
+        self.logger.info(f'Test data: {self.test_data}')
+        self.logger.info(f'Log interval: {self.log_interval}')
+        self.logger.info(f'Batch size: {self.batch_size}')
+        self.logger.info(f'Num epochs: {self.num_epochs}')
+        self.logger.info(f'Use cuda: {self.cuda}')
+        self.logger.info(f'Learning rate: {self.learning_rate}')
 
     def get_data_loader(self, data_file):
         dataset = ChessDataset(data_file)
