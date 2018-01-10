@@ -214,7 +214,7 @@ def run():
     parser.add_argument('-i', '--log-interval', type=int)
     parser.add_argument('-b', '--batch-size', type=int)
     parser.add_argument('-e', '--num-epochs', type=int)
-    parser.add_argument('-p', '--parallel', action='store_true', type=bool)
+    parser.add_argument('-p', '--parallel', action='store_true')
     parser.add_argument('-l', '--log-file')
     parser.add_argument('-s', '--saved-model')
     parser.add_argument('-r', '--learning-rate', type=float)
