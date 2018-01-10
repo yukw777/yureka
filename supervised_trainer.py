@@ -33,12 +33,18 @@ class SupervisedTrainer():
     batch_size = attr.ib(default=16)
     num_epochs = attr.ib(default=100)
     cuda = attr.ib(default=True)
+    parallel = attr.ib(default=False)
     learning_rate = attr.ib(default=1e-4)
 
     def __attrs_post_init__(self):
         self.cuda = self.cuda and torch.cuda.is_available()
         # summary
         self.print_summary()
+
+        if self.parallel and torch.cuda.device_count() > 1:
+            device_count = torch.cuda.device_count()
+            self.logger.info(f'Using {device_count} GPUs')
+            self.model = nn.DataParallel(self.model)
 
         if self.cuda:
             self.model.cuda()
@@ -209,6 +215,7 @@ def run():
     parser.add_argument('-b', '--batch-size', type=int)
     parser.add_argument('-e', '--num-epochs', type=int)
     parser.add_argument('-c', '--cuda', type=bool)
+    parser.add_argument('-p', '--parallel', type=bool)
     parser.add_argument('-l', '--log-file')
     parser.add_argument('-s', '--saved-model')
     parser.add_argument('-r', '--learning-rate', type=float)
@@ -243,6 +250,8 @@ def run():
         trainer_setting['num_epochs'] = args.num_epochs
     if args.cuda:
         trainer_setting['cuda'] = args.cuda
+    if args.parallel:
+        trainer_setting['parallel'] = args.parallel
     if args.learning_rate:
         trainer_setting['learning_rate'] = args.learning_rate
     trainer = SupervisedTrainer(**trainer_setting)
