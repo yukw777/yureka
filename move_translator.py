@@ -88,7 +88,9 @@ def get_engine_move_from_index(index):
         return '_'.join([square, UNDERPROMOTION_PREFIX, direction, piece])
     elif move_offset >= KNIGHT_MOVE_OFFSET:
         # Knight move
-        pass
+        offset = move_offset - KNIGHT_MOVE_OFFSET
+        direction = get_knight_from_offset(offset)
+        return '_'.join([square, KNIGHT_MOVE_PREFIX, direction])
     else:
         # Queen move
         pass
@@ -107,6 +109,10 @@ def get_underpromotion_from_offset(offset):
     piece = chess.PIECE_SYMBOLS[piece + chess.KNIGHT]
 
     return direction, piece
+
+
+def get_knight_from_offset(offset):
+    return KNIGHT_MOVE_DIRECTIONS[offset]
 
 
 def square_name_to_square(name):
