@@ -98,7 +98,10 @@ def test_underpromotion():
     for tc in test_cases:
         translated = move_translator.translate_to_engine_move(
             tc['move'], tc['color'])
+        inverse = move_translator.translate_from_engine_move(
+            translated, tc['color'])
         assert translated == tc['expected']
+        assert inverse == tc['move']
 
 
 def test_promotion_queens_move():

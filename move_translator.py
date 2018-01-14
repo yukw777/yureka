@@ -60,6 +60,8 @@ UNDERPROMOTION_DIRECTION_MAP = {
     QUEEN_MOVE_DIRECTION_NE: UNDERPROMOTION_PAWN_RIGHT_CAPTURE,
     QUEEN_MOVE_DIRECTION_NW: UNDERPROMOTION_PAWN_LEFT_CAPTURE,
 }
+UNDERPROMOTION_REVERSE_DIRECTION_MAP = {u: q for q, u in
+                                        UNDERPROMOTION_DIRECTION_MAP.items()}
 UNDERPROMOTION_DIRECTIONS = [
     UNDERPROMOTION_PAWN_MOVE,
     UNDERPROMOTION_PAWN_LEFT_CAPTURE,
@@ -77,6 +79,56 @@ BOARD_OFFSET = len(chess.FILE_NAMES) * len(chess.RANK_NAMES)
 QUEEN_MOVE_OFFSET = 0
 KNIGHT_MOVE_OFFSET = QUEEN_MOVE_OFFSET + len(QUEEN_MOVE_DIRECTIONS) * 7
 UNDERPROMOTION_OFFSET = KNIGHT_MOVE_OFFSET + len(KNIGHT_MOVE_DIRECTIONS)
+
+
+def translate_from_engine_move(engine_move, color):
+    from_sq, move_type, move_data = engine_move.split('_', 2)
+    from_sq = chess.SQUARE_NAMES.index(from_sq)
+    if move_type == UNDERPROMOTION_PREFIX:
+        return get_from_underpromotion(from_sq, move_data, color)
+
+
+def get_queen_to_square(from_square, direction, distance):
+    from_file = chess.square_file(from_square)
+    from_rank = chess.square_rank(from_square)
+    file_diff = 0
+    rank_diff = 0
+    if direction == QUEEN_MOVE_DIRECTION_N:
+        rank_diff = distance
+    elif direction == QUEEN_MOVE_DIRECTION_S:
+        rank_diff = -distance
+    elif direction == QUEEN_MOVE_DIRECTION_E:
+        file_diff = distance
+    elif direction == QUEEN_MOVE_DIRECTION_W:
+        file_diff = -distance
+    elif direction == QUEEN_MOVE_DIRECTION_NE:
+        file_diff = distance
+        rank_diff = distance
+    elif direction == QUEEN_MOVE_DIRECTION_SE:
+        file_diff = distance
+        rank_diff = -distance
+    elif direction == QUEEN_MOVE_DIRECTION_SW:
+        file_diff = -distance
+        rank_diff = -distance
+    elif direction == QUEEN_MOVE_DIRECTION_NW:
+        file_diff = -distance
+        rank_diff = distance
+    else:
+        raise Exception(f'Unknown Queen direction: {direction}')
+    return chess.square(from_file + file_diff, from_rank + rank_diff)
+
+
+def get_from_underpromotion(from_sq, move_data, color):
+    direction, piece = move_data.split('_')
+    direction = UNDERPROMOTION_REVERSE_DIRECTION_MAP[direction]
+    to_sq = get_queen_to_square(from_sq, direction, 1)
+    piece = chess.PIECE_SYMBOLS.index(piece)
+
+    if color == chess.BLACK:
+        from_sq = square_invert(from_sq)
+        to_sq = square_invert(to_sq)
+
+    return chess.Move(from_sq, to_sq, promotion=piece)
 
 
 def get_engine_move_from_index(index):
