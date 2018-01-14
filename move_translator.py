@@ -86,6 +86,18 @@ def translate_from_engine_move(engine_move, color):
     from_sq = chess.SQUARE_NAMES.index(from_sq)
     if move_type == UNDERPROMOTION_PREFIX:
         return get_from_underpromotion(from_sq, move_data, color)
+    elif move_type == QUEEN_MOVE_PREFIX:
+        return get_from_queen(from_sq, move_data, color)
+
+
+def get_from_queen(from_sq, move_data, color):
+    steps, direction = move_data.split('_')
+    steps = int(steps)
+    to_sq = get_queen_to_square(from_sq, direction, steps)
+    if color == chess.BLACK:
+        from_sq = square_invert(from_sq)
+        to_sq = square_invert(to_sq)
+    return chess.Move(from_sq, to_sq)
 
 
 def get_queen_to_square(from_square, direction, distance):

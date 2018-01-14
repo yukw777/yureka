@@ -140,7 +140,17 @@ def test_promotion_queens_move():
     for tc in test_cases:
         translated = move_translator.translate_to_engine_move(
             tc['move'], tc['color'])
+        inverse = move_translator.translate_from_engine_move(
+            translated, tc['color'])
+        # promotion is automatically added if the piece is a pawn on rank 7
+        # for the purpose of testing, let's assume it's a pawn
+        inverse = chess.Move(
+            inverse.from_square,
+            inverse.to_square,
+            promotion=chess.QUEEN
+        )
         assert translated == tc['expected']
+        assert inverse == tc['move']
 
 
 def test_queens_move():
@@ -309,7 +319,10 @@ def test_queens_move():
     for tc in test_cases:
         translated = move_translator.translate_to_engine_move(
             tc['move'], tc['color'])
+        inverse = move_translator.translate_from_engine_move(
+            translated, tc['color'])
         assert translated == tc['expected']
+        assert inverse == tc['move']
 
 
 def test_knights_move():
