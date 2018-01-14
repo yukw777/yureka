@@ -152,6 +152,9 @@ class StateGenerator():
                 pd.DataFrame(self.get_move_count_data(game)),
                 pd.DataFrame(self.get_castling_data(game)),
                 pd.DataFrame(self.get_no_progress_data(game)),
+            ], axis=1)
+            combined_df = pd.concat([
+                combined_df,
                 pd.DataFrame(self.get_move_data(game))
             ], axis=1)
             df = pd.concat([df, combined_df])
