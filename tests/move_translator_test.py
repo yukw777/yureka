@@ -398,7 +398,7 @@ def test_knights_move():
         assert translated == tc['expected']
 
 
-def test_get_engine_move_index():
+def test_get_engine_move_to_and_from_index():
     test_cases = [
         {
             'move': 'a1_q_1_n',
@@ -452,4 +452,6 @@ def test_get_engine_move_index():
 
     for tc in test_cases:
         translated = move_translator.get_engine_move_index(tc['move'])
+        inverse = move_translator.get_engine_move_from_index(translated)
         assert translated == tc['expected']
+        assert inverse == tc['move']

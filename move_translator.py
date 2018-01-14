@@ -79,6 +79,36 @@ KNIGHT_MOVE_OFFSET = QUEEN_MOVE_OFFSET + len(QUEEN_MOVE_DIRECTIONS) * 7
 UNDERPROMOTION_OFFSET = KNIGHT_MOVE_OFFSET + len(KNIGHT_MOVE_DIRECTIONS)
 
 
+def get_engine_move_from_index(index):
+    square, move_offset = get_square_move_offset_from_index(index)
+    if move_offset >= UNDERPROMOTION_OFFSET:
+        # Underpromotion move
+        offset = move_offset - UNDERPROMOTION_OFFSET
+        direction, piece = get_underpromotion_from_offset(offset)
+        return '_'.join([square, UNDERPROMOTION_PREFIX, direction, piece])
+    elif move_offset >= KNIGHT_MOVE_OFFSET:
+        # Knight move
+        pass
+    else:
+        # Queen move
+        pass
+
+
+def get_square_move_offset_from_index(index):
+    offset = int(index / BOARD_OFFSET)
+    square_index = index % BOARD_OFFSET
+    return chess.SQUARE_NAMES[square_index], offset
+
+
+def get_underpromotion_from_offset(offset):
+    direction = offset % len(UNDERPROMOTION_PIECE_MAP)
+    direction = UNDERPROMOTION_DIRECTIONS[direction]
+    piece = int(offset / len(UNDERPROMOTION_PIECE_MAP))
+    piece = chess.PIECE_SYMBOLS[piece + chess.KNIGHT]
+
+    return direction, piece
+
+
 def square_name_to_square(name):
     f = chess.FILE_NAMES.index(name[0])
     r = chess.RANK_NAMES.index(name[1])
