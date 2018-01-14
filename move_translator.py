@@ -88,6 +88,46 @@ def translate_from_engine_move(engine_move, color):
         return get_from_underpromotion(from_sq, move_data, color)
     elif move_type == QUEEN_MOVE_PREFIX:
         return get_from_queen(from_sq, move_data, color)
+    elif move_type == KNIGHT_MOVE_PREFIX:
+        return get_from_knight(from_sq, move_data, color)
+    else:
+        raise Exception(f'Unknown move type: {move_type}')
+
+
+def get_from_knight(from_square, direction, color):
+    from_file = chess.square_file(from_square)
+    from_rank = chess.square_rank(from_square)
+    if direction == KNIGHT_MOVE_UP_RIGHT:
+        rank_diff = 2
+        file_diff = 1
+    elif direction == KNIGHT_MOVE_RIGHT_UP:
+        rank_diff = 1
+        file_diff = 2
+    elif direction == KNIGHT_MOVE_RIGHT_DOWN:
+        rank_diff = -1
+        file_diff = 2
+    elif direction == KNIGHT_MOVE_DOWN_RIGHT:
+        rank_diff = -2
+        file_diff = 1
+    elif direction == KNIGHT_MOVE_DOWN_LEFT:
+        rank_diff = -2
+        file_diff = -1
+    elif direction == KNIGHT_MOVE_LEFT_DOWN:
+        rank_diff = -1
+        file_diff = -2
+    elif direction == KNIGHT_MOVE_LEFT_UP:
+        rank_diff = 1
+        file_diff = -2
+    elif direction == KNIGHT_MOVE_UP_LEFT:
+        rank_diff = 2
+        file_diff = -1
+    else:
+        raise Exception(f'Unknown knight move direction: {direction}')
+    to_square = chess.square(from_file + file_diff, from_rank + rank_diff)
+    if color == chess.BLACK:
+        from_square = square_invert(from_square)
+        to_square = square_invert(to_square)
+    return chess.Move(from_square, to_square)
 
 
 def get_from_queen(from_sq, move_data, color):
