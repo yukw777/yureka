@@ -284,4 +284,4 @@ def test_chess_dataset():
         assert tc['data'][22].equal(
             torch.from_numpy(np.full(BOARD_SIZE, 0)).float())
 
-        assert tc['move'].equal(torch.Tensor([tc['expected_move']]))
+        assert tc['move'] == tc['expected_move']
