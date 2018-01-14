@@ -92,8 +92,9 @@ def get_engine_move_from_index(index):
         direction = get_knight_from_offset(offset)
         return '_'.join([square, KNIGHT_MOVE_PREFIX, direction])
     else:
-        # Queen move
-        pass
+        offset = move_offset - QUEEN_MOVE_OFFSET
+        steps, direction = get_queen_from_offset(offset)
+        return '_'.join([square, QUEEN_MOVE_PREFIX, steps, direction])
 
 
 def get_square_move_offset_from_index(index):
@@ -113,6 +114,12 @@ def get_underpromotion_from_offset(offset):
 
 def get_knight_from_offset(offset):
     return KNIGHT_MOVE_DIRECTIONS[offset]
+
+
+def get_queen_from_offset(offset):
+    steps = int(offset / len(QUEEN_MOVE_DIRECTIONS))
+    direction = offset % len(QUEEN_MOVE_DIRECTIONS)
+    return str(steps + 1), QUEEN_MOVE_DIRECTIONS[direction]
 
 
 def square_name_to_square(name):
