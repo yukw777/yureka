@@ -12,7 +12,7 @@ def test_generate_correct_num_games():
 def test_generate_correct_sq_piece_data():
     state_gen = StateGenerator("tests/test.pgn", "bogus")
     g = next(state_gen.get_game())
-    df = pd.DataFrame(state_gen.get_square_piece_data(g))
+    df = pd.DataFrame(state_gen.get_game_data(g))
     assert df.loc[0, 'white_square_piece'] == (
         'a1-R,b1-N,c1-B,d1-Q,e1-K,f1-B,g1-N,h1-R,a2-P,b2-P,c2-P,'
         'd2-P,e2-P,f2-P,g2-P,h2-P'
@@ -46,7 +46,7 @@ def test_repetition_data():
     game = chess.pgn.Game.from_board(b)
     state_gen = StateGenerator("tests/test.pgn", "bogus")  # file not used
 
-    df = pd.DataFrame(state_gen.get_repetition_data(game))
+    df = pd.DataFrame(state_gen.get_game_data(game))
 
     for i, data in df.iterrows():
         if i < 4:
@@ -73,7 +73,7 @@ def test_turn_data():
     game = chess.pgn.Game.from_board(b)
     state_gen = StateGenerator("tests/test.pgn", "bogus")  # file not used
 
-    df = pd.DataFrame(state_gen.get_turn_data(game))
+    df = pd.DataFrame(state_gen.get_game_data(game))
     for i, data in df.iterrows():
         if i % 2 == 0:
             assert data['turn'] == 1
@@ -85,7 +85,7 @@ def test_move_count_data():
     state_gen = StateGenerator("tests/test.pgn", "bogus")  # file not used
     game = next(state_gen.get_game())
 
-    df = pd.DataFrame(state_gen.get_move_count_data(game))
+    df = pd.DataFrame(state_gen.get_game_data(game))
     for i, data in df.iterrows():
         assert int(i / 2) + 1 == data['move_count']
 
@@ -159,8 +159,14 @@ def test_castling_data():
     ]
 
     for tc in test_cases:
-        df = pd.DataFrame(state_gen.get_castling_data(tc['game']))
-        assert df.equals(tc['expected_data'])
+        df = pd.DataFrame(state_gen.get_game_data(tc['game']))
+        columns = [
+            'b_kingside_castling',
+            'b_queenside_castling',
+            'w_kingside_castling',
+            'w_queenside_castling',
+        ]
+        assert df[columns].equals(tc['expected_data'])
 
 
 def test_no_progress_count_data():
@@ -178,7 +184,7 @@ def test_no_progress_count_data():
     game = chess.pgn.Game.from_board(b)
     state_gen = StateGenerator("tests/test.pgn", "bogus")  # file not used
 
-    df = pd.DataFrame(state_gen.get_no_progress_data(game))
+    df = pd.DataFrame(state_gen.get_game_data(game))
 
     for i, data in df.iterrows():
         assert data['no_progress'] == int(i / 2)
