@@ -25,6 +25,97 @@ pieces = [
 BOARD_SIZE = (len(chess.FILE_NAMES), len(chess.RANK_NAMES))
 
 
+def get_board_data(board, transpositions):
+    row = {}
+    row.update(get_square_piece_data(board))
+    row.update(get_repetition_data(board, transpositions))
+    row.update(get_turn_data(board))
+    row.update(get_move_count_data(board))
+    row.update(get_castling_data(board))
+    row.update(get_no_progress_data(board))
+    return row
+
+
+def get_no_progress_data(board):
+    return {'no_progress': int(board.halfmove_clock / 2)}
+
+
+def get_castling_data(board):
+    w_kingside = 1 if board.has_kingside_castling_rights(
+        chess.WHITE) else 0
+    w_queenside = 1 if board.has_queenside_castling_rights(
+        chess.WHITE) else 0
+    b_kingside = 1 if board.has_kingside_castling_rights(
+        chess.BLACK) else 0
+    b_queenside = 1 if board.has_queenside_castling_rights(
+        chess.BLACK) else 0
+    return {
+        'w_kingside_castling': w_kingside,
+        'w_queenside_castling': w_queenside,
+        'b_kingside_castling': b_kingside,
+        'b_queenside_castling': b_queenside,
+    }
+
+
+def get_move_count_data(board):
+    return {'move_count': board.fullmove_number}
+
+
+def get_turn_data(board):
+    return {'turn': 1 if board.turn else 0}  # 1 if white else 0
+
+
+def get_repetition_data(board, transpositions):
+    key = board._transposition_key()
+    transpositions.update((key, ))
+    data_dict = {
+        'rep_2': 0,
+        'rep_3': 0,
+    }
+    if transpositions[key] >= 3:
+        # this position repeated at least three times
+        data_dict['rep_2'] = 1
+        data_dict['rep_3'] = 1
+    elif transpositions[key] >= 2:
+        # this position repeated at least twice
+        data_dict['rep_2'] = 1
+    return data_dict
+
+
+def get_square_piece_data(board):
+    piece_map = board.piece_map()
+    white_data = []
+    black_data = []
+    for sq, sq_name in enumerate(chess.SQUARE_NAMES):
+        if board.turn == chess.WHITE:
+            sq_name_for_player = sq_name
+        else:
+            inv_square = move_translator.square_invert(sq)
+            sq_name_for_player = chess.SQUARE_NAMES[inv_square]
+        for piece in pieces:
+            occupied = get_square_piece_value(
+                piece_map, sq, piece)
+
+            key = f'{sq_name_for_player}-{piece.symbol()}'
+            if occupied:
+                if piece.color == chess.WHITE:
+                    white_data.append(key)
+                else:
+                    black_data.append(key)
+    return {
+        'white_square_piece': ','.join(white_data),
+        'black_square_piece': ','.join(black_data),
+    }
+
+
+def get_square_piece_value(piece_map, square, piece):
+    p = piece_map.get(square)
+    if p and p == piece:
+        return True
+    else:
+        return False
+
+
 @attr.s
 class StateGenerator():
     game_file_name = attr.ib()
@@ -40,79 +131,6 @@ class StateGenerator():
                 break
             yield g
 
-    def get_square_piece_value(self, piece_map, square, piece):
-        p = piece_map.get(square)
-        if p and p == piece:
-            return True
-        else:
-            return False
-
-    def get_square_piece_data(self, board):
-        piece_map = board.piece_map()
-        white_data = []
-        black_data = []
-        for sq, sq_name in enumerate(chess.SQUARE_NAMES):
-            if board.turn == chess.WHITE:
-                sq_name_for_player = sq_name
-            else:
-                inv_square = move_translator.square_invert(sq)
-                sq_name_for_player = chess.SQUARE_NAMES[inv_square]
-            for piece in pieces:
-                occupied = self.get_square_piece_value(
-                    piece_map, sq, piece)
-
-                key = f'{sq_name_for_player}-{piece.symbol()}'
-                if occupied:
-                    if piece.color == chess.WHITE:
-                        white_data.append(key)
-                    else:
-                        black_data.append(key)
-        return {
-            'white_square_piece': ','.join(white_data),
-            'black_square_piece': ','.join(black_data),
-        }
-
-    def get_repetition_data(self, board, transpositions):
-        key = board._transposition_key()
-        transpositions.update((key, ))
-        data_dict = {
-            'rep_2': 0,
-            'rep_3': 0,
-        }
-        if transpositions[key] >= 3:
-            # this position repeated at least three times
-            data_dict['rep_2'] = 1
-            data_dict['rep_3'] = 1
-        elif transpositions[key] >= 2:
-            # this position repeated at least twice
-            data_dict['rep_2'] = 1
-        return data_dict
-
-    def get_turn_data(self, board):
-        return {'turn': 1 if board.turn else 0}  # 1 if white else 0
-
-    def get_move_count_data(self, board):
-        return {'move_count': board.fullmove_number}
-
-    def get_castling_data(self, board):
-        w_kingside = 1 if board.has_kingside_castling_rights(
-            chess.WHITE) else 0
-        w_queenside = 1 if board.has_queenside_castling_rights(
-            chess.WHITE) else 0
-        b_kingside = 1 if board.has_kingside_castling_rights(
-            chess.BLACK) else 0
-        b_queenside = 1 if board.has_queenside_castling_rights(
-            chess.BLACK) else 0
-        return {
-            'w_kingside_castling': w_kingside,
-            'w_queenside_castling': w_queenside,
-            'b_kingside_castling': b_kingside,
-            'b_queenside_castling': b_queenside,
-        }
-
-    def get_no_progress_data(self, board):
-        return {'no_progress': int(board.halfmove_clock / 2)}
-
     def get_move_data(self, game):
         board = game.board()
         for move in game.main_line():
@@ -124,18 +142,8 @@ class StateGenerator():
         board = game.board()
         transpositions = collections.Counter()
         for move in game.main_line():
-            yield self.get_board_data(board, transpositions)
+            yield get_board_data(board, transpositions)
             board.push(move)
-
-    def get_board_data(self, board, transpositions):
-        row = {}
-        row.update(self.get_square_piece_data(board))
-        row.update(self.get_repetition_data(board, transpositions))
-        row.update(self.get_turn_data(board))
-        row.update(self.get_move_count_data(board))
-        row.update(self.get_castling_data(board))
-        row.update(self.get_no_progress_data(board))
-        return row
 
     def generate(self, write=False):
         count = 0
