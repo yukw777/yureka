@@ -8,19 +8,19 @@ from torch.autograd import Variable
 def test_get_move():
     test_cases = [
         {
-            'expected_move_index': 0,
-            'expected_white_move': chess.Move.from_uci('a1a2'),
-            'expected_black_move': chess.Move.from_uci('h8h7'),
+            'expected_move_index': 9,
+            'expected_white_move': chess.Move.from_uci('b2b3'),
+            'expected_black_move': chess.Move.from_uci('g7g6'),
         },
         {
-            'expected_move_index': 100,
-            'expected_white_move': chess.Move.from_uci('e5f6'),
-            'expected_black_move': chess.Move.from_uci('d4c3'),
+            'expected_move_index': 520,
+            'expected_white_move': chess.Move.from_uci('a2a4'),
+            'expected_black_move': chess.Move.from_uci('h7h5'),
         },
     ]
     for tc in test_cases:
-        t = torch.randn(4672, 1)
-        t[tc['expected_move_index']] = t.max() + 1
+        t = torch.randn(1, 4672)
+        t[0, tc['expected_move_index']] = t.max() + 1
         mock_model = MagicMock(return_value=Variable(t))
         white_board = chess.Board()
         black_board = chess.Board()
