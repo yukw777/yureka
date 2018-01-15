@@ -124,15 +124,18 @@ class StateGenerator():
         board = game.board()
         transpositions = collections.Counter()
         for move in game.main_line():
-            row = {}
-            row.update(self.get_square_piece_data(board))
-            row.update(self.get_repetition_data(board, transpositions))
-            row.update(self.get_turn_data(board))
-            row.update(self.get_move_count_data(board))
-            row.update(self.get_castling_data(board))
-            row.update(self.get_no_progress_data(board))
-            yield row
+            yield self.get_board_data(board, transpositions)
             board.push(move)
+
+    def get_board_data(self, board, transpositions):
+        row = {}
+        row.update(self.get_square_piece_data(board))
+        row.update(self.get_repetition_data(board, transpositions))
+        row.update(self.get_turn_data(board))
+        row.update(self.get_move_count_data(board))
+        row.update(self.get_castling_data(board))
+        row.update(self.get_no_progress_data(board))
+        return row
 
     def generate(self, write=False):
         count = 0
