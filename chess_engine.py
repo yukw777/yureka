@@ -43,10 +43,11 @@ class ChessEngine():
 
 
 def filter_illegal_moves(board, probs):
-    filtered = torch.zeros(probs.shape)
+    filtered = Variable(torch.zeros(probs.shape))
     for move in board.legal_moves:
         engine_move = translate_to_engine_move(move, board.turn)
         index = get_engine_move_index(engine_move)
-        filtered[0, index] = probs.data[0, index]
+        filtered.data[0, index] = probs.data[0, index]
+    probs.set_(source=filtered)
 
-    return Variable(filtered)
+    return probs
