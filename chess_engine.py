@@ -1,5 +1,6 @@
 import attr
 import collections
+import chess
 import state_generator
 import chess_dataset
 import torch
@@ -49,6 +50,7 @@ class ChessEngine():
             _, move_index = probs.max(1)
         engine_move = get_engine_move_from_index(move_index.data[0])
         move = translate_from_engine_move(engine_move, board.turn)
+        move = queen_promotion_if_possible(board, move)
         if self.train:
             return move, m.log_prob(move_index)
         else:
@@ -64,3 +66,15 @@ class ChessEngine():
             index = get_engine_move_index(engine_move)
             filtered.data[0, index] = probs.data[0, index]
         probs.set_(source=filtered)
+
+
+def queen_promotion_if_possible(board, move):
+    if board.piece_type_at(move.from_square) != chess.PAWN:
+        return move
+
+    to_rank = chess.square_rank(move.to_square)
+    if to_rank in (0, 7):
+        # it's a queen move on a pawn to rank 1 or 8, automatically
+        # promote to queen
+        return chess.Move.from_uci(move.uci() + 'q')
+    return move

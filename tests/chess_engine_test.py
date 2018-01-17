@@ -1,6 +1,6 @@
 import torch
 import chess
-from chess_engine import ChessEngine
+from chess_engine import ChessEngine, queen_promotion_if_possible
 from unittest.mock import MagicMock
 from torch.autograd import Variable
 
@@ -51,3 +51,42 @@ def test_get_move():
         else:
             assert tc['expected_white_move'] == e.get_move(white_board)
             assert tc['expected_black_move'] == e.get_move(black_board)
+
+
+def test_queen_promotion():
+    test_cases = [
+        {
+            'board': chess.Board(fen='8/4P3/8/8/8/8/8/8 w - - 0 1'),
+            'move': chess.Move.from_uci('e7e8'),
+            'expected_move': chess.Move.from_uci('e7e8q'),
+        },
+        {
+            'board': chess.Board(fen='8/8/8/8/8/8/4p3/8 b - - 0 1'),
+            'move': chess.Move.from_uci('e2e1'),
+            'expected_move': chess.Move.from_uci('e2e1q'),
+        },
+        {
+            'board': chess.Board(fen='8/4R3/8/8/8/8/8/8 w - - 0 1'),
+            'move': chess.Move.from_uci('e7e8'),
+            'expected_move': chess.Move.from_uci('e7e8'),
+        },
+        {
+            'board': chess.Board(fen='8/8/8/8/8/8/4r3/8 b - - 0 1'),
+            'move': chess.Move.from_uci('e2e1'),
+            'expected_move': chess.Move.from_uci('e2e1'),
+        },
+        {
+            'board': chess.Board(fen='8/8/8/8/3P4/8/8/8 w - - 0 1'),
+            'move': chess.Move.from_uci('d4d5'),
+            'expected_move': chess.Move.from_uci('d4d5'),
+        },
+        {
+            'board': chess.Board(fen='8/8/8/8/3p4/8/8/8 b - - 0 1'),
+            'move': chess.Move.from_uci('d4d3'),
+            'expected_move': chess.Move.from_uci('d4d3'),
+        },
+    ]
+
+    for tc in test_cases:
+        converted = queen_promotion_if_possible(tc['board'], tc['move'])
+        assert tc['expected_move'] == converted
