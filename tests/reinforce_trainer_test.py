@@ -26,13 +26,13 @@ def test_self_play():
     ]
 
     # trainee loses
-    t = ReinforceTrainer()
+    t = ReinforceTrainer('ChessEngine.v0', 'pool_path', None)
     reward, policy_loss = t.self_play(white, black, chess.WHITE)
     assert reward == -1
     assert type(policy_loss) == Variable
 
     # trainee wins
-    t = ReinforceTrainer()
+    t = ReinforceTrainer('ChessEngine.v0', 'pool_path', None)
     reward, policy_loss = t.self_play(black, white, chess.BLACK)
     assert reward == 1
     assert type(policy_loss) == Variable
@@ -41,7 +41,7 @@ def test_self_play():
     mock_board = mock.MagicMock()
     mock_board.return_value = chess.Board(fen='4k3/8/4KP2/8/8/8/8/8 w - - 0 1')
     with mock.patch('chess.Board', mock_board):
-        t = ReinforceTrainer()
+        t = ReinforceTrainer('ChessEngine.v0', 'pool_path', None)
         reward, policy_loss = t.self_play(black, white, chess.BLACK)
         assert reward == 0
         assert type(policy_loss) == Variable
