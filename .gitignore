@@ -110,3 +110,4 @@ data/
 *.swp
 
 saved_models/
+opponent_pool/
