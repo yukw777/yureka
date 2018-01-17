@@ -1,13 +1,16 @@
+import attr
 import chess
 import torch
 import logging
 
 
+@attr.s
 class ReinforceTrainer():
+    num_iter = attr.ib(default=1000)
+    num_games = attr.ib(default=128)
+    logger = attr.ib(default=logging.getLogger(__name__))
 
     def self_play(self, trainee, opponent, color):
-        logging.info(
-            f'Trainee color: {"white" if color == chess.WHITE else "black"}')
         log_probs = []
         board = chess.Board()
         while not board.is_game_over(claim_draw=True):
@@ -23,7 +26,13 @@ class ReinforceTrainer():
         result = board.result(claim_draw=True)
         reward = self.get_reward(result, color)
         policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
+        self.self_play_log(color, reward, policy_loss)
         return reward, policy_loss
+
+    def self_play_log(self, color, reward, policy_loss):
+        str_color = "white" if color == chess.WHITE else "black"
+        self.logger.info(f'Trainee color: {color}\tReward: {reward}\t'
+            'Policy loss: {policy_loss}')
 
     def get_reward(self, result, color):
         points = result.split('-')
