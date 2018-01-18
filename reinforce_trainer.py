@@ -83,8 +83,12 @@ class ReinforceTrainer():
         return self.self_play(trainee_engine, self.get_opponent(), trainee_color)
 
     def run(self):
-        optimizer = optim.Adam(
-            self.trainee_model.parameters(), lr=self.learning_rate)
+        optimizer = optim.SGD(
+            self.trainee_model.parameters(),
+            lr=self.learning_rate,
+            momentum=0.9,
+            nesterov=True
+        )
         for i in range(self.num_iter):
             policy_losses = []
             with concurrent.futures.ThreadPoolExecutor() as executor:
