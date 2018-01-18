@@ -22,6 +22,7 @@ class ReinforceTrainer():
     num_iter = attr.ib(default=10000)
     num_games = attr.ib(default=128)
     save_interval = attr.ib(default=500)
+    multi_threaded = attr.ib(default=False)
     logger = attr.ib(default=logging.getLogger(__name__))
 
     def __attrs_post_init__(self):
@@ -46,7 +47,7 @@ class ReinforceTrainer():
         reward = self.get_reward(result, color)
         policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
         self.self_play_log(color, reward, policy_loss)
-        return reward, policy_loss
+        return policy_loss
 
     def self_play_log(self, color, reward, policy_loss):
         str_color = "white" if color == chess.WHITE else "black"
@@ -82,6 +83,19 @@ class ReinforceTrainer():
         trainee_engine = ChessEngine(self.trainee_model)
         return self.self_play(trainee_engine, self.get_opponent(), trainee_color)
 
+    def collect_policy_losses(self):
+        if self.multi_threaded:
+            policy_losses = []
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                game_futures = [executor.submit(self.game) for _ in
+                                range(self.num_games)]
+                for future in concurrent.futures.as_completed(game_futures):
+                    game_policy_loss = future.result()
+                    policy_losses.append(game_policy_loss)
+            return policy_losses
+        else:
+            return [self.game() for _ in range(self.num_games)]
+
     def run(self):
         optimizer = optim.SGD(
             self.trainee_model.parameters(),
@@ -90,13 +104,7 @@ class ReinforceTrainer():
             nesterov=True
         )
         for i in range(self.num_iter):
-            policy_losses = []
-            with concurrent.futures.ThreadPoolExecutor() as executor:
-                game_futures = [executor.submit(self.game) for _ in
-                                range(self.num_games)]
-                for future in concurrent.futures.as_completed(game_futures):
-                    _, game_policy_loss = future.result()
-                    policy_losses.append(game_policy_loss)
+            policy_losses = self.collect_policy_losses()
             optimizer.zero_grad()
             policy_loss = torch.cat(policy_losses).sum()
             policy_loss /= self.num_games
@@ -132,6 +140,7 @@ def run():
     parser.add_argument('-g', '--num-games', type=int)
     parser.add_argument('-l', '--log-file')
     parser.add_argument('-s', '--save-interval', type=int)
+    parser.add_argument('-m', '--multi-threaded', action="store_true")
 
     args = parser.parse_args()
 
@@ -158,6 +167,8 @@ def run():
         trainer_setting['num_games'] = args.num_games
     if args.save_interval:
         trainer_setting['save_interval'] = args.save_interval
+    if args.multi_threaded:
+        trainer_setting['multi_threaded'] = args.multi_threaded
 
     trainer = ReinforceTrainer(**trainer_setting)
     trainer.run()
