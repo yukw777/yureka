@@ -16,7 +16,7 @@ class ReinforceTrainer():
     opponent_pool_path = attr.ib()
     trainee_saved_model = attr.ib()
     learning_rate = attr.ib(default=1e-3)
-    num_iter = attr.ib(default=1000)
+    num_iter = attr.ib(default=10000)
     num_games = attr.ib(default=128)
     logger = attr.ib(default=logging.getLogger(__name__))
 
