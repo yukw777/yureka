@@ -2,6 +2,7 @@ import attr
 import os
 import chess
 import torch
+import datetime
 import logging
 import random
 import glob
@@ -18,6 +19,7 @@ class ReinforceTrainer():
     learning_rate = attr.ib(default=1e-3)
     num_iter = attr.ib(default=10000)
     num_games = attr.ib(default=128)
+    save_interval = attr.ib(default=500)
     logger = attr.ib(default=logging.getLogger(__name__))
 
     def __attrs_post_init__(self):
@@ -94,6 +96,21 @@ class ReinforceTrainer():
                 f'{policy_loss.data[0]}')
             policy_loss.backward()
             optimizer.step()
+            if i != 0 and i % self.save_interval == 0:
+                self.save(i)
+
+    def save(self, iteration):
+        filename = self.trainee_model.__class__.__name__
+        filename += f"_{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}"
+        filename += f"_{iteration}.model"
+        filepath = os.path.join(
+            os.getcwd(),
+            self.opponent_pool_path,
+            filename
+        )
+        self.logger.info(f'Saving: {filepath}')
+        torch.save(self.trainee_model.state_dict(), filepath)
+        self.logger.info('Done saving')
 
 
 def run():
@@ -106,6 +123,7 @@ def run():
     parser.add_argument('-i', '--num-iter', type=int)
     parser.add_argument('-g', '--num-games', type=int)
     parser.add_argument('-l', '--log-file')
+    parser.add_argument('-s', '--save-interval', type=int)
 
     args = parser.parse_args()
 
@@ -130,6 +148,8 @@ def run():
         trainer_setting['num_iter'] = args.num_iter
     if args.num_games:
         trainer_setting['num_games'] = args.num_games
+    if args.save_interval:
+        trainer_setting['save_interval'] = args.save_interval
 
     trainer = ReinforceTrainer(**trainer_setting)
     trainer.run()
