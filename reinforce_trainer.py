@@ -3,10 +3,12 @@ import os
 import chess
 import torch
 import datetime
+import multiprocessing
 import logging
 import random
 import glob
 import models
+import concurrent.futures
 import torch.optim as optim
 from chess_engine import ChessEngine
 
@@ -85,10 +87,12 @@ class ReinforceTrainer():
             self.trainee_model.parameters(), lr=self.learning_rate)
         for i in range(self.num_iter):
             policy_losses = []
-            # TODO: parallelize. Possibly using ThreadPoolExecutor
-            for g in range(self.num_games):
-                _, game_policy_loss = self.game()
-                policy_losses.append(game_policy_loss)
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                game_futures = [executor.submit(self.game) for g in
+                                range(self.num_games)]
+                for future in concurrent.futures.as_completed(game_futures):
+                    _, game_policy_loss = future.result()
+                    policy_losses.append(game_policy_loss)
             optimizer.zero_grad()
             policy_loss = torch.cat(policy_losses).sum()
             policy_loss /= self.num_games
