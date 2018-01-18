@@ -69,18 +69,25 @@ class ReinforceTrainer():
         else:
             raise Exception(f'Unknown result: {result}, {color}')
 
-    def get_opponent(self):
+    def get_opponent(self, cuda_device):
         opponent_model = models.create(self.model)
         opponent_model_files = glob.glob(os.path.join(
             self.opponent_pool_path, '*.model'))
         opponent_model_file = random.choice(opponent_model_files)
         opponent_model.load_state_dict(torch.load(opponent_model_file))
-        return ChessEngine(opponent_model, train=False)
+        return ChessEngine(opponent_model, train=False, cuda_device=cuda_device)
 
-    def game(self):
+    def game(self, cuda_device):
+        self.logger.info(f'Cuda device: {cuda_device}')
         trainee_color = random.choice([chess.WHITE, chess.BLACK])
-        trainee_engine = ChessEngine(self.trainee_model)
-        return self.self_play(trainee_engine, self.get_opponent(), trainee_color)
+        trainee_engine = ChessEngine(
+            self.trainee_model, cuda_device=cuda_device)
+        _, game_policy_loss = self.self_play(
+            trainee_engine, self.get_opponent(cuda_device), trainee_color)
+        if cuda_device != 0:
+            # move it back to the default device
+            game_policy_loss.cuda(0)
+        return game_policy_loss
 
     def run(self):
         optimizer = optim.Adam(
@@ -88,8 +95,8 @@ class ReinforceTrainer():
         for i in range(self.num_iter):
             policy_losses = []
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                game_futures = [executor.submit(self.game) for _ in
-                                range(self.num_games)]
+                game_futures = executor.map(
+                    self.game, [g % 2 for g in range(self.num_games)])
                 for future in concurrent.futures.as_completed(game_futures):
                     _, game_policy_loss = future.result()
                     policy_losses.append(game_policy_loss)
