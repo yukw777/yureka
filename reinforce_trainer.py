@@ -88,7 +88,7 @@ class ReinforceTrainer():
         for i in range(self.num_iter):
             policy_losses = []
             with concurrent.futures.ThreadPoolExecutor() as executor:
-                game_futures = [executor.submit(self.game) for g in
+                game_futures = [executor.submit(self.game) for _ in
                                 range(self.num_games)]
                 for future in concurrent.futures.as_completed(game_futures):
                     _, game_policy_loss = future.result()
