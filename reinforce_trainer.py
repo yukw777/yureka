@@ -19,7 +19,6 @@ class ReinforceTrainer():
     opponent_pool_path = attr.ib()
     trainee_saved_model = attr.ib()
     learning_rate = attr.ib(default=1e-4)
-    r_learning_rate = attr.ib(default=0.1)
     num_iter = attr.ib(default=10000)
     num_games = attr.ib(default=64)
     log_interval = attr.ib(default=10)
@@ -51,7 +50,6 @@ class ReinforceTrainer():
         result = board.result(claim_draw=True)
         reward = self.get_reward(result, color)
         policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
-        policy_loss *= self.r_learning_rate
         self.self_play_log(color, reward, policy_loss)
         return reward, policy_loss
 
@@ -117,7 +115,6 @@ class ReinforceTrainer():
         self.logger.info(f'Opponent pool: {self.opponent_pool_path}')
         self.logger.info(f'Trainee saved model: {self.trainee_saved_model}')
         self.logger.info(f'Learning rate: {self.learning_rate}')
-        self.logger.info(f'Reinforce learning rate: {self.r_learning_rate}')
         self.logger.info(f'Number of iterations: {self.num_iter}')
         self.logger.info(f'Number of games: {self.num_games}')
         self.logger.info(f'Log interval: {self.log_interval}')
@@ -168,7 +165,6 @@ def run():
     parser.add_argument('opponent_pool_path')
     parser.add_argument('trainee_saved_model')
     parser.add_argument('-r', '--learning-rate', type=float)
-    parser.add_argument('-e', '--r-learning-rate', type=float)
     parser.add_argument('-i', '--num-iter', type=int)
     parser.add_argument('-g', '--num-games', type=int)
     parser.add_argument('-l', '--log-file')
@@ -196,8 +192,6 @@ def run():
     }
     if args.learning_rate:
         trainer_setting['learning_rate'] = args.learning_rate
-    if args.r_learning_rate:
-        trainer_setting['r_learning_rate'] = args.r_learning_rate
     if args.num_iter:
         trainer_setting['num_iter'] = args.num_iter
     if args.num_games:
