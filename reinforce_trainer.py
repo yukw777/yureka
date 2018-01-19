@@ -168,7 +168,7 @@ def run():
     parser.add_argument('-g', '--num-games', type=int)
     parser.add_argument('-l', '--log-file')
     parser.add_argument('-s', '--save-interval', type=int)
-    parser.add_argument('-i', '--log-interval', type=int)
+    parser.add_argument('-o', '--log-interval', type=int)
     parser.add_argument('-t', '--single-threaded', action="store_true")
     parser.add_argument('-d', '--debug', action="store_true")
 
