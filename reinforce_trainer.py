@@ -5,6 +5,7 @@ import torch
 import datetime
 import logging
 import random
+import threading
 import glob
 import models
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -69,25 +70,32 @@ class ReinforceTrainer():
         else:
             raise Exception(f'Unknown result: {result}, {color}')
 
-    def get_opponent(self):
-        opponent_model = models.create(self.model)
+    def get_opponent(self, lock):
+        # NOTE: We need to lock it when creating a new model b/c of a bug
+        # https://github.com/pytorch/pytorch/issues/1868
+        with lock:
+            opponent_model = models.create(self.model)
         opponent_model_files = glob.glob(os.path.join(
             self.opponent_pool_path, '*.model'))
         opponent_model_file = random.choice(opponent_model_files)
         opponent_model.load_state_dict(torch.load(opponent_model_file))
         return ChessEngine(opponent_model, train=False)
 
-    def game(self):
+    def game(self, lock):
         trainee_color = random.choice([chess.WHITE, chess.BLACK])
         trainee_engine = ChessEngine(self.trainee_model)
-        return self.self_play(trainee_engine, self.get_opponent(), trainee_color)
+        return self.self_play(
+            trainee_engine, self.get_opponent(lock), trainee_color)
 
     def collect_policy_losses(self):
         if self.multi_threaded:
             policy_losses = []
+            lock = threading.Lock()
             with ThreadPoolExecutor() as executor:
-                game_futures = [executor.submit(self.game) for _ in
-                                range(self.num_games)]
+                game_futures = executor.map(
+                    self.game,
+                    [lock for _ in range(self.num_games)]
+                )
                 for future in as_completed(game_futures):
                     game_policy_loss = future.result()
                     policy_losses.append(game_policy_loss)
