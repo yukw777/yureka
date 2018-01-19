@@ -3,7 +3,6 @@ import os
 import chess
 import torch
 import datetime
-import multiprocessing
 import logging
 import random
 import glob
