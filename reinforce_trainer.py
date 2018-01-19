@@ -8,7 +8,8 @@ import random
 import threading
 import glob
 import models
-from concurrent.futures import ThreadPoolExecutor, as_completed
+# from concurrent.futures import ProcessPoolExecutor, as_completed
+import torch.multiprocessing as mp
 import torch.optim as optim
 from chess_engine import ChessEngine
 
@@ -32,7 +33,9 @@ class ReinforceTrainer():
             self.trainee_model.load_state_dict(
                 torch.load(self.trainee_saved_model))
         if self.multi_threaded:
-            self.lock = threading.Lock()
+            mp.set_start_method('spawn')
+            self.trainee_model.share_memory()
+            # self.lock = threading.Lock()
 
     def self_play_log(self, color, reward, policy_loss):
         str_color = "white" if color == chess.WHITE else "black"
@@ -42,16 +45,18 @@ class ReinforceTrainer():
     def get_opponent(self):
         # NOTE: We need to lock it when creating a new model b/c of a bug
         # https://github.com/pytorch/pytorch/issues/1868
-        if self.multi_threaded:
-            with self.lock:
-                opponent_model = models.create(self.model)
-        else:
-            opponent_model = models.create(self.model)
+        # if self.multi_threaded:
+            # with self.lock:
+                # opponent_model = models.create(self.model)
+        # else:
+        opponent_model = models.create(self.model)
 
         opponent_model_files = glob.glob(os.path.join(
             self.opponent_pool_path, '*.model'))
         opponent_model_file = random.choice(opponent_model_files)
         opponent_model.load_state_dict(torch.load(opponent_model_file))
+        if self.multi_threaded:
+            opponent_model.share_memory()
         return ChessEngine(opponent_model, train=False)
 
     def game(self, number):
@@ -63,14 +68,30 @@ class ReinforceTrainer():
         self.self_play_log(color, reward, policy_loss)
         return policy_loss
 
+    def setup_games(self):
+        color = random.choice([chess.WHITE, chess.BLACK])
+        trainee = ChessEngine(self.trainee_model)
+        opponent = self.get_opponent()
+        return color, trainee, opponent
+
     def collect_policy_losses(self):
         if self.multi_threaded:
+            # policy_losses = []
+            # with ProcessPoolExecutor() as executor:
+                # game_futures = [executor.submit(self_play, *self.setup_games())
+                                # for _ in range(self.num_games)]
+                # for future in as_completed(game_futures):
+                    # color, reward, policy_loss = future.result()
+                    # self.self_play_log(color, reward, policy_loss)
+                    # policy_losses.append(policy_loss)
+            # return policy_losses
             policy_losses = []
-            with ThreadPoolExecutor() as executor:
-                game_futures = [executor.submit(self.game, n)
-                                for n in range(self.num_games)]
-                for future in as_completed(game_futures):
-                    policy_losses.append(future.result())
+            with mp.Pool() as p:
+                for color, reward, policy_loss in p.starmap(
+                    self_play, [self.setup_games() for _ in
+                    range(self.num_games)]):
+                    self.self_play_log(color, reward, policy_loss)
+                    policy_losses.append(policy_loss)
             return policy_losses
         else:
             return [self.game(n) for n in range(self.num_games)]
@@ -95,6 +116,7 @@ class ReinforceTrainer():
         )
         for i in range(self.num_iter):
             policy_losses = self.collect_policy_losses()
+            import pdb; pdb.set_trace()
             optimizer.zero_grad()
             policy_loss = torch.cat(policy_losses).sum()
             policy_loss /= self.num_games
