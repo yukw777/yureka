@@ -59,7 +59,8 @@ class ChessEngine():
 
     def filter_illegal_moves(self, board, probs):
         if self.cuda:
-            filtered = Variable(torch.zeros(probs.shape).cuda(self.cuda_device))
+            filtered = Variable(torch.zeros(probs.shape).cuda(
+                self.cuda_device))
         else:
             filtered = Variable(torch.zeros(probs.shape))
         for move in board.legal_moves:
