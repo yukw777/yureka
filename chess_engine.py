@@ -71,12 +71,14 @@ class ChessEngine():
 
 
 def queen_promotion_if_possible(board, move):
-    if board.piece_type_at(move.from_square) != chess.PAWN:
+    if move.promotion is not None or \
+       board.piece_type_at(move.from_square) != chess.PAWN:
         return move
 
     to_rank = chess.square_rank(move.to_square)
     if to_rank in (0, 7):
         # it's a queen move on a pawn to rank 1 or 8, automatically
         # promote to queen
-        return chess.Move.from_uci(move.uci() + 'q')
+        move.promotion = chess.QUEEN
+        return move
     return move

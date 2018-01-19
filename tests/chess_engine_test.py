@@ -66,6 +66,11 @@ def test_queen_promotion():
             'expected_move': chess.Move.from_uci('e2e1q'),
         },
         {
+            'board': chess.Board(fen='8/8/8/8/8/8/4p3/8 b - - 0 1'),
+            'move': chess.Move.from_uci('e2e1r'),
+            'expected_move': chess.Move.from_uci('e2e1r'),
+        },
+        {
             'board': chess.Board(fen='8/4R3/8/8/8/8/8/8 w - - 0 1'),
             'move': chess.Move.from_uci('e7e8'),
             'expected_move': chess.Move.from_uci('e7e8'),
