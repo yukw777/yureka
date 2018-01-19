@@ -117,8 +117,10 @@ class ReinforceTrainer():
         self.logger.info(f'Opponent pool: {self.opponent_pool_path}')
         self.logger.info(f'Trainee saved model: {self.trainee_saved_model}')
         self.logger.info(f'Learning rate: {self.learning_rate}')
+        self.logger.info(f'Reinforce learning rate: {self.r_learning_rate}')
         self.logger.info(f'Number of iterations: {self.num_iter}')
         self.logger.info(f'Number of games: {self.num_games}')
+        self.logger.info(f'Log interval: {self.log_interval}')
         self.logger.info(f'Save interval: {self.save_interval}')
         self.logger.info(f'Multi threaded: {self.multi_threaded}')
 
