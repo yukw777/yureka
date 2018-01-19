@@ -28,7 +28,8 @@ class ReinforceTrainer():
     def __attrs_post_init__(self):
         self.trainee_model = models.create(self.model)
         if self.trainee_saved_model:
-            self.trainee_model.load_state_dict(torch.load(self.trainee_saved_model))
+            self.trainee_model.load_state_dict(
+                torch.load(self.trainee_saved_model))
         if self.multi_threaded:
             self.lock = threading.Lock()
 
@@ -54,7 +55,7 @@ class ReinforceTrainer():
     def self_play_log(self, color, reward, policy_loss):
         str_color = "white" if color == chess.WHITE else "black"
         self.logger.debug(f'Trainee color: {str_color}\tReward: {reward}\t'
-            f'Policy loss: {policy_loss.data[0]}')
+                          f'Policy loss: {policy_loss.data[0]}')
 
     def get_reward(self, result, color):
         points = result.split('-')
@@ -99,7 +100,7 @@ class ReinforceTrainer():
             policy_losses = []
             with ThreadPoolExecutor() as executor:
                 game_futures = [executor.submit(self.game, n)
-                    for n in range(self.num_games)]
+                                for n in range(self.num_games)]
                 for future in as_completed(game_futures):
                     policy_losses.append(future.result())
             return policy_losses
@@ -198,6 +199,7 @@ def run():
 
     trainer = ReinforceTrainer(**trainer_setting)
     trainer.run()
+
 
 if __name__ == '__main__':
     run()
