@@ -34,45 +34,10 @@ class ReinforceTrainer():
         if self.multi_threaded:
             self.lock = threading.Lock()
 
-    def self_play(self, trainee, opponent, color):
-        log_probs = []
-        board = chess.Board()
-        while not board.is_game_over(claim_draw=True):
-            if board.turn == color:
-                move, log_prob = trainee.get_move(board)
-                log_probs.append(log_prob)
-            else:
-                move = opponent.get_move(board)
-            board.push(move)
-
-        # TODO: set baseline with the value network
-        baseline = 0
-        result = board.result(claim_draw=True)
-        reward = self.get_reward(result, color)
-        policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
-        self.self_play_log(color, reward, policy_loss)
-        return reward, policy_loss
-
     def self_play_log(self, color, reward, policy_loss):
         str_color = "white" if color == chess.WHITE else "black"
         self.logger.debug(f'Trainee color: {str_color}\tReward: {reward}\t'
                           f'Policy loss: {policy_loss.data[0]}')
-
-    def get_reward(self, result, color):
-        points = result.split('-')
-        if color == chess.WHITE:
-            player_point = points[0]
-        else:
-            player_point = points[1]
-
-        if player_point == '0':
-            return -1
-        elif player_point == '1/2':
-            return 0
-        elif player_point == '1':
-            return 1
-        else:
-            raise Exception(f'Unknown result: {result}, {color}')
 
     def get_opponent(self):
         # NOTE: We need to lock it when creating a new model b/c of a bug
@@ -93,8 +58,9 @@ class ReinforceTrainer():
         self.logger.debug(f'Staring game {number}')
         trainee_color = random.choice([chess.WHITE, chess.BLACK])
         trainee_engine = ChessEngine(self.trainee_model)
-        _, policy_loss = self.self_play(
-            trainee_engine, self.get_opponent(), trainee_color)
+        color, reward, policy_loss = self_play(
+            trainee_color, trainee_engine, self.get_opponent())
+        self.self_play_log(color, reward, policy_loss)
         return policy_loss
 
     def collect_policy_losses(self):
@@ -156,6 +122,42 @@ class ReinforceTrainer():
         self.logger.info(f'Saving: {filepath}')
         torch.save(self.trainee_model.state_dict(), filepath)
         self.logger.info('Done saving')
+
+
+def get_reward(result, color):
+    points = result.split('-')
+    if color == chess.WHITE:
+        player_point = points[0]
+    else:
+        player_point = points[1]
+
+    if player_point == '0':
+        return -1
+    elif player_point == '1/2':
+        return 0
+    elif player_point == '1':
+        return 1
+    else:
+        raise Exception(f'Unknown result: {result}, {color}')
+
+
+def self_play(color, trainee, opponent):
+    log_probs = []
+    board = chess.Board()
+    while not board.is_game_over(claim_draw=True):
+        if board.turn == color:
+            move, log_prob = trainee.get_move(board)
+            log_probs.append(log_prob)
+        else:
+            move = opponent.get_move(board)
+        board.push(move)
+
+    # TODO: set baseline with the value network
+    baseline = 0
+    result = board.result(claim_draw=True)
+    reward = get_reward(result, color)
+    policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
+    return color, reward, policy_loss
 
 
 def run():
