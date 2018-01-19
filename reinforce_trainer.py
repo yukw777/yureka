@@ -51,7 +51,7 @@ class ReinforceTrainer():
 
     def self_play_log(self, color, reward, policy_loss):
         str_color = "white" if color == chess.WHITE else "black"
-        self.logger.info(f'Trainee color: {str_color}\tReward: {reward}\t'
+        self.logger.debug(f'Trainee color: {str_color}\tReward: {reward}\t'
             f'Policy loss: {policy_loss.data[0]}')
 
     def get_reward(self, result, color):
@@ -108,8 +108,12 @@ class ReinforceTrainer():
             optimizer.zero_grad()
             policy_loss = torch.cat(policy_losses).sum()
             policy_loss /= self.num_games
-            self.logger.info(f'Total policy loss for iteration {i}: '
-                f'{policy_loss.data[0]}')
+            msg = f'Total policy loss for iteration {i}: {policy_loss.data[0]}'
+            if i % 100 == 1:
+                self.logger.info(msg)
+            else:
+                self.logger.debug(msg)
+
             policy_loss.backward()
             optimizer.step()
             if i != 0 and i % self.save_interval == 0:
@@ -141,13 +145,14 @@ def run():
     parser.add_argument('-l', '--log-file')
     parser.add_argument('-s', '--save-interval', type=int)
     parser.add_argument('-m', '--multi-threaded', action="store_true")
+    parser.add_argument('-d', '--debug', action="store_true")
 
     args = parser.parse_args()
 
     logger = logging.getLogger('ReinforceTrainer')
     logging_config = {
         'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        'level': logging.INFO,
+        'level': logging.DEBUG if args.debug else logging.INFO,
     }
     if args.log_file:
         logging_config['filename'] = args.log_file
