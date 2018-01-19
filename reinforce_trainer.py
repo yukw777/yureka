@@ -7,7 +7,7 @@ import logging
 import random
 import glob
 import models
-import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import torch.optim as optim
 from chess_engine import ChessEngine
 
@@ -85,10 +85,10 @@ class ReinforceTrainer():
     def collect_policy_losses(self):
         if self.multi_threaded:
             policy_losses = []
-            with concurrent.futures.ThreadPoolExecutor() as executor:
+            with ThreadPoolExecutor() as executor:
                 game_futures = [executor.submit(self.game) for _ in
                                 range(self.num_games)]
-                for future in concurrent.futures.as_completed(game_futures):
+                for future in as_completed(game_futures):
                     game_policy_loss = future.result()
                     policy_losses.append(game_policy_loss)
             return policy_losses
