@@ -51,7 +51,7 @@ class ReinforceTrainer():
         reward = self.get_reward(result, color)
         policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
         self.self_play_log(color, reward, policy_loss)
-        return policy_loss
+        return reward, policy_loss
 
     def self_play_log(self, color, reward, policy_loss):
         str_color = "white" if color == chess.WHITE else "black"
@@ -93,8 +93,9 @@ class ReinforceTrainer():
         self.logger.debug(f'Staring game {number}')
         trainee_color = random.choice([chess.WHITE, chess.BLACK])
         trainee_engine = ChessEngine(self.trainee_model)
-        return self.self_play(
+        _, policy_loss = self.self_play(
             trainee_engine, self.get_opponent(), trainee_color)
+        return policy_loss
 
     def collect_policy_losses(self):
         if self.multi_threaded:
