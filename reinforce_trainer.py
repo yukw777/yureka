@@ -1,3 +1,13 @@
+import sys
+import importlib
+import torch.multiprocessing as mp
+import multiprocessing
+multiprocessing.Queue = mp.Queue
+multiprocessing.Process = mp.Process
+multiprocessing.SimpleQueue = mp.SimpleQueue
+multiprocessing.Pool = mp.Pool
+sys.modules['multiprocessing.reduction'] = importlib.import_module(
+    'torch.multiprocessing.reductions')
 import attr
 import os
 import chess
@@ -8,8 +18,7 @@ import random
 import threading
 import glob
 import models
-# from concurrent.futures import ProcessPoolExecutor, as_completed
-import torch.multiprocessing as mp
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import torch.optim as optim
 from chess_engine import ChessEngine
 
@@ -76,23 +85,23 @@ class ReinforceTrainer():
 
     def collect_policy_losses(self):
         if self.multi_threaded:
-            # policy_losses = []
-            # with ProcessPoolExecutor() as executor:
-                # game_futures = [executor.submit(self_play, *self.setup_games())
-                                # for _ in range(self.num_games)]
-                # for future in as_completed(game_futures):
-                    # color, reward, policy_loss = future.result()
-                    # self.self_play_log(color, reward, policy_loss)
-                    # policy_losses.append(policy_loss)
-            # return policy_losses
             policy_losses = []
-            with mp.Pool() as p:
-                for color, reward, policy_loss in p.starmap(
-                    self_play, [self.setup_games() for _ in
-                    range(self.num_games)]):
+            with ProcessPoolExecutor() as executor:
+                game_futures = [executor.submit(self_play, *self.setup_games())
+                                for _ in range(self.num_games)]
+                for future in as_completed(game_futures):
+                    color, reward, policy_loss = future.result()
                     self.self_play_log(color, reward, policy_loss)
                     policy_losses.append(policy_loss)
             return policy_losses
+            # policy_losses = []
+            # with mp.Pool() as p:
+                # for color, reward, policy_loss in p.starmap(
+                    # self_play, [self.setup_games() for _ in
+                    # range(self.num_games)]):
+                    # self.self_play_log(color, reward, policy_loss)
+                    # policy_losses.append(policy_loss)
+            # return policy_losses
         else:
             return [self.game(n) for n in range(self.num_games)]
 
