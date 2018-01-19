@@ -29,6 +29,8 @@ class ReinforceTrainer():
         self.trainee_model = models.create(self.model)
         if self.trainee_saved_model:
             self.trainee_model.load_state_dict(torch.load(self.trainee_saved_model))
+        if self.multi_threaded:
+            self.lock = threading.Lock()
 
     def self_play(self, trainee, opponent, color):
         log_probs = []
@@ -70,38 +72,42 @@ class ReinforceTrainer():
         else:
             raise Exception(f'Unknown result: {result}, {color}')
 
-    def get_opponent(self, lock):
+    def get_opponent(self):
         # NOTE: We need to lock it when creating a new model b/c of a bug
         # https://github.com/pytorch/pytorch/issues/1868
-        with lock:
+        if self.multi_threaded:
+            with self.lock:
+                opponent_model = models.create(self.model)
+        else:
             opponent_model = models.create(self.model)
+
         opponent_model_files = glob.glob(os.path.join(
             self.opponent_pool_path, '*.model'))
         opponent_model_file = random.choice(opponent_model_files)
         opponent_model.load_state_dict(torch.load(opponent_model_file))
         return ChessEngine(opponent_model, train=False)
 
-    def game(self, lock):
+    def game(self, number):
+        self.logger.debug(f'Staring game {number}')
         trainee_color = random.choice([chess.WHITE, chess.BLACK])
         trainee_engine = ChessEngine(self.trainee_model)
         return self.self_play(
-            trainee_engine, self.get_opponent(lock), trainee_color)
+            trainee_engine, self.get_opponent(), trainee_color)
 
     def collect_policy_losses(self):
         if self.multi_threaded:
             policy_losses = []
-            lock = threading.Lock()
             with ThreadPoolExecutor() as executor:
                 game_futures = executor.map(
                     self.game,
-                    [lock for _ in range(self.num_games)]
+                    [n for n in range(self.num_games)]
                 )
                 for future in as_completed(game_futures):
                     game_policy_loss = future.result()
                     policy_losses.append(game_policy_loss)
             return policy_losses
         else:
-            return [self.game() for _ in range(self.num_games)]
+            return [self.game(n) for n in range(self.num_games)]
 
     def run(self):
         self.logger.info('Training starting...')
