@@ -21,7 +21,7 @@ class ReinforceTrainer():
     learning_rate = attr.ib(default=1e-4)
     r_learning_rate = attr.ib(default=0.1)
     num_iter = attr.ib(default=10000)
-    num_games = attr.ib(default=128)
+    num_games = attr.ib(default=64)
     log_interval = attr.ib(default=10)
     save_interval = attr.ib(default=500)
     multi_threaded = attr.ib(default=True)
