@@ -98,13 +98,10 @@ class ReinforceTrainer():
         if self.multi_threaded:
             policy_losses = []
             with ThreadPoolExecutor() as executor:
-                game_futures = executor.map(
-                    self.game,
-                    [n for n in range(self.num_games)]
-                )
+                game_futures = [executor.submit(self.game, n)
+                    for n in range(self.num_games)]
                 for future in as_completed(game_futures):
-                    game_policy_loss = future.result()
-                    policy_losses.append(game_policy_loss)
+                    policy_losses.append(future.result())
             return policy_losses
         else:
             return [self.game(n) for n in range(self.num_games)]
