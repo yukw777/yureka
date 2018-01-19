@@ -8,6 +8,7 @@ import random
 import threading
 import glob
 import models
+import numpy as np
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import torch.optim as optim
 from chess_engine import ChessEngine
@@ -32,7 +33,8 @@ class ReinforceTrainer():
             self.trainee_model.load_state_dict(
                 torch.load(self.trainee_saved_model))
         if self.multi_threaded:
-            self.lock = threading.Lock()
+            self.model_lock = threading.Lock()
+            self.loss_lock = threading.Lock()
 
     def self_play(self, trainee, opponent, color):
         log_probs = []
@@ -49,7 +51,15 @@ class ReinforceTrainer():
         baseline = 0
         result = board.result(claim_draw=True)
         reward = self.get_reward(result, color)
-        policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
+        if self.multi_threaded:
+            with self.loss_lock:
+                policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
+        else:
+            policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
+        if np.sign(reward) != np.sign(policy_loss.data[0]):
+            self.logger.error('reward policy loss sign different')
+            self.logger.error(f'reward: {reward}')
+            self.logger.error(f'policy_loss: {policy_loss}')
         self.self_play_log(color, reward, policy_loss)
         return reward, policy_loss
 
@@ -78,7 +88,7 @@ class ReinforceTrainer():
         # NOTE: We need to lock it when creating a new model b/c of a bug
         # https://github.com/pytorch/pytorch/issues/1868
         if self.multi_threaded:
-            with self.lock:
+            with self.model_lock:
                 opponent_model = models.create(self.model)
         else:
             opponent_model = models.create(self.model)
