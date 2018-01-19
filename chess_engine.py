@@ -18,13 +18,14 @@ from move_translator import (
 class ChessEngine():
     model = attr.ib()
     cuda = attr.ib(default=True)
+    cuda_device = attr.ib(default=None)
     transpositions = attr.ib(default=collections.Counter())
     train = attr.ib(default=True)
 
     def __attrs_post_init__(self):
         self.cuda = self.cuda and torch.cuda.is_available()
         if self.cuda:
-            self.model.cuda()
+            self.model.cuda(self.cuda_device)
         if self.train:
             self.model.train()
         else:
@@ -37,7 +38,7 @@ class ChessEngine():
         tensor = tensor.view(1, *tensor.shape)
         volatile = not self.model.training
         if self.cuda:
-            inputs = Variable(tensor.cuda(), volatile=volatile)
+            inputs = Variable(tensor.cuda(self.cuda_device), volatile=volatile)
         else:
             inputs = Variable(tensor, volatile=volatile)
         outputs = self.model(inputs)
@@ -58,7 +59,7 @@ class ChessEngine():
 
     def filter_illegal_moves(self, board, probs):
         if self.cuda:
-            filtered = Variable(torch.zeros(probs.shape).cuda())
+            filtered = Variable(torch.zeros(probs.shape).cuda(self.cuda_device))
         else:
             filtered = Variable(torch.zeros(probs.shape))
         for move in board.legal_moves:
