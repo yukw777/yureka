@@ -97,6 +97,16 @@ class ReinforceTrainer():
             return [self.game() for _ in range(self.num_games)]
 
     def run(self):
+        self.logger.info('Training starting...')
+        self.logger.info(f'Model: {self.model}')
+        self.logger.info(f'Opponent pool: {self.opponent_pool_path}')
+        self.logger.info(f'Trainee saved model: {self.trainee_saved_model}')
+        self.logger.info(f'Learning rate: {self.learning_rate}')
+        self.logger.info(f'Number of iterations: {self.num_iter}')
+        self.logger.info(f'Number of games: {self.num_games}')
+        self.logger.info(f'Save interval: {self.save_interval}')
+        self.logger.info(f'Multi threaded: {self.multi_threaded}')
+
         optimizer = optim.SGD(
             self.trainee_model.parameters(),
             lr=self.learning_rate,
@@ -118,6 +128,7 @@ class ReinforceTrainer():
             optimizer.step()
             if i != 0 and i % self.save_interval == 0:
                 self.save(i)
+        self.logger.info('Training done')
 
     def save(self, iteration):
         filename = self.trainee_model.__class__.__name__
