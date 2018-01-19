@@ -21,6 +21,7 @@ class ReinforceTrainer():
     learning_rate = attr.ib(default=1e-4)
     num_iter = attr.ib(default=10000)
     num_games = attr.ib(default=128)
+    log_interval = attr.ib(default=100)
     save_interval = attr.ib(default=500)
     multi_threaded = attr.ib(default=True)
     logger = attr.ib(default=logging.getLogger(__name__))
@@ -130,7 +131,7 @@ class ReinforceTrainer():
             policy_loss = torch.cat(policy_losses).sum()
             policy_loss /= self.num_games
             msg = f'Total policy loss for iteration {i}: {policy_loss.data[0]}'
-            if i % 100 == 1:
+            if i % self.log_interval == self.log_interval - 1:
                 self.logger.info(msg)
             else:
                 self.logger.debug(msg)
@@ -166,6 +167,7 @@ def run():
     parser.add_argument('-g', '--num-games', type=int)
     parser.add_argument('-l', '--log-file')
     parser.add_argument('-s', '--save-interval', type=int)
+    parser.add_argument('-i', '--log-interval', type=int)
     parser.add_argument('-t', '--single-threaded', action="store_true")
     parser.add_argument('-d', '--debug', action="store_true")
 
@@ -194,6 +196,8 @@ def run():
         trainer_setting['num_games'] = args.num_games
     if args.save_interval:
         trainer_setting['save_interval'] = args.save_interval
+    if args.log_interval:
+        trainer_setting['log_interval'] = args.log_interval
     if args.single_threaded:
         trainer_setting['multi_threaded'] = not args.single_threaded
 
