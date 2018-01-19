@@ -22,7 +22,7 @@ class ReinforceTrainer():
     num_iter = attr.ib(default=10000)
     num_games = attr.ib(default=128)
     save_interval = attr.ib(default=500)
-    multi_threaded = attr.ib(default=False)
+    multi_threaded = attr.ib(default=True)
     logger = attr.ib(default=logging.getLogger(__name__))
 
     def __attrs_post_init__(self):
@@ -165,7 +165,7 @@ def run():
     parser.add_argument('-g', '--num-games', type=int)
     parser.add_argument('-l', '--log-file')
     parser.add_argument('-s', '--save-interval', type=int)
-    parser.add_argument('-m', '--multi-threaded', action="store_true")
+    parser.add_argument('-t', '--single-threaded', action="store_true")
     parser.add_argument('-d', '--debug', action="store_true")
 
     args = parser.parse_args()
@@ -193,8 +193,8 @@ def run():
         trainer_setting['num_games'] = args.num_games
     if args.save_interval:
         trainer_setting['save_interval'] = args.save_interval
-    if args.multi_threaded:
-        trainer_setting['multi_threaded'] = args.multi_threaded
+    if args.single_threaded:
+        trainer_setting['multi_threaded'] = not args.single_threaded
 
     trainer = ReinforceTrainer(**trainer_setting)
     trainer.run()
