@@ -20,6 +20,7 @@ class ReinforceTrainer():
     opponent_pool_path = attr.ib()
     trainee_saved_model = attr.ib()
     learning_rate = attr.ib(default=1e-4)
+    discount_rate = attr.ib(default=0.99)
     num_iter = attr.ib(default=10000)
     num_games = attr.ib(default=64)
     log_interval = attr.ib(default=10)
@@ -185,6 +186,7 @@ def run():
     parser.add_argument('opponent_pool_path')
     parser.add_argument('trainee_saved_model')
     parser.add_argument('-r', '--learning-rate', type=float)
+    parser.add_argument('-u', '--discount-rate', type=float)
     parser.add_argument('-i', '--num-iter', type=int)
     parser.add_argument('-g', '--num-games', type=int)
     parser.add_argument('-l', '--log-file')
@@ -213,6 +215,8 @@ def run():
     }
     if args.learning_rate:
         trainer_setting['learning_rate'] = args.learning_rate
+    if args.discount_rate:
+        trainer_setting['discount_rate'] = args.learning_rate
     if args.num_iter:
         trainer_setting['num_iter'] = args.num_iter
     if args.num_games:
