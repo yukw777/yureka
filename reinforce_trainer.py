@@ -54,8 +54,8 @@ class ReinforceTrainer():
         reward = self.get_reward(result, color)
         rewards = self.discounted_rewards([reward] * len(log_probs))
         policy_loss = []
-        for log_prob, reward in zip(log_probs, rewards):
-            policy_loss.append(-log_prob * (reward - baseline))
+        for log_prob, r in zip(log_probs, rewards):
+            policy_loss.append(-log_prob * (r - baseline))
         policy_loss = -torch.cat(policy_loss).sum()
         self.self_play_log(color, reward, policy_loss)
         return reward, policy_loss
