@@ -23,6 +23,7 @@ class ReinforceTrainer():
     log_interval = attr.ib(default=10)
     save_interval = attr.ib(default=500)
     multi_threaded = attr.ib(default=True)
+    cuda_device = attr.ib(default=None)
     logger = attr.ib(default=logging.getLogger(__name__))
 
     def __attrs_post_init__(self):
@@ -33,7 +34,6 @@ class ReinforceTrainer():
         if self.multi_threaded:
             mp.set_start_method('spawn')
             self.trainee_model.share_memory()
-            # self.lock = threading.Lock()
 
     def self_play_log(self, color, reward, policy_loss):
         str_color = "white" if color == chess.WHITE else "black"
@@ -55,12 +55,14 @@ class ReinforceTrainer():
         opponent_model.load_state_dict(torch.load(opponent_model_file))
         if self.multi_threaded:
             opponent_model.share_memory()
-        return ChessEngine(opponent_model, train=False)
+        return ChessEngine(
+            opponent_model, train=False, cuda_device=self.cuda_device)
 
     def game(self, number):
         self.logger.debug(f'Staring game {number}')
         trainee_color = random.choice([chess.WHITE, chess.BLACK])
-        trainee_engine = ChessEngine(self.trainee_model)
+        trainee_engine = ChessEngine(
+            self.trainee_model, cuda_device=self.cuda_device)
         color, reward, policy_loss = self_play(
             trainee_color, trainee_engine, self.get_opponent())
         self.self_play_log(color, reward, policy_loss)
@@ -96,6 +98,7 @@ class ReinforceTrainer():
         self.logger.info(f'Log interval: {self.log_interval}')
         self.logger.info(f'Save interval: {self.save_interval}')
         self.logger.info(f'Multi threaded: {self.multi_threaded}')
+        self.logger.info(f'Cuda device: {self.cuda_device}')
 
         optimizer = optim.SGD(
             self.trainee_model.parameters(),
@@ -182,6 +185,7 @@ def run():
     parser.add_argument('-l', '--log-file')
     parser.add_argument('-s', '--save-interval', type=int)
     parser.add_argument('-o', '--log-interval', type=int)
+    parser.add_argument('-c', '--cuda-device', type=int)
     parser.add_argument('-t', '--single-threaded', action="store_true")
     parser.add_argument('-d', '--debug', action="store_true")
 
@@ -214,6 +218,8 @@ def run():
         trainer_setting['log_interval'] = args.log_interval
     if args.single_threaded:
         trainer_setting['multi_threaded'] = not args.single_threaded
+    if args.cuda_device:
+        trainer_setting['cuda_device'] = args.cuda_device
 
     trainer = ReinforceTrainer(**trainer_setting)
     trainer.run()
