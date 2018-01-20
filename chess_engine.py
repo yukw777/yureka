@@ -43,10 +43,12 @@ class ChessEngine():
             inputs = Variable(tensor, volatile=volatile)
         outputs = self.model(inputs)
         probs = outputs.view(outputs.shape[0], -1)
+        cloned_probs = probs.clone()
         self.filter_illegal_moves(board, probs)
         if self.train:
             m = Categorical(probs)
             move_index = m.sample()
+            probs.set_(source=cloned_probs)
         else:
             _, move_index = probs.max(1)
         engine_move = get_engine_move_from_index(move_index.data[0])
