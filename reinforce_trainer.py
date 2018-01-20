@@ -8,9 +8,15 @@ import random
 import threading
 import glob
 import models
+import numpy as np
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import torch.optim as optim
 from chess_engine import ChessEngine
+
+
+@attr.s
+class PolicyLossIsNan(Exception):
+    log_probs = attr.ib()
 
 
 @attr.s
@@ -28,12 +34,20 @@ class ReinforceTrainer():
     logger = attr.ib(default=logging.getLogger(__name__))
 
     def __attrs_post_init__(self):
+        self.latest_saved_trainee = self.trainee_saved_model
+        self.latest_saved_iteration = 0
+        self.init_trainee_model_to_latest()
         self.trainee_model = models.create(self.model)
-        if self.trainee_saved_model:
-            self.trainee_model.load_state_dict(
-                torch.load(self.trainee_saved_model))
+        self.trainee_model.load_state_dict(
+            torch.load(self.trainee_saved_model))
         if self.multi_threaded:
             self.lock = threading.Lock()
+
+    def init_trainee_model_to_latest(self):
+        self.trainee_model = models.create(self.model)
+        self.trainee_model.load_state_dict(
+            torch.load(self.latest_saved_trainee))
+        self.logger.info(f'Trainee model loaded: {self.latest_saved_trainee}')
 
     def self_play(self, trainee, opponent, color):
         log_probs = []
@@ -52,6 +66,8 @@ class ReinforceTrainer():
         reward = self.get_reward(result, color)
         policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
         self.self_play_log(color, reward, policy_loss)
+        if np.isnan(policy_loss.data[0]):
+            raise PolicyLossIsNan(log_probs)
         return reward, policy_loss
 
     def self_play_log(self, color, reward, policy_loss):
@@ -131,21 +147,45 @@ class ReinforceTrainer():
             momentum=0.9,
             nesterov=True
         )
-        for i in range(self.num_iter):
-            policy_losses = self.collect_policy_losses()
-            optimizer.zero_grad()
-            policy_loss = torch.cat(policy_losses).sum()
-            policy_loss /= self.num_games
-            msg = f'Total policy loss for iteration {i}: {policy_loss.data[0]}'
-            if i % self.log_interval == self.log_interval - 1:
-                self.logger.info(msg)
-            else:
-                self.logger.debug(msg)
+        i = 0
+        while i < self.num_iter:
+            while True:
+                try:
+                    policy_losses = self.collect_policy_losses()
+                    optimizer.zero_grad()
+                    policy_loss = torch.cat(policy_losses).sum()
+                    policy_loss /= self.num_games
+                    msg = 'Total policy loss for iteration '
+                    msg += f'{i}: {policy_loss.data[0]}'
+                    if i % self.log_interval == self.log_interval - 1:
+                        self.logger.info(msg)
+                    else:
+                        self.logger.debug(msg)
 
-            policy_loss.backward()
-            optimizer.step()
-            if i != 0 and i % self.save_interval == 0:
-                self.save(i)
+                    policy_loss.backward()
+                    optimizer.step()
+                    if i != 0 and i % self.save_interval == 0:
+                        self.save(i)
+                except PolicyLossIsNan:
+                    if self.learning_rate <= 1e-8:
+                        self.logger.error(
+                            'Policy loss is nan, and learning rate'
+                            ' is below 1e-8')
+                        raise
+                    # policy loss is nan, let's restore the trainee to the
+                    # previous state and try again
+                    self.logger.info('Policy loss is nan. '
+                                     'Retrying with a lower learning rate.')
+                    self.logger.info('Restoring to latest model...')
+                    self.init_trainee_model_to_latest()
+                    self.learning_rate /= 10
+                    self.logger.info(
+                        f'Reduced learning rate: {self.learning_rate}')
+                    i = self.latest_saved_iteration
+                    self.logger.info(f'Back to iteration {i}')
+                break
+            i += 1
+
         self.logger.info('Training done')
 
     def save(self, iteration):
@@ -159,6 +199,8 @@ class ReinforceTrainer():
         )
         self.logger.info(f'Saving: {filepath}')
         torch.save(self.trainee_model.state_dict(), filepath)
+        self.latest_saved_trainee = filepath
+        self.latest_saved_iteration = iteration
         self.logger.info('Done saving')
 
 
