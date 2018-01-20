@@ -4,6 +4,7 @@ import chess
 import torch
 import datetime
 import logging
+import numpy as np
 import random
 import threading
 import glob
@@ -50,9 +51,24 @@ class ReinforceTrainer():
         baseline = 0
         result = board.result(claim_draw=True)
         reward = self.get_reward(result, color)
-        policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
+        rewards = self.discounted_rewards([reward] * len(log_probs))
+        policy_loss = []
+        for log_prob, reward in zip(log_probs, rewards):
+            policy_loss.append(-log_prob * (reward - baseline))
+        policy_loss = -torch.cat(policy_loss).sum()
         self.self_play_log(color, reward, policy_loss)
         return reward, policy_loss
+
+    def discounted_rewards(self, rewards):
+        R = 0
+        discounted = []
+        for r in rewards:
+            R = r + self.discount_rate * R
+            discounted.insert(0, R)
+        discounted = torch.Tensor(discounted)
+        discounted = (discounted - discounted.mean()) / (
+            discounted.std() + np.finfo(np.float32).eps)
+        return discounted
 
     def self_play_log(self, color, reward, policy_loss):
         str_color = "white" if color == chess.WHITE else "black"
