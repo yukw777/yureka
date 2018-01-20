@@ -52,6 +52,8 @@ class ReinforceTrainer():
         reward = self.get_reward(result, color)
         policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
         self.self_play_log(color, reward, policy_loss)
+        del trainee
+        del opponent
         return reward, policy_loss
 
     def self_play_log(self, color, reward, policy_loss):
