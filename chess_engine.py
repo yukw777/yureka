@@ -43,9 +43,9 @@ class ChessEngine():
             inputs = Variable(tensor, volatile=volatile)
         outputs = self.model(inputs)
         probs = outputs.view(outputs.shape[0], -1)
-        self.filter_illegal_moves(board, probs)
+        filtered_probs = self.filter_illegal_moves(board, probs)
         if self.train:
-            m = Categorical(probs)
+            m = Categorical(filtered_probs)
             move_index = m.sample()
         else:
             _, move_index = probs.max(1)
@@ -58,16 +58,12 @@ class ChessEngine():
             return move
 
     def filter_illegal_moves(self, board, probs):
-        if self.cuda:
-            filtered = Variable(torch.zeros(probs.shape).cuda(
-                self.cuda_device))
-        else:
-            filtered = Variable(torch.zeros(probs.shape))
+        filtered = torch.zeros(probs.shape)
         for move in board.legal_moves:
             engine_move = translate_to_engine_move(move, board.turn)
             index = get_engine_move_index(engine_move)
-            filtered.data[0, index] = probs.data[0, index]
-        probs.set_(source=filtered)
+            filtered[0, index] = probs.data[0, index]
+        return filtered
 
 
 def queen_promotion_if_possible(board, move):
