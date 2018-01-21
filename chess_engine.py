@@ -1,6 +1,9 @@
+#!/home/keunwoo/Documents/Projects/chess-engine/venv/bin/python
+
 import attr
 import models
 import sys
+import os
 import collections
 import chess
 import state_generator
@@ -184,9 +187,15 @@ class UCI():
 
 if __name__ == '__main__':
     import argparse
+    default_model = os.path.join(
+        os.path.dirname(os.path.realpath(__file__)),
+        'saved_models',
+        '2018-01-08',
+        'ChessEngine_2018-01-09_22:26:13_11.model',
+    )
     parser = argparse.ArgumentParser()
-    parser.add_argument('model_file')
     parser.add_argument('-m', '--model', default='ChessEngine.v0')
+    parser.add_argument('-f', '--model-file', default=default_model)
 
     args = parser.parse_args()
     uci = UCI(args.model, args.model_file)
