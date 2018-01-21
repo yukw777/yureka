@@ -124,6 +124,7 @@ class UCI():
 
     def init_engine(self):
         self.engine = ChessEngine(self.model, train=False)
+        self.board = chess.Board()
 
     def uci(self, args):
         print('id name Yureka 0.1')
@@ -137,7 +138,17 @@ class UCI():
         self.init_engine()
 
     def position(self, args):
-        print(args)
+        args = args.split()
+        if args[0] == 'startpos':
+            fen = chess.STARTING_FEN
+            moves = args[1:]
+        else:
+            fen = ' '.join(args[:6])
+            moves = args[6:]
+        self.board = chess.Board(fen=fen)
+        for uci in moves:
+            self.board.push_uci(uci)
+        print(self.board)
 
     def go(self, args):
         print(args)
