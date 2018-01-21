@@ -151,7 +151,8 @@ class UCI():
         print(self.board)
 
     def go(self, args):
-        print(args)
+        move = self.engine.get_move(self.board)
+        print(f'bestmove {move.uci()}')
 
     def quit(self, args):
         sys.exit()
