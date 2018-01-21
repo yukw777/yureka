@@ -70,6 +70,7 @@ class ReinforceTrainer():
         return policy_loss
 
     def setup_games(self, number):
+        self.logger.debug(f'Setting up game {number}')
         color = random.choice([chess.WHITE, chess.BLACK])
         trainee = ChessEngine(self.trainee_model)
         opponent_model_file = self.get_opponent_model_file()
