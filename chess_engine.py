@@ -118,7 +118,9 @@ class UCI():
         }
 
     def uci(self, args):
-        print(args)
+        print('id name Yureka 0.1')
+        print('id author Peter Yu')
+        print('uciok')
 
     def isready(self, args):
         print(args)
