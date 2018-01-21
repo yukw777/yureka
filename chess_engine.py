@@ -1,4 +1,5 @@
 import attr
+import models
 import sys
 import collections
 import chess
@@ -106,6 +107,7 @@ def queen_promotion_if_possible(board, move):
 @attr.s
 class UCI():
     model = attr.ib()
+    model_file = attr.ib()
 
     def __attrs_post_init__(self):
         self.handlers = {
@@ -116,6 +118,12 @@ class UCI():
             'go': self.go,
             'quit': self.quit,
         }
+        self.model = models.create(self.model)
+        self.model.load_state_dict(torch.load(self.model_file))
+        self.init_engine()
+
+    def init_engine(self):
+        self.engine = ChessEngine(self.model, train=False)
 
     def uci(self, args):
         print('id name Yureka 0.1')
@@ -126,7 +134,7 @@ class UCI():
         print('readyok')
 
     def ucinewgame(self, args):
-        print(args)
+        self.init_engine()
 
     def position(self, args):
         print(args)
@@ -165,8 +173,9 @@ class UCI():
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('model')
+    parser.add_argument('model_file')
+    parser.add_argument('-m', '--model', default='ChessEngine.v0')
 
     args = parser.parse_args()
-    uci = UCI(args.model)
+    uci = UCI(args.model, args.model_file)
     uci.listen()
