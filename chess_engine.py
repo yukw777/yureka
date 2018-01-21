@@ -4,6 +4,7 @@ import chess
 import state_generator
 import chess_dataset
 import torch
+import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.distributions import Categorical
 from move_translator import (
@@ -74,7 +75,7 @@ class ChessEngine():
             # by setting the probs of legal moves to 1
             for i in move_indeces:
                 filtered.data[0, i] = 1
-        probs.set_(source=filtered)
+        probs.set_(source=F.normalize(filtered))
 
 
 def queen_promotion_if_possible(board, move):
