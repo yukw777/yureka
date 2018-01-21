@@ -1,4 +1,5 @@
 import torch
+import math
 import chess
 from chess_engine import ChessEngine, queen_promotion_if_possible
 from unittest.mock import MagicMock
@@ -52,6 +53,20 @@ def test_get_move():
             assert tc['expected_white_move'] == e.get_move(white_board)
             assert tc['expected_black_move'] == e.get_move(black_board)
 
+
+def test_get_move_probs_zero():
+    t = torch.zeros(1, 4672)
+    mock_model = MagicMock(return_value=Variable(t))
+    board = chess.Board()
+    board.push(chess.Move.from_uci("g1f3"))
+    e_train = ChessEngine(model=mock_model, cuda=False, train=True)
+    e_test = ChessEngine(model=mock_model, cuda=False, train=False)
+
+    move, log_prob = e_train.get_move(board)
+    assert round(log_prob.data[0], 6) == round(math.log(1/20), 6)
+    assert move in board.legal_moves
+    move = e_test.get_move(board)
+    assert move in board.legal_moves
 
 def test_queen_promotion():
     test_cases = [

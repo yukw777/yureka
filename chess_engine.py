@@ -4,6 +4,7 @@ import chess
 import state_generator
 import chess_dataset
 import torch
+import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.distributions import Categorical
 from move_translator import (
@@ -63,11 +64,18 @@ class ChessEngine():
                 self.cuda_device))
         else:
             filtered = Variable(torch.zeros(probs.shape))
+        move_indeces = []
         for move in board.legal_moves:
             engine_move = translate_to_engine_move(move, board.turn)
             index = get_engine_move_index(engine_move)
             filtered.data[0, index] = probs.data[0, index]
-        probs.set_(source=filtered)
+            move_indeces.append(index)
+        if not filtered.nonzero().size():
+            # all the moves have zero probs. so make it uniform
+            # by setting the probs of legal moves to 1
+            for i in move_indeces:
+                filtered.data[0, i] = 1
+        probs.set_(source=F.normalize(filtered))
 
 
 def queen_promotion_if_possible(board, move):
