@@ -74,8 +74,7 @@ class ReinforceTrainer():
         trainee = ChessEngine(self.trainee_model)
         opponent_model_file = self.get_opponent_model_file()
         return (
-            self.logger,
-            number,
+            self.cuda_device,
             color,
             trainee,
             self.model,
@@ -87,7 +86,7 @@ class ReinforceTrainer():
             policy_losses = []
             with mp.Pool() as p:
                 for color, reward, policy_loss in p.imap_unordered(
-                    self_play, [self.setup_games(n) for n in
+                    self_play_args, [self.setup_games(n) for n in
                                 range(self.num_games)]):
                     self.self_play_log(color, reward, policy_loss)
                     policy_losses.append(policy_loss)
@@ -188,11 +187,20 @@ def get_reward(result, color):
         raise Exception(f'Unknown result: {result}, {color}')
 
 
-def self_play(args):
-    logger, number, color, trainee, opponent_model, opponent_model_file = args
-    logger.debug(f'Staring game {number}')
-    opponent = models.create(opponent_model)
+def self_play_args(args):
+    return self_play(*args)
+
+
+def self_play(
+    cuda_device,
+    color,
+    trainee,
+    opponent_model_name,
+    opponent_model_file
+):
+    opponent = models.create(opponent_model_name)
     opponent.load_state_dict(torch.load(opponent_model_file))
+    opponent = ChessEngine(opponent, train=False, cuda_device=cuda_device)
 
     log_probs = []
     board = chess.Board()
