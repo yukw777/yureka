@@ -54,7 +54,7 @@ class ReinforceTrainer():
         self.logger.debug(f'Trainee color: {str_color}\tReward: {reward}\t'
                           f'Policy loss: {policy_loss.data[0]}')
 
-    def get_opponent(self):
+    def get_opponent_model_file(self):
         # NOTE: We need to lock it when creating a new model b/c of a bug
         # https://github.com/pytorch/pytorch/issues/1868
         # if self.multi_threaded:
@@ -82,18 +82,25 @@ class ReinforceTrainer():
         self.self_play_log(color, reward, policy_loss)
         return policy_loss
 
-    def setup_games(self):
+    def setup_games(self, number):
         color = random.choice([chess.WHITE, chess.BLACK])
         trainee = ChessEngine(self.trainee_model)
-        opponent = self.get_opponent()
-        return color, trainee, opponent
+        opponent_model_file = self.get_opponent_model_file()
+        return (
+            self.logger,
+            number,
+            color,
+            trainee,
+            self.model,
+            opponent_model_file
+        )
 
     def collect_policy_losses(self):
         if self.multi_threaded:
             policy_losses = []
             with mp.Pool() as p:
-                for color, reward, policy_loss in p.starmap(
-                    self_play, [self.setup_games() for _ in
+                for color, reward, policy_loss in p.imap_unordered(
+                    self_play, [self.setup_games(n) for n in
                                 range(self.num_games)]):
                     self.self_play_log(color, reward, policy_loss)
                     policy_losses.append(policy_loss)
@@ -194,7 +201,12 @@ def get_reward(result, color):
         raise Exception(f'Unknown result: {result}, {color}')
 
 
-def self_play(color, trainee, opponent):
+def self_play(args):
+    logger, number, color, trainee, opponent_model, opponent_model_file = args
+    logger.debug(f'Staring game {number}')
+    opponent = models.create(opponent_model)
+    opponent.load_state_dict(torch.load(opponent_model_file))
+
     log_probs = []
     board = chess.Board()
     while not board.is_game_over(claim_draw=True):
