@@ -3,6 +3,7 @@ attrs==17.3.0
 bleach==2.1.2
 decorator==4.1.2
 entrypoints==0.2.3
+flake8==3.5.0
 html5lib==1.0.1
 ipykernel==4.7.0
 ipython==6.2.1
@@ -16,6 +17,7 @@ jupyter-client==5.2.0
 jupyter-console==5.2.0
 jupyter-core==4.4.0
 MarkupSafe==1.0
+mccabe==0.6.1
 mistune==0.8.3
 nbconvert==5.3.1
 nbformat==4.4.0
@@ -31,6 +33,8 @@ pluggy==0.6.0
 prompt-toolkit==1.0.15
 ptyprocess==0.5.2
 py==1.5.2
+pycodestyle==2.3.1
+pyflakes==1.6.0
 Pygments==2.2.0
 pytest==3.3.1
 python-chess==0.22.0

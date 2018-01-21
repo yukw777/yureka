@@ -43,9 +43,12 @@ class ChessEngine():
         else:
             inputs = Variable(tensor, volatile=volatile)
         outputs = self.model(inputs)
-        probs = outputs.view(outputs.shape[0], -1)
-        self.filter_illegal_moves(board, probs)
+
+        probs = F.softmax(outputs.view(outputs.shape[0], -1), dim=1)
+        probs = self.filter_illegal_moves(board, probs)
         if self.train:
+            # clamp to 1e-12 for numerical stability
+            probs = probs.clamp(min=1e-12)
             m = Categorical(probs)
             move_index = m.sample()
         else:
@@ -60,22 +63,29 @@ class ChessEngine():
 
     def filter_illegal_moves(self, board, probs):
         if self.cuda:
-            filtered = Variable(torch.zeros(probs.shape).cuda(
+            move_filter = Variable(torch.zeros(probs.shape).cuda(
                 self.cuda_device))
         else:
-            filtered = Variable(torch.zeros(probs.shape))
+            move_filter = Variable(torch.zeros(probs.shape))
         move_indeces = []
         for move in board.legal_moves:
             engine_move = translate_to_engine_move(move, board.turn)
             index = get_engine_move_index(engine_move)
-            filtered.data[0, index] = probs.data[0, index]
+            move_filter.data[0, index] = 1
             move_indeces.append(index)
+        filtered = probs * move_filter
         if not filtered.nonzero().size():
             # all the moves have zero probs. so make it uniform
             # by setting the probs of legal moves to 1
+            if self.cuda:
+                move_filter = Variable(torch.zeros(probs.shape).cuda(
+                    self.cuda_device))
+            else:
+                move_filter = Variable(torch.zeros(probs.shape))
             for i in move_indeces:
-                filtered.data[0, i] = 1
-        probs.set_(source=F.normalize(filtered))
+                move_filter.data[0, i] = 1
+            filtered = filtered + move_filter
+        return filtered
 
 
 def queen_promotion_if_possible(board, move):
