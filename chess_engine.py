@@ -43,9 +43,12 @@ class ChessEngine():
         else:
             inputs = Variable(tensor, volatile=volatile)
         outputs = self.model(inputs)
-        probs = outputs.view(outputs.shape[0], -1)
+
+        probs = F.softmax(outputs.view(outputs.shape[0], -1), dim=1)
         self.filter_illegal_moves(board, probs)
         if self.train:
+            # clamp to 1e-12 for numerical stability
+            probs = probs.clamp(min=1e-12)
             m = Categorical(probs)
             move_index = m.sample()
         else:
@@ -75,7 +78,7 @@ class ChessEngine():
             # by setting the probs of legal moves to 1
             for i in move_indeces:
                 filtered.data[0, i] = 1
-        probs.set_(source=F.normalize(filtered))
+        probs.set_(source=filtered)
 
 
 def queen_promotion_if_possible(board, move):
