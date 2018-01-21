@@ -78,7 +78,7 @@ class ReinforceTrainer():
             with mp.Pool() as p:
                 for color, reward, policy_loss in p.imap_unordered(
                     self_play_args, [self.setup_games(n) for n in
-                                     range(self.num_games)]):
+                                     range(self.num_games)], mp.cpu_count()):
                     self.self_play_log(color, reward, policy_loss)
                     policy_losses.append(policy_loss)
             return policy_losses
