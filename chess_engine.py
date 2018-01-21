@@ -123,7 +123,7 @@ class UCI():
         print('uciok')
 
     def isready(self, args):
-        print(args)
+        print('readyok')
 
     def ucinewgame(self, args):
         print(args)
