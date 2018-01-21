@@ -50,10 +50,11 @@ class ChessEngine():
         outputs = self.model(inputs)
 
         probs = F.softmax(outputs.view(outputs.shape[0], -1), dim=1)
-        probs = self.filter_illegal_moves(board, probs)
         if self.train:
             # clamp to 1e-12 for numerical stability
             probs = probs.clamp(min=1e-12)
+        probs = self.filter_illegal_moves(board, probs)
+        if self.train:
             m = Categorical(probs)
             move_index = m.sample()
         else:
