@@ -59,16 +59,6 @@ class ReinforceTrainer():
             self.opponent_pool_path, '*.model'))
         return random.choice(opponent_model_files)
 
-    def game(self, number):
-        self.logger.debug(f'Staring game {number}')
-        trainee_color = random.choice([chess.WHITE, chess.BLACK])
-        trainee_engine = ChessEngine(
-            self.trainee_model, cuda_device=self.cuda_device)
-        color, reward, policy_loss = self_play(
-            trainee_color, trainee_engine, self.get_opponent())
-        self.self_play_log(color, reward, policy_loss)
-        return policy_loss
-
     def setup_games(self, number):
         self.logger.debug(f'Setting up game {number}')
         color = random.choice([chess.WHITE, chess.BLACK])
