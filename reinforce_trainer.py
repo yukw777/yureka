@@ -28,7 +28,7 @@ class ReinforceTrainer():
     num_games = attr.ib(default=64)
     log_interval = attr.ib(default=10)
     save_interval = attr.ib(default=500)
-    multi_threaded = attr.ib(default=True)
+    multi_process = attr.ib(default=True)
     cuda_device = attr.ib(default=None)
     logger = attr.ib(default=logging.getLogger(__name__))
 
@@ -39,7 +39,7 @@ class ReinforceTrainer():
         self.trainee_model = models.create(self.model)
         self.trainee_model.load_state_dict(
             torch.load(self.trainee_saved_model))
-        if self.multi_threaded:
+        if self.multi_process:
             mp.set_start_method('spawn')
             self.trainee_model.share_memory()
 
@@ -74,7 +74,7 @@ class ReinforceTrainer():
 
     def collect_policy_losses(self):
         policy_losses = []
-        if self.multi_threaded:
+        if self.multi_process:
             with mp.Pool() as p:
                 for color, reward, policy_loss in p.imap_unordered(
                     self_play_args, [self.setup_games(n) for n in
@@ -100,7 +100,7 @@ class ReinforceTrainer():
         self.logger.info(f'Number of games: {self.num_games}')
         self.logger.info(f'Log interval: {self.log_interval}')
         self.logger.info(f'Save interval: {self.save_interval}')
-        self.logger.info(f'Multi threaded: {self.multi_threaded}')
+        self.logger.info(f'Multi threaded: {self.multi_process}')
         self.logger.info(f'Cuda device: {self.cuda_device}')
 
         optimizer = optim.SGD(
@@ -231,7 +231,7 @@ def run():
     parser.add_argument('-s', '--save-interval', type=int)
     parser.add_argument('-o', '--log-interval', type=int)
     parser.add_argument('-c', '--cuda-device', type=int)
-    parser.add_argument('-t', '--single-threaded', action="store_true")
+    parser.add_argument('-t', '--single-process', action="store_true")
     parser.add_argument('-d', '--debug', action="store_true")
 
     args = parser.parse_args()
@@ -261,8 +261,8 @@ def run():
         trainer_setting['save_interval'] = args.save_interval
     if args.log_interval:
         trainer_setting['log_interval'] = args.log_interval
-    if args.single_threaded:
-        trainer_setting['multi_threaded'] = not args.single_threaded
+    if args.single_process:
+        trainer_setting['multi_process'] = not args.single_process
     if args.cuda_device:
         trainer_setting['cuda_device'] = args.cuda_device
 
