@@ -83,17 +83,22 @@ class ReinforceTrainer():
         )
 
     def collect_policy_losses(self):
+        policy_losses = []
         if self.multi_threaded:
-            policy_losses = []
             with mp.Pool() as p:
                 for color, reward, policy_loss in p.imap_unordered(
                     self_play_args, [self.setup_games(n) for n in
-                                range(self.num_games)]):
+                                     range(self.num_games)]):
                     self.self_play_log(color, reward, policy_loss)
                     policy_losses.append(policy_loss)
             return policy_losses
         else:
-            return [self.game(n) for n in range(self.num_games)]
+            for n in range(self.num_games):
+                args = self.setup_games(n)
+                color, reward, policy_loss = self_play_args(args)
+                self.self_play_log(color, reward, policy_loss)
+                policy_losses.append(policy_loss)
+            return policy_losses
 
     def run(self):
         self.logger.info('Training starting...')
