@@ -1,4 +1,5 @@
 import attr
+import sys
 import collections
 import chess
 import state_generator
@@ -100,3 +101,70 @@ def queen_promotion_if_possible(board, move):
         move.promotion = chess.QUEEN
         return move
     return move
+
+
+@attr.s
+class UCI():
+    model = attr.ib()
+
+    def __attrs_post_init__(self):
+        self.handlers = {
+            'uci': self.uci,
+            'isready': self.isready,
+            'ucinewgame': self.ucinewgame,
+            'position': self.position,
+            'go': self.go,
+            'quit': self.quit,
+        }
+
+    def uci(self, args):
+        print(args)
+
+    def isready(self, args):
+        print(args)
+
+    def ucinewgame(self, args):
+        print(args)
+
+    def position(self, args):
+        print(args)
+
+    def go(self, args):
+        print(args)
+
+    def quit(self, args):
+        sys.exit()
+
+    def unknown_handler(self, command):
+        print(f'Unknown command: {command}')
+
+    def parse_command(self, raw_command):
+        parts = raw_command.split(maxsplit=1)
+        if len(parts) == 1:
+            args = ''
+        else:
+            args = parts[1]
+        return parts[0], args
+
+    def handle(self, raw_command):
+        command, args = self.parse_command(raw_command)
+        h = self.handlers.get(command)
+        if not h:
+            self.unknown_handler(raw_command)
+        else:
+            h(args)
+
+    def listen(self):
+        while True:
+            command = input()
+            self.handle(command)
+
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('model')
+
+    args = parser.parse_args()
+    uci = UCI(args.model)
+    uci.listen()
