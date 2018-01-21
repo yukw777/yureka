@@ -55,22 +55,9 @@ class ReinforceTrainer():
                           f'Policy loss: {policy_loss.data[0]}')
 
     def get_opponent_model_file(self):
-        # NOTE: We need to lock it when creating a new model b/c of a bug
-        # https://github.com/pytorch/pytorch/issues/1868
-        # if self.multi_threaded:
-            # with self.lock:
-                # opponent_model = models.create(self.model)
-        # else:
-        opponent_model = models.create(self.model)
-
         opponent_model_files = glob.glob(os.path.join(
             self.opponent_pool_path, '*.model'))
-        opponent_model_file = random.choice(opponent_model_files)
-        opponent_model.load_state_dict(torch.load(opponent_model_file))
-        if self.multi_threaded:
-            opponent_model.share_memory()
-        return ChessEngine(
-            opponent_model, train=False, cuda_device=self.cuda_device)
+        return random.choice(opponent_model_files)
 
     def game(self, number):
         self.logger.debug(f'Staring game {number}')
