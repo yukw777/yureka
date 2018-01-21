@@ -144,14 +144,16 @@ class UCI():
         args = args.split()
         if args[0] == 'startpos':
             fen = chess.STARTING_FEN
-            moves = args[1:]
+            moves = args[2:]
+        elif args[0] == 'fen':
+            fen = ' '.join(args[1:7])
+            moves = args[7:]
         else:
-            fen = ' '.join(args[:6])
-            moves = args[6:]
+            self.unknown_handler(' '.join(args))
+            return
         self.board = chess.Board(fen=fen)
         for uci in moves:
             self.board.push_uci(uci)
-        print(self.board)
 
     def go(self, args):
         move = self.engine.get_move(self.board)
