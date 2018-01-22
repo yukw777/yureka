@@ -8,7 +8,6 @@ import logging
 import random
 import glob
 import models
-import numpy as np
 import torch.optim as optim
 from chess_engine import ChessEngine
 
@@ -69,23 +68,40 @@ class ReinforceTrainer():
             color,
             trainee,
             self.model,
-            opponent_model_file
+            opponent_model_file,
         )
 
     def collect_policy_losses(self):
         policy_losses = []
         if self.multi_process:
-            with mp.Pool() as p:
-                for color, reward, policy_loss in p.imap_unordered(
-                    self_play_args, [self.setup_games(n) for n in
-                                     range(self.num_games)], mp.cpu_count()):
-                    self.self_play_log(color, reward, policy_loss)
-                    policy_losses.append(policy_loss)
+            game_queue = mp.Queue()
+            done_queue = mp.Queue()
+
+            # submit games
+            for n in range(self.num_games):
+                game_queue.put(self.setup_games(n))
+
+            # start processes
+            for i in range(mp.cpu_count()):
+                mp.Process(
+                    target=self_play_multi,
+                    args=(game_queue, done_queue)
+                ).start()
+
+            for _ in range(self.num_games):
+                color, reward, policy_loss = done_queue.get()
+                self.self_play_log(color, reward, policy_loss)
+                policy_losses.append(policy_loss)
+
+            # stop the processes
+            for _ in range(mp.cpu_count()):
+                game_queue.put('STOP')
+
             return policy_losses
         else:
             for n in range(self.num_games):
                 args = self.setup_games(n)
-                color, reward, policy_loss = self_play_args(args)
+                color, reward, policy_loss = self_play(*args)
                 self.self_play_log(color, reward, policy_loss)
                 policy_losses.append(policy_loss)
             return policy_losses
@@ -183,8 +199,21 @@ def get_reward(result, color):
         raise Exception(f'Unknown result: {result}, {color}')
 
 
-def self_play_args(args):
-    return self_play(*args)
+def self_play_multi(game_queue, done_queue):
+    for game_data in iter(game_queue.get, 'STOP'):
+        cuda_device = game_data[0]
+        color = game_data[1]
+        trainee = game_data[2]
+        opponent_model_name = game_data[3]
+        opponent_model_file = game_data[4]
+
+        done_queue.put(self_play(
+            cuda_device,
+            color,
+            trainee,
+            opponent_model_name,
+            opponent_model_file,
+        ))
 
 
 def self_play(
@@ -213,8 +242,7 @@ def self_play(
     result = board.result(claim_draw=True)
     reward = get_reward(result, color)
     policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
-    if np.isnan(policy_loss.data[0]):
-        raise PolicyLossIsNan(log_probs)
+
     return color, reward, policy_loss
 
 
