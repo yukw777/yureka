@@ -187,6 +187,7 @@ class UCI():
             h(args)
 
     def listen(self):
+        print('Yureka!')
         while True:
             command = input()
             self.handle(command)
