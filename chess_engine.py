@@ -192,9 +192,8 @@ if __name__ == '__main__':
     import argparse
     default_model = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
-        'saved_models',
-        '2018-01-08',
-        'ChessEngine_2018-01-09_22:26:13_11.model',
+        'opponent_pool',
+        'ChessEngine_2018-01-21_20:24:55_200.model',
     )
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', default='ChessEngine.v0')
