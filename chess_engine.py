@@ -120,6 +120,7 @@ class UCI():
             'ucinewgame': self.ucinewgame,
             'position': self.position,
             'go': self.go,
+            'stop': self.stop,
             'quit': self.quit,
         }
         self.model = models.create(self.model)
@@ -134,6 +135,9 @@ class UCI():
         print('id name Yureka 0.1')
         print('id author Peter Yu')
         print('uciok')
+
+    def stop(self, args):
+        pass
 
     def isready(self, args):
         print('readyok')
