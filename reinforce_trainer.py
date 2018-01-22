@@ -116,7 +116,7 @@ class ReinforceTrainer():
         self.logger.info(f'Number of games: {self.num_games}')
         self.logger.info(f'Log interval: {self.log_interval}')
         self.logger.info(f'Save interval: {self.save_interval}')
-        self.logger.info(f'Multi threaded: {self.multi_process}')
+        self.logger.info(f'Multi process: {self.multi_process}')
         self.logger.info(f'Cuda device: {self.cuda_device}')
 
         optimizer = optim.SGD(
