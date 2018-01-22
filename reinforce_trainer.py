@@ -1,3 +1,4 @@
+import torch.multiprocessing as mp
 import attr
 import os
 import chess
@@ -5,11 +6,8 @@ import torch
 import datetime
 import logging
 import random
-import threading
 import glob
 import models
-import numpy as np
-from concurrent.futures import ThreadPoolExecutor, as_completed
 import torch.optim as optim
 from chess_engine import ChessEngine
 
@@ -29,7 +27,7 @@ class ReinforceTrainer():
     num_games = attr.ib(default=64)
     log_interval = attr.ib(default=10)
     save_interval = attr.ib(default=500)
-    multi_threaded = attr.ib(default=True)
+    multi_process = attr.ib(default=True)
     cuda_device = attr.ib(default=None)
     logger = attr.ib(default=logging.getLogger(__name__))
 
@@ -40,8 +38,9 @@ class ReinforceTrainer():
         self.trainee_model = models.create(self.model)
         self.trainee_model.load_state_dict(
             torch.load(self.trainee_saved_model))
-        if self.multi_threaded:
-            self.lock = threading.Lock()
+        if self.multi_process:
+            mp.set_start_method('spawn')
+            self.trainee_model.share_memory()
 
     def init_trainee_model_to_latest(self):
         self.trainee_model = models.create(self.model)
@@ -49,84 +48,63 @@ class ReinforceTrainer():
             torch.load(self.latest_saved_trainee))
         self.logger.info(f'Trainee model loaded: {self.latest_saved_trainee}')
 
-    def self_play(self, trainee, opponent, color):
-        log_probs = []
-        board = chess.Board()
-        while not board.is_game_over(claim_draw=True):
-            if board.turn == color:
-                move, log_prob = trainee.get_move(board)
-                log_probs.append(log_prob)
-            else:
-                move = opponent.get_move(board)
-            board.push(move)
-
-        # TODO: set baseline with the value network
-        baseline = 0
-        result = board.result(claim_draw=True)
-        reward = self.get_reward(result, color)
-        policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
-        self.self_play_log(color, reward, policy_loss)
-        if np.isnan(policy_loss.data[0]):
-            raise PolicyLossIsNan(log_probs)
-        return reward, policy_loss
-
     def self_play_log(self, color, reward, policy_loss):
         str_color = "white" if color == chess.WHITE else "black"
         self.logger.debug(f'Trainee color: {str_color}\tReward: {reward}\t'
                           f'Policy loss: {policy_loss.data[0]}')
 
-    def get_reward(self, result, color):
-        points = result.split('-')
-        if color == chess.WHITE:
-            player_point = points[0]
-        else:
-            player_point = points[1]
-
-        if player_point == '0':
-            return -1
-        elif player_point == '1/2':
-            return 0
-        elif player_point == '1':
-            return 1
-        else:
-            raise Exception(f'Unknown result: {result}, {color}')
-
-    def get_opponent(self):
-        # NOTE: We need to lock it when creating a new model b/c of a bug
-        # https://github.com/pytorch/pytorch/issues/1868
-        if self.multi_threaded:
-            with self.lock:
-                opponent_model = models.create(self.model)
-        else:
-            opponent_model = models.create(self.model)
-
+    def get_opponent_model_file(self):
         opponent_model_files = glob.glob(os.path.join(
             self.opponent_pool_path, '*.model'))
-        opponent_model_file = random.choice(opponent_model_files)
-        opponent_model.load_state_dict(torch.load(opponent_model_file))
-        return ChessEngine(
-            opponent_model, train=False, cuda_device=self.cuda_device)
+        return random.choice(opponent_model_files)
 
-    def game(self, number):
-        self.logger.debug(f'Staring game {number}')
-        trainee_color = random.choice([chess.WHITE, chess.BLACK])
-        trainee_engine = ChessEngine(
-            self.trainee_model, cuda_device=self.cuda_device)
-        _, policy_loss = self.self_play(
-            trainee_engine, self.get_opponent(), trainee_color)
-        return policy_loss
+    def setup_games(self, number):
+        self.logger.debug(f'Setting up game {number}')
+        color = random.choice([chess.WHITE, chess.BLACK])
+        trainee = ChessEngine(self.trainee_model)
+        opponent_model_file = self.get_opponent_model_file()
+        return (
+            self.cuda_device,
+            color,
+            trainee,
+            self.model,
+            opponent_model_file,
+        )
 
     def collect_policy_losses(self):
-        if self.multi_threaded:
-            policy_losses = []
-            with ThreadPoolExecutor() as executor:
-                game_futures = [executor.submit(self.game, n)
-                                for n in range(self.num_games)]
-                for future in as_completed(game_futures):
-                    policy_losses.append(future.result())
+        policy_losses = []
+        if self.multi_process:
+            game_queue = mp.Queue()
+            done_queue = mp.Queue()
+
+            # submit games
+            for n in range(self.num_games):
+                game_queue.put(self.setup_games(n))
+
+            # start processes
+            for i in range(mp.cpu_count()):
+                mp.Process(
+                    target=self_play_multi,
+                    args=(game_queue, done_queue)
+                ).start()
+
+            for _ in range(self.num_games):
+                color, reward, policy_loss = done_queue.get()
+                self.self_play_log(color, reward, policy_loss)
+                policy_losses.append(policy_loss)
+
+            # stop the processes
+            for _ in range(mp.cpu_count()):
+                game_queue.put('STOP')
+
             return policy_losses
         else:
-            return [self.game(n) for n in range(self.num_games)]
+            for n in range(self.num_games):
+                args = self.setup_games(n)
+                color, reward, policy_loss = self_play(*args)
+                self.self_play_log(color, reward, policy_loss)
+                policy_losses.append(policy_loss)
+            return policy_losses
 
     def run(self):
         self.logger.info('Training starting...')
@@ -138,7 +116,7 @@ class ReinforceTrainer():
         self.logger.info(f'Number of games: {self.num_games}')
         self.logger.info(f'Log interval: {self.log_interval}')
         self.logger.info(f'Save interval: {self.save_interval}')
-        self.logger.info(f'Multi threaded: {self.multi_threaded}')
+        self.logger.info(f'Multi threaded: {self.multi_process}')
         self.logger.info(f'Cuda device: {self.cuda_device}')
 
         optimizer = optim.SGD(
@@ -204,6 +182,70 @@ class ReinforceTrainer():
         self.logger.info('Done saving')
 
 
+def get_reward(result, color):
+    points = result.split('-')
+    if color == chess.WHITE:
+        player_point = points[0]
+    else:
+        player_point = points[1]
+
+    if player_point == '0':
+        return -1
+    elif player_point == '1/2':
+        return 0
+    elif player_point == '1':
+        return 1
+    else:
+        raise Exception(f'Unknown result: {result}, {color}')
+
+
+def self_play_multi(game_queue, done_queue):
+    for game_data in iter(game_queue.get, 'STOP'):
+        cuda_device = game_data[0]
+        color = game_data[1]
+        trainee = game_data[2]
+        opponent_model_name = game_data[3]
+        opponent_model_file = game_data[4]
+
+        done_queue.put(self_play(
+            cuda_device,
+            color,
+            trainee,
+            opponent_model_name,
+            opponent_model_file,
+        ))
+
+
+def self_play(
+    cuda_device,
+    color,
+    trainee,
+    opponent_model_name,
+    opponent_model_file
+):
+    opponent = models.create(opponent_model_name)
+    opponent.load_state_dict(torch.load(opponent_model_file))
+    opponent = ChessEngine(opponent, train=False, cuda_device=cuda_device)
+
+    log_probs = []
+    board = chess.Board()
+    while not board.is_game_over(claim_draw=True):
+        if board.turn == color:
+            move, log_prob = trainee.get_move(board)
+            log_probs.append(log_prob)
+        else:
+            move = opponent.get_move(board)
+        board.push(move)
+
+    # TODO: set baseline with the value network
+    baseline = 0
+    result = board.result(claim_draw=True)
+    reward = get_reward(result, color)
+    policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
+
+    return color, reward, policy_loss
+
+
 def run():
     import argparse
     parser = argparse.ArgumentParser()
@@ -217,7 +259,7 @@ def run():
     parser.add_argument('-s', '--save-interval', type=int)
     parser.add_argument('-o', '--log-interval', type=int)
     parser.add_argument('-c', '--cuda-device', type=int)
-    parser.add_argument('-t', '--single-threaded', action="store_true")
+    parser.add_argument('-t', '--single-process', action="store_true")
     parser.add_argument('-d', '--debug', action="store_true")
 
     args = parser.parse_args()
@@ -247,8 +289,8 @@ def run():
         trainer_setting['save_interval'] = args.save_interval
     if args.log_interval:
         trainer_setting['log_interval'] = args.log_interval
-    if args.single_threaded:
-        trainer_setting['multi_threaded'] = not args.single_threaded
+    if args.single_process:
+        trainer_setting['multi_process'] = not args.single_process
     if args.cuda_device:
         trainer_setting['cuda_device'] = args.cuda_device
 
