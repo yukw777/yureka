@@ -68,6 +68,7 @@ def test_get_move_probs_zero():
     move = e_test.get_move(board)
     assert move in board.legal_moves
 
+
 def test_queen_promotion():
     test_cases = [
         {
