@@ -131,8 +131,7 @@ class ReinforceTrainer():
                 try:
                     policy_losses = self.collect_policy_losses()
                     optimizer.zero_grad()
-                    policy_loss = torch.cat(policy_losses).sum()
-                    policy_loss /= self.num_games
+                    policy_loss = torch.cat(policy_losses).mean()
                     msg = 'Total policy loss for iteration '
                     msg += f'{i}: {policy_loss.data[0]}'
                     if i % self.log_interval == self.log_interval - 1:
