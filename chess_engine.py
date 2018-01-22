@@ -187,7 +187,6 @@ class UCI():
             h(args)
 
     def listen(self):
-        print('Yureka!')
         while True:
             command = input()
             self.handle(command)
@@ -205,5 +204,6 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--model-file', default=default_model)
 
     args = parser.parse_args()
+    print('Yureka!')
     uci = UCI(args.model, args.model_file)
     uci.listen()
