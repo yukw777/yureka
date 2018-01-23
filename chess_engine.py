@@ -197,7 +197,7 @@ if __name__ == '__main__':
     default_model = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
         'opponent_pool',
-        'ChessEngine_2018-01-22_14:00:16_400.model',
+        'ChessEngine_2018-01-22_18:05:52_100.model',
     )
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', default='ChessEngine.v0')
