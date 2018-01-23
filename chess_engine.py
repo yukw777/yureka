@@ -205,5 +205,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print('Yureka!')
-    uci = UCI(args.model, args.model_file)
+    uci = UCI(args.model, os.path.expanduser(args.model_file))
     uci.listen()
