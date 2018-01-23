@@ -2,7 +2,7 @@ import torch
 import math
 import chess
 from chess_engine import ChessEngine, queen_promotion_if_possible
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from torch.autograd import Variable
 
 
@@ -42,13 +42,15 @@ def test_get_move():
         black_board.push(chess.Move.from_uci("g1f3"))
         e = ChessEngine(model=mock_model, cuda=False, train=tc['train'])
         if tc['train']:
-            white_move, log_prob = e.get_move(white_board)
-            assert tc['expected_white_move'] == white_move
-            assert type(log_prob) == Variable
+            with patch('chess_engine.torch.nn.functional.softmax',
+                       return_value=Variable(t)):
+                white_move, log_prob = e.get_move(white_board)
+                assert tc['expected_white_move'] == white_move
+                assert type(log_prob) == Variable
 
-            black_move, log_prob = e.get_move(black_board)
-            assert tc['expected_black_move'] == black_move
-            assert type(log_prob) == Variable
+                black_move, log_prob = e.get_move(black_board)
+                assert tc['expected_black_move'] == black_move
+                assert type(log_prob) == Variable
         else:
             assert tc['expected_white_move'] == e.get_move(white_board)
             assert tc['expected_black_move'] == e.get_move(black_board)
