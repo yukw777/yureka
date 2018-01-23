@@ -57,7 +57,18 @@ class ChessEngine():
         probs = self.filter_illegal_moves(board, probs)
         if self.train:
             m = Categorical(probs)
-            move_index = m.sample()
+            while True:
+                move_index = m.sample()
+                if probs.squeeze()[move_index].data[0] == 0:
+                    print('Categorical sampled a move with zero prob...',
+                          file=sys.stderr)
+                    print(f'move_index: {move_index}', file=sys.stderr)
+                    nonzero_indeces = probs.squeeze().nonzero().squeeze()
+                    print(f'nonzero prob indeces: {nonzero_indeces}')
+                    nonzero = probs.squeeze().gather(0, nonzero_indeces)
+                    print(f'nonzero probs: {nonzero}', file=sys.stderr)
+                else:
+                    break
         else:
             _, move_index = probs.max(1)
         engine_move = get_engine_move_from_index(move_index.data[0])
@@ -70,8 +81,9 @@ class ChessEngine():
                 print('log prob is not a right value!', file=sys.stderr)
                 print(f'log_prob: {log_prob}', file=sys.stderr)
                 print(f'move_index: {move_index}', file=sys.stderr)
-                nonzero = probs.squeeze().gather(
-                    0, probs.squeeze().nonzero().squeeze())
+                nonzero_indeces = probs.squeeze().nonzero().squeeze()
+                print(f'nonzero prob indeces: {nonzero_indeces}')
+                nonzero = probs.squeeze().gather(0, nonzero_indeces)
                 print(f'nonzero probs: {nonzero}', file=sys.stderr)
             return move, log_prob
         else:
