@@ -8,6 +8,7 @@ import collections
 import chess
 import state_generator
 import chess_dataset
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
@@ -63,7 +64,16 @@ class ChessEngine():
         move = translate_from_engine_move(engine_move, board.turn)
         move = queen_promotion_if_possible(board, move)
         if self.train:
-            return move, m.log_prob(move_index)
+            log_prob = m.log_prob(move_index)
+            log_prob_num = log_prob.data[0]
+            if np.isnan(log_prob_num) or np.isinf(log_prob_num):
+                print('log prob is not a right value!', file=sys.stderr)
+                print(f'log_prob: {log_prob}', file=sys.stderr)
+                print(f'move_index: {move_index}', file=sys.stderr)
+                nonzero = probs.squeeze().gather(
+                    0, probs.squeeze().nonzero().squeeze())
+                print(f'nonzero probs: {nonzero}', file=sys.stderr)
+            return move, log_prob
         else:
             return move
 
