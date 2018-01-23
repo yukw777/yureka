@@ -112,6 +112,7 @@ def queen_promotion_if_possible(board, move):
 class UCI():
     model = attr.ib()
     model_file = attr.ib()
+    cuda_device = attr.ib(default=None)
 
     def __attrs_post_init__(self):
         self.handlers = {
@@ -128,7 +129,8 @@ class UCI():
         self.init_engine()
 
     def init_engine(self):
-        self.engine = ChessEngine(self.model, train=False)
+        self.engine = ChessEngine(
+            self.model, train=False, cuda_device=self.cuda_device)
         self.board = chess.Board()
 
     def uci(self, args):
@@ -202,8 +204,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', default='ChessEngine.v0')
     parser.add_argument('-f', '--model-file', default=default_model)
+    parser.add_argument('-c', '--cuda-device', type=int)
 
     args = parser.parse_args()
     print('Yureka!')
-    uci = UCI(args.model, os.path.expanduser(args.model_file))
+    uci = UCI(
+        args.model,
+        os.path.expanduser(args.model_file),
+        cuda_device=args.cuda_device
+    )
     uci.listen()
