@@ -117,7 +117,7 @@ def get_square_piece_value(piece_map, square, piece):
 
 
 @attr.s
-class StateGenerator():
+class ExpertStateGenerator():
     game_file_name = attr.ib()
     out_csv_file = attr.ib()
 
@@ -185,5 +185,5 @@ if __name__ == '__main__':
     parser.add_argument('pgn_file')
     parser.add_argument('out_csv_file')
     args = parser.parse_args()
-    s = StateGenerator(args.pgn_file, args.out_csv_file)
+    s = ExpertStateGenerator(args.pgn_file, args.out_csv_file)
     s.generate(write=True)
