@@ -57,15 +57,36 @@ class Policy(nn.Module):
 
 
 class Value(Policy):
-    def __init__(self, *args, **kwargs):
-        super(Value, self).__init__()
-        self.relu = nn.ReLU()
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        hidden_conv_layers,
+        linear_relu_out,
+        batch_norm=False
+    ):
+        super(Value, self).__init__(
+            in_channels,
+            out_channels,
+            hidden_conv_layers,
+            batch_norm=batch_norm
+        )
+        self.linear_relu = nn.Sequential(
+            nn.Linear(NUM_MOVE_PLANES * 8 * 8, linear_relu_out),
+            nn.ReLU()
+        )
+        self.linear_tanh = nn.Sequential(
+            nn.Linear(linear_relu_out, 1),
+            nn.Tanh()
+        )
 
     def forward(self, x):
-        x = super(Value, self).forward()
+        x = super(Value, self).forward(x)
         # x.shape = (batch_size, out_channels, 8, 8)
-        x = self.relu(x)
-        # x.shape = (batch_size, out_channels, 8, 8)
+        x = self.linear_relu(x.view(x.shape[0], -1))
+        # x.shape = (batch_size, linear_relu_out)
+        x = self.linear_tanh(x)
+        # x.shape = (batch_size, 1)
         return x
 
 
@@ -77,7 +98,7 @@ models = {
     },
     'Value.v0': {
         'class': Value,
-        'args': (23, 128, 11),
+        'args': (23, 128, 11, 128),
         'kwargs': {},
     },
 }
