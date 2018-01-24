@@ -44,7 +44,7 @@ def test_repetition_data():
         move(b)
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = ExpertStateGenerator("tests/test.pgn", "bogus")  # file not used
+    state_gen = ExpertStateGenerator("tests/test.pgn", "bogus")
 
     df = pd.DataFrame(state_gen.get_game_data(game))
 
@@ -71,7 +71,7 @@ def test_turn_data():
     b.push(chess.Move.from_uci('e7e8'))
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = ExpertStateGenerator("tests/test.pgn", "bogus")  # file not used
+    state_gen = ExpertStateGenerator("tests/test.pgn", "bogus")
 
     df = pd.DataFrame(state_gen.get_game_data(game))
     for i, data in df.iterrows():
@@ -82,7 +82,7 @@ def test_turn_data():
 
 
 def test_move_count_data():
-    state_gen = ExpertStateGenerator("tests/test.pgn", "bogus")  # file not used
+    state_gen = ExpertStateGenerator("tests/test.pgn", "bogus")
     game = next(state_gen.get_game())
 
     df = pd.DataFrame(state_gen.get_game_data(game))
@@ -91,7 +91,7 @@ def test_move_count_data():
 
 
 def test_castling_data():
-    state_gen = ExpertStateGenerator("tests/test.pgn", "bogus")  # file not used
+    state_gen = ExpertStateGenerator("tests/test.pgn", "bogus")
 
     def get_castling_game(king_side=True):
         b = chess.Board(fen='r3k2r/8/8/8/8/8/8/R3K2R w - - 0 1')
@@ -182,7 +182,7 @@ def test_no_progress_count_data():
         move(b)
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = ExpertStateGenerator("tests/test.pgn", "bogus")  # file not used
+    state_gen = ExpertStateGenerator("tests/test.pgn", "bogus")
 
     df = pd.DataFrame(state_gen.get_game_data(game))
 
@@ -196,7 +196,7 @@ def test_move_data():
     b.push(chess.Move.from_uci('e8e7'))
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = ExpertStateGenerator("tests/test.pgn", "bogus")  # file not used
+    state_gen = ExpertStateGenerator("tests/test.pgn", "bogus")
 
     df = pd.DataFrame(state_gen.get_move_data(game))
     assert df.equals(pd.DataFrame([
