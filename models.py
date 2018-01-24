@@ -56,9 +56,27 @@ class Policy(nn.Module):
         return x
 
 
+class Value(Policy):
+    def __init__(self, *args, **kwargs):
+        super(Value, self).__init__()
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        x = super(Value, self).forward()
+        # x.shape = (batch_size, out_channels, 8, 8)
+        x = self.relu(x)
+        # x.shape = (batch_size, out_channels, 8, 8)
+        return x
+
+
 models = {
     'Policy.v0': {
         'class': Policy,
+        'args': (23, 128, 11),
+        'kwargs': {},
+    },
+    'Value.v0': {
+        'class': Value,
         'args': (23, 128, 11),
         'kwargs': {},
     },
