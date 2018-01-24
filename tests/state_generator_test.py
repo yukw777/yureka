@@ -4,7 +4,7 @@ import chess.pgn
 from state_generator import ExpertStateGenerator
 
 
-def test_generate_correct_num_games():
+def test_expert_get_correct_num_games():
     state_gen = ExpertStateGenerator("bogus", "tests/test.pgn")
     assert len(list(state_gen.get_game())) == 2
 
@@ -190,7 +190,7 @@ def test_no_progress_count_data():
         assert data['no_progress'] == int(i / 2)
 
 
-def test_move_data():
+def test_expert_label_data():
     b = chess.Board(fen='4k3/8/8/8/8/8/8/4K3 w - - 0 1')
     b.push(chess.Move.from_uci('e1e2'))
     b.push(chess.Move.from_uci('e8e7'))
@@ -198,7 +198,7 @@ def test_move_data():
     game = chess.pgn.Game.from_board(b)
     state_gen = ExpertStateGenerator("bogus", "tests/test.pgn")
 
-    df = pd.DataFrame(state_gen.get_move_data(game))
+    df = pd.DataFrame(state_gen.get_label_data(game))
     assert df.equals(pd.DataFrame([
         {'move': 'e1_q_1_n'},
         {'move': 'd1_q_1_n'},

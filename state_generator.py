@@ -123,46 +123,11 @@ class StateGenerator():
     def get_game(self):
         raise NotImplemented
 
-    def generate(self, write=False):
+    def get_label_data(self):
         raise NotImplemented
 
-
-@attr.s
-class UnbiasedStateGenerator(StateGenerator):
-    sl_network = attr.ib()
-    rl_network = attr.ib()
-
-    def generate(self, write=False):
-        pass
-
-
-@attr.s
-class ExpertStateGenerator(StateGenerator):
-    game_file_name = attr.ib()
-
-    def __attrs_post_init__(self):
-        self.game_file = open(self.game_file_name, 'r')
-
-    def get_game(self):
-        while True:
-            g = chess.pgn.read_game(self.game_file)
-            if g is None:
-                break
-            yield g
-
-    def get_move_data(self, game):
-        board = game.board()
-        for move in game.main_line():
-            yield {'move': move_translator.translate_to_engine_move(
-                move, board.turn)}
-            board.push(move)
-
     def get_game_data(self, game):
-        board = game.board()
-        transpositions = collections.Counter()
-        for move in game.main_line():
-            yield get_board_data(board, transpositions)
-            board.push(move)
+        raise NotImplemented
 
     def generate(self, write=False):
         count = 0
@@ -173,7 +138,7 @@ class ExpertStateGenerator(StateGenerator):
             game_df = pd.DataFrame(self.get_game_data(game))
             game_df = pd.concat([
                 game_df,
-                pd.DataFrame(self.get_move_data(game))
+                pd.DataFrame(self.get_label_data(game))
             ], axis=1)
             df = pd.concat([df, game_df])
             if count % 100 == 0:
@@ -196,6 +161,50 @@ class ExpertStateGenerator(StateGenerator):
             )
 
         return df
+
+
+@attr.s
+class UnbiasedStateGenerator(StateGenerator):
+    sl_network = attr.ib()
+    rl_network = attr.ib()
+
+    def get_game(self):
+        pass
+
+    def get_game_data(self):
+        pass
+
+    def get_label_data(self, game):
+        pass
+
+
+@attr.s
+class ExpertStateGenerator(StateGenerator):
+    game_file_name = attr.ib()
+
+    def __attrs_post_init__(self):
+        self.game_file = open(self.game_file_name, 'r')
+
+    def get_game(self):
+        while True:
+            g = chess.pgn.read_game(self.game_file)
+            if g is None:
+                break
+            yield g
+
+    def get_game_data(self, game):
+        board = game.board()
+        transpositions = collections.Counter()
+        for move in game.main_line():
+            yield get_board_data(board, transpositions)
+            board.push(move)
+
+    def get_label_data(self, game):
+        board = game.board()
+        for move in game.main_line():
+            yield {'move': move_translator.translate_to_engine_move(
+                move, board.turn)}
+            board.push(move)
 
 
 if __name__ == '__main__':
