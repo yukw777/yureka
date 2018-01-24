@@ -220,8 +220,9 @@ if __name__ == '__main__':
     import argparse
     default_model = os.path.join(
         os.path.dirname(os.path.realpath(__file__)),
-        'opponent_pool',
-        'ChessEngine_2018-01-22_18:05:52_100.model',
+        'saved_models',
+        'RL',
+        'ChessEngine_2018-01-23_19:22:59_1000.model',
     )
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', default='Policy.v0')
