@@ -25,6 +25,23 @@ pieces = [
 BOARD_SIZE = (len(chess.FILE_NAMES), len(chess.RANK_NAMES))
 
 
+def get_reward(result, color):
+    points = result.split('-')
+    if color == chess.WHITE:
+        player_point = points[0]
+    else:
+        player_point = points[1]
+
+    if player_point == '0':
+        return -1
+    elif player_point == '1/2':
+        return 0
+    elif player_point == '1':
+        return 1
+    else:
+        raise Exception(f'Unknown result: {result}, {color}')
+
+
 def get_board_data(board, transpositions):
     row = {}
     row.update(get_square_piece_data(board))
@@ -126,7 +143,7 @@ class StateGenerator():
     def get_label_data(self):
         raise NotImplemented
 
-    def get_game_data(self, game, data=None):
+    def get_game_data(self, game):
         raise NotImplemented
 
     def generate(self, write=False):
@@ -134,12 +151,8 @@ class StateGenerator():
         df = pd.DataFrame()
         header = True
         for game in self.get_game():
-            if type(game) == tuple:
-                game, data = game
-            else:
-                data = None
             count += 1
-            game_df = pd.DataFrame(self.get_game_data(game, data=data))
+            game_df = pd.DataFrame(self.get_game_data(game))
             game_df = pd.concat([
                 game_df,
                 pd.DataFrame(self.get_label_data(game))
@@ -175,19 +188,22 @@ class UnbiasedStateGenerator(StateGenerator):
     def get_game(self):
         pass
 
-    def get_game_data(self, game, data):
-        u = data
+    def get_game_data(self, data):
+        game, step, _ = data
         board = game.board()
         transpositions = collections.Counter()
         count = 0
         for move in game.main_line():
-            if count == u + 1:
+            if count == step + 1:
                 return [get_board_data(board, transpositions)]
             board.push(move)
             count += 1
 
-    def get_label_data(self, game):
-        pass
+    def get_label_data(self, data):
+        game, step, color = data
+        board = game.board()
+        result = board.result(claim_draw=True)
+        return [{'value': get_reward(result, color)}]
 
 
 @attr.s
@@ -204,7 +220,7 @@ class ExpertStateGenerator(StateGenerator):
                 break
             yield g
 
-    def get_game_data(self, game, data=None):
+    def get_game_data(self, game):
         board = game.board()
         transpositions = collections.Counter()
         for move in game.main_line():

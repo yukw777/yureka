@@ -10,6 +10,7 @@ import glob
 import models
 import torch.optim as optim
 from chess_engine import ChessEngine
+from state_generator import get_reward
 
 
 @attr.s
@@ -179,23 +180,6 @@ class ReinforceTrainer():
         self.latest_saved_trainee = filepath
         self.latest_saved_iteration = iteration
         self.logger.info('Done saving')
-
-
-def get_reward(result, color):
-    points = result.split('-')
-    if color == chess.WHITE:
-        player_point = points[0]
-    else:
-        player_point = points[1]
-
-    if player_point == '0':
-        return -1
-    elif player_point == '1/2':
-        return 0
-    elif player_point == '1':
-        return 1
-    else:
-        raise Exception(f'Unknown result: {result}, {color}')
 
 
 def self_play_multi(game_queue, done_queue):
