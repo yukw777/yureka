@@ -5,6 +5,9 @@ import chess
 import chess.pgn
 import pandas as pd
 import move_translator
+import models
+import chess_engine
+import torch
 
 
 pieces = [
@@ -197,12 +200,12 @@ class UnbiasedStateGenerator(StateGenerator):
                 t = 1
                 while not board.is_game_over(claim_draw=True):
                     if t < step:
-                        move, _ = self.sl_engine.get_move()
+                        move, _ = self.sl_engine.get_move(board)
                     elif t == step:
                         move = random.choice(list(board.legal_moves))
                         color = board.turn
                     else:
-                        move, _ = self.rl_engine.get_move()
+                        move, _ = self.rl_engine.get_move(board)
                     board.push(move)
                     t += 1
                 if t <= step:
@@ -259,11 +262,39 @@ class ExpertStateGenerator(StateGenerator):
             board.push(move)
 
 
+def expert(args):
+    s = ExpertStateGenerator(args.out_csv_file, args.pgn_file)
+    s.generate(write=True)
+
+
+def unbiased(args):
+    sl = models.create(args.sl_engine_name)
+    sl.load_state_dict(torch.load(args.sl_engine_file))
+    sl = chess_engine.ChessEngine(sl)
+    rl = models.create(args.rl_engine_name)
+    rl.load_state_dict(torch.load(args.rl_engine_file))
+    rl = chess_engine.ChessEngine(rl)
+    u = UnbiasedStateGenerator(args.out_csv_file, sl, rl, args.num_games)
+    u.generate(write=True)
+
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('pgn_file')
-    parser.add_argument('out_csv_file')
+    subparsers = parser.add_subparsers()
+
+    parser_expert = subparsers.add_parser('expert')
+    parser_expert.add_argument('pgn_file')
+    parser_expert.add_argument('out_csv_file')
+    parser_expert.set_defaults(func=expert)
+
+    parser_unbiased = subparsers.add_parser('unbiased')
+    parser_unbiased.add_argument('sl_engine_name')
+    parser_unbiased.add_argument('sl_engine_file')
+    parser_unbiased.add_argument('rl_engine_name')
+    parser_unbiased.add_argument('rl_engine_file')
+    parser_unbiased.add_argument('num_games', type=int)
+    parser_unbiased.add_argument('out_csv_file')
+    parser_unbiased.set_defaults(func=unbiased)
     args = parser.parse_args()
-    s = ExpertStateGenerator(args.out_csv_file, args.pgn_file)
-    s.generate(write=True)
+    args.func(args)
