@@ -240,12 +240,7 @@ def self_play(
     baseline = 0
     result = board.result(claim_draw=True)
     reward = get_reward(result, color)
-    try:
-        policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
-    except RuntimeError as e:
-        import sys
-        print(log_probs, file=sys.stderr)
-        raise
+    policy_loss = -torch.cat(log_probs).sum() * (reward - baseline)
 
     return color, reward, policy_loss
 

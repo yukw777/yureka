@@ -8,6 +8,7 @@ import collections
 import chess
 import state_generator
 import chess_dataset
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
@@ -56,14 +57,35 @@ class ChessEngine():
         probs = self.filter_illegal_moves(board, probs)
         if self.train:
             m = Categorical(probs)
-            move_index = m.sample()
+            while True:
+                move_index = m.sample()
+                if probs.squeeze()[move_index].data[0] == 0:
+                    print('Categorical sampled a move with zero prob...',
+                          file=sys.stderr)
+                    print(f'move_index: {move_index}', file=sys.stderr)
+                    nonzero_indeces = probs.squeeze().nonzero().squeeze()
+                    print(f'nonzero prob indeces: {nonzero_indeces}')
+                    nonzero = probs.squeeze().gather(0, nonzero_indeces)
+                    print(f'nonzero probs: {nonzero}', file=sys.stderr)
+                else:
+                    break
         else:
             _, move_index = probs.max(1)
         engine_move = get_engine_move_from_index(move_index.data[0])
         move = translate_from_engine_move(engine_move, board.turn)
         move = queen_promotion_if_possible(board, move)
         if self.train:
-            return move, m.log_prob(move_index)
+            log_prob = m.log_prob(move_index)
+            log_prob_num = log_prob.data[0]
+            if np.isnan(log_prob_num) or np.isinf(log_prob_num):
+                print('log prob is not a right value!', file=sys.stderr)
+                print(f'log_prob: {log_prob}', file=sys.stderr)
+                print(f'move_index: {move_index}', file=sys.stderr)
+                nonzero_indeces = probs.squeeze().nonzero().squeeze()
+                print(f'nonzero prob indeces: {nonzero_indeces}')
+                nonzero = probs.squeeze().gather(0, nonzero_indeces)
+                print(f'nonzero probs: {nonzero}', file=sys.stderr)
+            return move, log_prob
         else:
             return move
 
