@@ -6,6 +6,7 @@ import chess.pgn
 import pandas as pd
 import move_translator
 import models
+import sys
 import chess_engine
 import torch
 
@@ -150,6 +151,9 @@ class StateGenerator():
     def get_game_data(self, game):
         raise NotImplemented
 
+    def stop(self, game_count, state_count):
+        pass
+
     def generate(self, write=False):
         count = 0
         state_count = 0
@@ -178,6 +182,7 @@ class StateGenerator():
                     state_count = df.shape[0]
                 print(f'{count} games processed...')
                 print(f'{state_count} states generated...')
+            self.stop(count, state_count)
         if write:
             df.to_csv(
                 self.out_csv_file,
@@ -241,6 +246,7 @@ class UnbiasedStateGenerator(StateGenerator):
 @attr.s
 class ExpertStateGenerator(StateGenerator):
     game_file_name = attr.ib()
+    num_states = attr.ib(default=None)
 
     def __attrs_post_init__(self):
         self.game_file = open(self.game_file_name, 'r')
@@ -266,9 +272,14 @@ class ExpertStateGenerator(StateGenerator):
                 move, board.turn)}
             board.push(move)
 
+    def stop(self, game_count, state_count):
+        if self.num_states and state_count > self.num_states:
+            print('Generated enough states. Exiting...')
+            sys.exit()
+
 
 def expert(args):
-    s = ExpertStateGenerator(args.out_csv_file, args.pgn_file)
+    s = ExpertStateGenerator(args.out_csv_file, args.pgn_file, args.num_states)
     s.generate(write=True)
 
 
@@ -291,6 +302,7 @@ if __name__ == '__main__':
     parser_expert = subparsers.add_parser('expert')
     parser_expert.add_argument('pgn_file')
     parser_expert.add_argument('out_csv_file')
+    parser_expert.add_argument('num_states', type=int)
     parser_expert.set_defaults(func=expert)
 
     parser_unbiased = subparsers.add_parser('unbiased')
