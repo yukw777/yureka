@@ -189,7 +189,7 @@ class UnbiasedStateGenerator(StateGenerator):
 
     def get_game(self):
         for i in range(self.num_games):
-            step = random.randint(1, 100)
+            step = random.randint(1, 200)
             board = chess.Board()
             t = 0
             while not board.is_game_over(claim_draw=True):
@@ -197,11 +197,14 @@ class UnbiasedStateGenerator(StateGenerator):
                     move, _ = self.sl_engine.get_move()
                 elif t == step:
                     move = random.choice(list(board.legal_moves))
+                    color = board.turn
                 else:
                     move, _ = self.rl_engine.get_move()
                 board.push(move)
                 t += 1
-            yield chess.pgn.Game.from_board(board)
+            result = board.result(claim_draw=True)
+            reward = get_reward(result, color)
+            yield chess.pgn.Game.from_board(board), step, reward
 
     def get_game_data(self, data):
         game, step, _ = data
@@ -209,16 +212,14 @@ class UnbiasedStateGenerator(StateGenerator):
         transpositions = collections.Counter()
         count = 0
         for move in game.main_line():
-            if count == step + 1:
+            if count == step:
                 return [get_board_data(board, transpositions)]
             board.push(move)
             count += 1
 
     def get_label_data(self, data):
-        game, step, color = data
-        board = game.board()
-        result = board.result(claim_draw=True)
-        return [{'value': get_reward(result, color)}]
+        _, _, reward = data
+        return [{'value': reward}]
 
 
 @attr.s

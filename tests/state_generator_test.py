@@ -20,6 +20,8 @@ def test_unbiased_get_game():
     num_games = 10
     mock_board = mock.MagicMock()
     mock_board.is_game_over.side_effect = ([False] * 9 + [True]) * num_games
+    mock_board.turn = chess.WHITE
+    mock_board.result.return_value = '1-0'
     with mock.patch('state_generator.chess.Board', return_value=mock_board), \
         mock.patch('state_generator.random.randint', return_value=step), \
             mock.patch('state_generator.random.choice', return_value=1), \
@@ -28,8 +30,26 @@ def test_unbiased_get_game():
             "bogus", sl_engine, rl_engine, num_games)
         games = list(state_gen.get_game())
         assert len(games) == num_games
+        for game in games:
+            assert len(game) == 3
         assert sl_engine.get_move.call_count == num_games * step
         assert rl_engine.get_move.call_count == num_games * (10 - step - 2)
+
+
+def test_unbiased_get_game_data():
+    with open('tests/test.pgn') as f:
+        g = chess.pgn.read_game(f)
+    state_gen = UnbiasedStateGenerator("bogus", "bogus", "bogus", "bogus")
+    step = 10
+    data = state_gen.get_game_data((g, step, True))
+    assert len(data) == 1
+
+
+def test_unbiased_get_label_data():
+    state_gen = UnbiasedStateGenerator("bogus", "bogus", "bogus", "bogus")
+    data = state_gen.get_label_data((0, 0, 1))
+    assert len(data) == 1
+    assert data[0]['value'] == 1
 
 
 def test_generate_correct_sq_piece_data():
