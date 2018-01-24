@@ -117,9 +117,28 @@ def get_square_piece_value(piece_map, square, piece):
 
 
 @attr.s
-class ExpertStateGenerator():
-    game_file_name = attr.ib()
+class StateGenerator():
     out_csv_file = attr.ib()
+
+    def get_game(self):
+        raise NotImplemented
+
+    def generate(self, write=False):
+        raise NotImplemented
+
+
+@attr.s
+class UnbiasedStateGenerator(StateGenerator):
+    sl_network = attr.ib()
+    rl_network = attr.ib()
+
+    def generate(self, write=False):
+        pass
+
+
+@attr.s
+class ExpertStateGenerator(StateGenerator):
+    game_file_name = attr.ib()
 
     def __attrs_post_init__(self):
         self.game_file = open(self.game_file_name, 'r')
@@ -185,5 +204,5 @@ if __name__ == '__main__':
     parser.add_argument('pgn_file')
     parser.add_argument('out_csv_file')
     args = parser.parse_args()
-    s = ExpertStateGenerator(args.pgn_file, args.out_csv_file)
+    s = ExpertStateGenerator(args.out_csv_file, args.pgn_file)
     s.generate(write=True)
