@@ -126,7 +126,7 @@ class StateGenerator():
     def get_label_data(self):
         raise NotImplemented
 
-    def get_game_data(self, game):
+    def get_game_data(self, game, data=None):
         raise NotImplemented
 
     def generate(self, write=False):
@@ -134,8 +134,12 @@ class StateGenerator():
         df = pd.DataFrame()
         header = True
         for game in self.get_game():
+            if type(game) == tuple:
+                game, data = game
+            else:
+                data = None
             count += 1
-            game_df = pd.DataFrame(self.get_game_data(game))
+            game_df = pd.DataFrame(self.get_game_data(game, data=data))
             game_df = pd.concat([
                 game_df,
                 pd.DataFrame(self.get_label_data(game))
@@ -165,14 +169,22 @@ class StateGenerator():
 
 @attr.s
 class UnbiasedStateGenerator(StateGenerator):
-    sl_network = attr.ib()
-    rl_network = attr.ib()
+    sl_engine = attr.ib()
+    rl_engine = attr.ib()
 
     def get_game(self):
         pass
 
-    def get_game_data(self):
-        pass
+    def get_game_data(self, game, data):
+        u = data
+        board = game.board()
+        transpositions = collections.Counter()
+        count = 0
+        for move in game.main_line():
+            if count == u + 1:
+                return [get_board_data(board, transpositions)]
+            board.push(move)
+            count += 1
 
     def get_label_data(self, game):
         pass
@@ -192,7 +204,7 @@ class ExpertStateGenerator(StateGenerator):
                 break
             yield g
 
-    def get_game_data(self, game):
+    def get_game_data(self, game, data=None):
         board = game.board()
         transpositions = collections.Counter()
         for move in game.main_line():
