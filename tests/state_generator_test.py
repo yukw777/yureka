@@ -1,12 +1,35 @@
 import pandas as pd
 import chess
 import chess.pgn
-from state_generator import ExpertStateGenerator
+import unittest.mock as mock
+from state_generator import ExpertStateGenerator, UnbiasedStateGenerator
 
 
 def test_expert_get_correct_num_games():
     state_gen = ExpertStateGenerator("bogus", "tests/test.pgn")
     assert len(list(state_gen.get_game())) == 2
+
+
+def test_unbiased_get_game():
+    # create mock sl_engine and rl_engine
+    step = 6
+    sl_engine = mock.MagicMock()
+    sl_engine.get_move = mock.Mock(return_value=(1, 2))
+    rl_engine = mock.MagicMock()
+    rl_engine.get_move = mock.Mock(return_value=(1, 2))
+    num_games = 10
+    mock_board = mock.MagicMock()
+    mock_board.is_game_over.side_effect = ([False] * 9 + [True]) * num_games
+    with mock.patch('state_generator.chess.Board', return_value=mock_board), \
+        mock.patch('state_generator.random.randint', return_value=step), \
+            mock.patch('state_generator.random.choice', return_value=1), \
+            mock.patch('state_generator.chess.pgn.Game.from_board'):
+        state_gen = UnbiasedStateGenerator(
+            "bogus", sl_engine, rl_engine, num_games)
+        games = list(state_gen.get_game())
+        assert len(games) == num_games
+        assert sl_engine.get_move.call_count == num_games * step
+        assert rl_engine.get_move.call_count == num_games * (10 - step - 2)
 
 
 def test_generate_correct_sq_piece_data():

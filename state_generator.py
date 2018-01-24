@@ -1,4 +1,5 @@
 import attr
+import random
 import collections
 import chess
 import chess.pgn
@@ -184,9 +185,23 @@ class StateGenerator():
 class UnbiasedStateGenerator(StateGenerator):
     sl_engine = attr.ib()
     rl_engine = attr.ib()
+    num_games = attr.ib()
 
     def get_game(self):
-        pass
+        for i in range(self.num_games):
+            step = random.randint(1, 100)
+            board = chess.Board()
+            t = 0
+            while not board.is_game_over(claim_draw=True):
+                if t < step:
+                    move, _ = self.sl_engine.get_move()
+                elif t == step:
+                    move = random.choice(list(board.legal_moves))
+                else:
+                    move, _ = self.rl_engine.get_move()
+                board.push(move)
+                t += 1
+            yield chess.pgn.Game.from_board(board)
 
     def get_game_data(self, data):
         game, step, _ = data
