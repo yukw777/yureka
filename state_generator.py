@@ -189,19 +189,27 @@ class UnbiasedStateGenerator(StateGenerator):
 
     def get_game(self):
         for i in range(self.num_games):
-            step = random.randint(1, 200)
-            board = chess.Board()
-            t = 0
-            while not board.is_game_over(claim_draw=True):
-                if t < step:
-                    move, _ = self.sl_engine.get_move()
-                elif t == step:
-                    move = random.choice(list(board.legal_moves))
-                    color = board.turn
+            while True:
+                # based on this statistics
+                # https://chess.stackexchange.com/questions/2506/what-is-the-average-length-of-a-game-of-chess
+                step = random.randint(1, 100)
+                board = chess.Board()
+                t = 1
+                while not board.is_game_over(claim_draw=True):
+                    if t < step:
+                        move, _ = self.sl_engine.get_move()
+                    elif t == step:
+                        move = random.choice(list(board.legal_moves))
+                        color = board.turn
+                    else:
+                        move, _ = self.rl_engine.get_move()
+                    board.push(move)
+                    t += 1
+                if t <= step:
+                    print(f'We drew {step} steps but the game only got to {t}')
+                    print("Let's try again")
                 else:
-                    move, _ = self.rl_engine.get_move()
-                board.push(move)
-                t += 1
+                    break
             result = board.result(claim_draw=True)
             reward = get_reward(result, color)
             yield chess.pgn.Game.from_board(board), step, reward
@@ -210,12 +218,12 @@ class UnbiasedStateGenerator(StateGenerator):
         game, step, _ = data
         board = game.board()
         transpositions = collections.Counter()
-        count = 0
+        t = 1
         for move in game.main_line():
-            if count == step:
+            if t == step + 1:
                 return [get_board_data(board, transpositions)]
             board.push(move)
-            count += 1
+            t += 1
 
     def get_label_data(self, data):
         _, _, reward = data
