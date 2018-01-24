@@ -152,6 +152,7 @@ class StateGenerator():
 
     def generate(self, write=False):
         count = 0
+        state_count = 0
         df = pd.DataFrame()
         header = True
         for game in self.get_game():
@@ -171,8 +172,12 @@ class StateGenerator():
                         mode='a'
                     )
                     header = False
+                    state_count += df.shape[0]
                     df = pd.DataFrame()
+                else:
+                    state_count = df.shape[0]
                 print(f'{count} games processed...')
+                print(f'{state_count} states generated...')
         if write:
             df.to_csv(
                 self.out_csv_file,
