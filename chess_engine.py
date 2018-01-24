@@ -224,7 +224,7 @@ if __name__ == '__main__':
         'ChessEngine_2018-01-22_18:05:52_100.model',
     )
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model', default='ChessEngine.v0')
+    parser.add_argument('-m', '--model', default='Policy.v0')
     parser.add_argument('-f', '--model-file', default=default_model)
     parser.add_argument('-c', '--cuda-device', type=int)
 

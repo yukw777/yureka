@@ -3,7 +3,7 @@ import torch.nn.init as init
 from move_translator import NUM_MOVE_PLANES
 
 
-class ChessEngine(nn.Module):
+class Policy(nn.Module):
     def __init__(
         self,
         in_channels,
@@ -11,7 +11,7 @@ class ChessEngine(nn.Module):
         hidden_conv_layers,
         batch_norm=False
     ):
-        super(ChessEngine, self).__init__()
+        super(Policy, self).__init__()
         self.batch_norm = batch_norm
         self.conv1 = self.create_conv_layer(
             in_channels,
@@ -57,8 +57,8 @@ class ChessEngine(nn.Module):
 
 
 models = {
-    'ChessEngine.v0': {
-        'class': ChessEngine,
+    'Policy.v0': {
+        'class': Policy,
         'args': (23, 128, 11),
         'kwargs': {},
     },
