@@ -209,7 +209,8 @@ class UCIPolicyEngine():
         else:
             self.unknown_handler(args)
             return
-        setattr(self, name, self.options[name]['py_type'](value))
+        option = self.options[name]
+        setattr(self, option['attr_name'], option['py_type'](value))
         self.option_changed = True
 
     def stop(self, args):
