@@ -4,6 +4,7 @@ import attr
 import models
 import sys
 import os
+import re
 import collections
 import chess
 import chess_dataset
@@ -140,7 +141,7 @@ def queen_promotion_if_possible(board, move):
 
 
 @attr.s
-class UCI():
+class UCIPolicyEngine():
     model_name = attr.ib(default=DEFAULT_MODEL)
     model_file = attr.ib(default=DEFAULT_MODEL_FILE)
     cuda_device = attr.ib(default=None)
@@ -153,35 +154,45 @@ class UCI():
             'position': self.position,
             'go': self.go,
             'stop': self.stop,
+            'setoption': self.setoption,
             'quit': self.quit,
         }
         self.options = {
             'Model Name': {
                 'type': 'string',
                 'default': DEFAULT_MODEL,
+                'attr_name': 'model_name',
+                'py_type': str,
             },
             'Model File': {
                 'type': 'string',
                 'default': DEFAULT_MODEL_FILE,
+                'attr_name': 'model_file',
+                'py_type': str,
             },
             'CUDA Device': {
                 'type': 'string',
                 'default': '0',
+                'attr_name': 'cuda_device',
+                'py_type': int,
             },
         }
+        self.model = None
+        self.option_changed = False
 
-    def init_engine(self):
-        self.model = models.create(self.model_name)
-        self.model.load_state_dict(torch.load(self.model_file))
+    def init_engine(self, init_model=True):
+        if init_model:
+            self.model = models.create(self.model_name)
+            self.model.load_state_dict(torch.load(self.model_file))
         self.engine = ChessEngine(
             self.model, train=False, cuda_device=self.cuda_device)
         self.board = chess.Board()
+        self.option_changed = False
 
     def uci(self, args):
         print('id name Yureka 0.1')
         print('id author Peter Yu')
         self.print_options()
-        self.init_engine()
         print('uciok')
 
     def print_options(self):
@@ -189,14 +200,27 @@ class UCI():
             print(f"option name {name} type {option['type']} default"
                   f" {option['default']}")
 
+    def setoption(self, args):
+        m = re.match(r'name\s+(.+)\s+value\s+(.+)', args)
+        if m:
+            name = m.group(1)
+            value = m.group(2)
+        else:
+            self.unknown_handler(args)
+            return
+        setattr(self, name, self.options[name]['py_type'](value))
+        self.option_changed = True
+
     def stop(self, args):
         pass
 
     def isready(self, args):
+        if not self.model or self.option_changed:
+            self.init_engine()
         print('readyok')
 
     def ucinewgame(self, args):
-        self.init_engine()
+        self.init_engine(init_model=False)
 
     def position(self, args):
         args = args.split()
@@ -260,7 +284,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     print('Yureka!')
-    uci = UCI(
+    uci = UCIPolicyEngine(
         model_name=args.model,
         model_file=os.path.expanduser(args.model_file),
         cuda_device=args.cuda_device
