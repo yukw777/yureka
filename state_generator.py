@@ -30,7 +30,7 @@ pieces = [
 BOARD_SIZE = (len(chess.FILE_NAMES), len(chess.RANK_NAMES))
 
 
-def get_reward(result, color):
+def get_reward(result, color, award_tie=True):
     points = result.split('-')
     if color == chess.WHITE:
         player_point = points[0]
@@ -40,7 +40,10 @@ def get_reward(result, color):
     if player_point == '0':
         return -1
     elif player_point == '1/2':
-        return 0
+        if award_tie:
+            return 0.5
+        else:
+            return 0
     elif player_point == '1':
         return 1
     else:
