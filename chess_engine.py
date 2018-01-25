@@ -183,7 +183,8 @@ class UCIPolicyEngine():
     def init_engine(self, init_model=True):
         if init_model:
             self.model = models.create(self.model_name)
-            self.model.load_state_dict(torch.load(self.model_file))
+            self.model.load_state_dict(
+                torch.load(os.path.expanduser(self.model_file)))
         self.engine = ChessEngine(
             self.model, train=False, cuda_device=self.cuda_device)
         self.board = chess.Board()
@@ -223,16 +224,21 @@ class UCIPolicyEngine():
         self.init_engine(init_model=False)
 
     def position(self, args):
-        args = args.split()
-        if args[0] == 'startpos':
+        m = re.match(r'startpos\s+moves\s+(.+)', args)
+        if m:
             fen = chess.STARTING_FEN
-            moves = args[2:]
-        elif args[0] == 'fen':
-            fen = ' '.join(args[1:7])
-            moves = args[7:]
+            moves = m.group(1).split()
         else:
-            self.unknown_handler(' '.join(args))
-            return
+            m = re.match(r'(.+)\s+moves\s+(.+)', args)
+            if m:
+                fen = m.group(1)
+                moves = m.group(1).split()
+            elif args.strip() == 'startpos':
+                fen = chess.STARTING_FEN
+                moves = []
+            else:
+                self.unknown_handler(args)
+                return
         self.board = chess.Board(fen=fen)
         for uci in moves:
             self.board.push_uci(uci)
