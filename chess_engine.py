@@ -21,6 +21,15 @@ from move_translator import (
 from board_data import get_board_data
 
 
+DEFAULT_MODEL = 'Policy.v0'
+DEFAULT_MODEL_FILE = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    'saved_models',
+    'RL',
+    'ChessEngine_2018-01-23_19:22:59_1000.model',
+)
+
+
 @attr.s
 class ChessEngine():
     model = attr.ib()
@@ -132,8 +141,8 @@ def queen_promotion_if_possible(board, move):
 
 @attr.s
 class UCI():
-    model = attr.ib()
-    model_file = attr.ib()
+    model_name = attr.ib(default=DEFAULT_MODEL)
+    model_file = attr.ib(default=DEFAULT_MODEL_FILE)
     cuda_device = attr.ib(default=None)
 
     def __attrs_post_init__(self):
@@ -146,11 +155,24 @@ class UCI():
             'stop': self.stop,
             'quit': self.quit,
         }
-        self.model = models.create(self.model)
-        self.model.load_state_dict(torch.load(self.model_file))
-        self.init_engine()
+        self.options = {
+            'Model Name': {
+                'type': 'string',
+                'default': DEFAULT_MODEL,
+            },
+            'Model File': {
+                'type': 'string',
+                'default': DEFAULT_MODEL_FILE,
+            },
+            'CUDA Device': {
+                'type': 'string',
+                'default': '0',
+            },
+        }
 
     def init_engine(self):
+        self.model = models.create(self.model_name)
+        self.model.load_state_dict(torch.load(self.model_file))
         self.engine = ChessEngine(
             self.model, train=False, cuda_device=self.cuda_device)
         self.board = chess.Board()
@@ -158,7 +180,14 @@ class UCI():
     def uci(self, args):
         print('id name Yureka 0.1')
         print('id author Peter Yu')
+        self.print_options()
+        self.init_engine()
         print('uciok')
+
+    def print_options(self):
+        for name, option in self.options.items():
+            print(f"option name {name} type {option['type']} default"
+                  f" {option['default']}")
 
     def stop(self, args):
         pass
@@ -225,15 +254,15 @@ if __name__ == '__main__':
         'ChessEngine_2018-01-23_19:22:59_1000.model',
     )
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model', default='Policy.v0')
-    parser.add_argument('-f', '--model-file', default=default_model)
+    parser.add_argument('-m', '--model', default=DEFAULT_MODEL)
+    parser.add_argument('-f', '--model-file', default=DEFAULT_MODEL_FILE)
     parser.add_argument('-c', '--cuda-device', type=int)
 
     args = parser.parse_args()
     print('Yureka!')
     uci = UCI(
-        args.model,
-        os.path.expanduser(args.model_file),
+        model_name=args.model,
+        model_file=os.path.expanduser(args.model_file),
         cuda_device=args.cuda_device
     )
     uci.listen()
