@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from chess_dataset import ChessDataset
-from state_generator import BOARD_SIZE
+from board_data import BOARD_SIZE
 
 
 def test_chess_dataset():

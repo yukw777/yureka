@@ -6,7 +6,6 @@ import sys
 import os
 import collections
 import chess
-import state_generator
 import chess_dataset
 import numpy as np
 import torch
@@ -19,6 +18,7 @@ from move_translator import (
     get_engine_move_from_index,
     get_engine_move_index,
 )
+from board_data import get_board_data
 
 
 @attr.s
@@ -40,7 +40,7 @@ class ChessEngine():
         self.transpositions = collections.Counter()
 
     def get_move(self, board):
-        board_data = state_generator.get_board_data(board, self.transpositions)
+        board_data = get_board_data(board, self.transpositions)
         tensor = chess_dataset.get_tensor_from_row(board_data)
         tensor = tensor.view(1, *tensor.shape)
         volatile = not self.model.training
