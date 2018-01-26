@@ -53,3 +53,5 @@ def test_node_add_child():
     b = chess.Board()
     b.push_uci('b2b4')
     assert child2.board == b
+    b = chess.Board()
+    assert root.board == b
