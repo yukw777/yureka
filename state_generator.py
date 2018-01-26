@@ -79,27 +79,29 @@ class SimSampledStateGenerator(StateGenerator):
             while True:
                 # based on this statistics
                 # https://chess.stackexchange.com/questions/2506/what-is-the-average-length-of-a-game-of-chess
-                step = random.randint(1, 100)
+                sampled = random.randint(1, 100)
                 board = chess.Board()
-                t = 1
+                t = 0
                 while not board.is_game_over(claim_draw=True):
-                    if t < step:
+                    if t < sampled:
                         move, _ = self.sl_engine.get_move(board)
-                    elif t == step:
+                    elif t == sampled:
                         move = random.choice(list(board.legal_moves))
-                        color = board.turn
                     else:
+                        if t == sampled + 1:
+                            color = board.turn
                         move, _ = self.rl_engine.get_move(board)
                     board.push(move)
                     t += 1
-                if t <= step:
-                    print(f'We drew {step} steps but the game only got to {t}')
+                if t <= sampled:
+                    print(f'We drew {sampled} state '
+                          f'but the game only got to {t}')
                     print("Let's try again")
                 else:
                     break
             result = board.result(claim_draw=True)
             reward = get_reward(result, color)
-            yield chess.pgn.Game.from_board(board), step, reward
+            yield chess.pgn.Game.from_board(board), sampled, reward
 
     def get_game_data(self, data):
         return sample_state_from_game(data)
@@ -109,12 +111,12 @@ class SimSampledStateGenerator(StateGenerator):
 
 
 def sample_state_from_game(data):
-    game, step, _ = data
+    game, sampled, _ = data
     board = game.board()
     transpositions = collections.Counter()
-    t = 1
+    t = 0
     for move in game.main_line():
-        if t == step + 1:
+        if t == sampled + 1:
             return [get_board_data(board, transpositions)]
         board.push(move)
         t += 1
@@ -158,6 +160,31 @@ class ExpertStateGenerator(StateGenerator):
         if self.num_states and state_count > self.num_states:
             print('Generated enough states. Exiting...')
             sys.exit()
+
+
+@attr.s
+class ExpertSampledStateGenerator(ExpertStateGenerator):
+
+    def get_game(self):
+        for game in super(ExpertSampledStateGenerator, self).get_game():
+            sampled = random.randint(1, len(list(game.main_line())))
+            board = chess.Board()
+            t = 0
+            for move in game.main_line():
+                if t == sampled:
+                    color = board.turn
+                    break
+                board.push(move)
+                t += 1
+            result = board.result(claim_draw=True)
+            reward = get_reward(result, color)
+            yield game, sampled, reward
+
+    def get_game_data(self, data):
+        return sample_state_from_game(data)
+
+    def get_label_data(self, game):
+        return get_value_from_game(game)
 
 
 def expert(args):

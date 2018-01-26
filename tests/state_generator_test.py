@@ -32,8 +32,8 @@ def test_unbiased_get_game():
         assert len(games) == num_games
         for game in games:
             assert len(game) == 3
-        assert sl_engine.get_move.call_count == num_games * (step - 1)
-        assert rl_engine.get_move.call_count == num_games * (10 - step - 1)
+        assert sl_engine.get_move.call_count == num_games * step
+        assert rl_engine.get_move.call_count == num_games * (10 - step - 2)
 
 
 def test_unbiased_get_game_data():
