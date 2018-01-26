@@ -26,14 +26,12 @@ def test_node_calculations():
 
     for tc in test_cases:
         n = mcts.Node(
-            lambda_c=tc['lambda'],
             value=tc['value'],
             visit=tc['visit'],
             result=tc['result'],
-            confidence=tc['confidence'],
         )
-        assert n.q == tc['expected_q']
-        assert n.ucb(100) == tc['expected_ucb']
+        assert n.q(tc['lambda']) == tc['expected_q']
+        assert n.ucb(tc['lambda'], tc['confidence'], 100) == tc['expected_ucb']
 
 
 def test_node_add_child():

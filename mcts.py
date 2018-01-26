@@ -19,22 +19,19 @@ class Node():
     visit = attr.ib(default=0)
     board = attr.ib(default=chess.Board())
     transpositions = attr.ib(default=collections.Counter())
-    lambda_c = attr.ib(default=0.5)
-    confidence = attr.ib(default=1)
 
     def __attrs_post_init__(self):
         self.board_data = get_board_data(self.board, self.transpositions)
 
-    @property
-    def q(self):
-        q = (1 - self.lambda_c) * self.value / self.visit
-        q += self.lambda_c * self.result / self.visit
+    def q(self, lambda_c):
+        q = (1 - lambda_c) * self.value / self.visit
+        q += lambda_c * self.result / self.visit
         return q
 
-    def ucb(self, visit_sum):
+    def ucb(self, lambda_c, confidence, visit_sum):
         # alpha go version
-        ucb = self.q
-        ucb += self.confidence * math.sqrt(visit_sum) / (1 + self.visit)
+        ucb = self.q(lambda_c)
+        ucb += confidence * math.sqrt(visit_sum) / (1 + self.visit)
         return ucb
 
     def add_child(self, move, **kwargs):
@@ -55,6 +52,8 @@ class MCTS():
     value = attr.ib()
     policy = attr.ib()
     terminate_search = attr.ib()
+    lambda_c = attr.ib(default=0.5)
+    confidence = attr.ib(default=1)
 
     def expand(self, node):
         if not self.children:
