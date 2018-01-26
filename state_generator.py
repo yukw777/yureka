@@ -102,19 +102,27 @@ class SimSampledStateGenerator(StateGenerator):
             yield chess.pgn.Game.from_board(board), step, reward
 
     def get_game_data(self, data):
-        game, step, _ = data
-        board = game.board()
-        transpositions = collections.Counter()
-        t = 1
-        for move in game.main_line():
-            if t == step + 1:
-                return [get_board_data(board, transpositions)]
-            board.push(move)
-            t += 1
+        return sample_state_from_game(data)
 
     def get_label_data(self, data):
-        _, _, reward = data
-        return [{'value': reward}]
+        return get_value_from_game(data)
+
+
+def sample_state_from_game(data):
+    game, step, _ = data
+    board = game.board()
+    transpositions = collections.Counter()
+    t = 1
+    for move in game.main_line():
+        if t == step + 1:
+            return [get_board_data(board, transpositions)]
+        board.push(move)
+        t += 1
+
+
+def get_value_from_game(data):
+    _, _, reward = data
+    return [{'value': reward}]
 
 
 @attr.s
