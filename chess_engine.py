@@ -49,7 +49,7 @@ class ChessEngine():
             self.model.eval()
         self.transpositions = collections.Counter()
 
-    def get_move(self, board):
+    def get_probs(self, board):
         board_data = get_board_data(board, self.transpositions)
         tensor = chess_dataset.get_tensor_from_row(board_data)
         tensor = tensor.view(1, *tensor.shape)
@@ -64,7 +64,10 @@ class ChessEngine():
         if self.train:
             # clamp to 1e-12 for numerical stability
             probs = probs.clamp(min=1e-12)
-        probs = self.filter_illegal_moves(board, probs)
+        return self.filter_illegal_moves(board, probs)
+
+    def get_move(self, board):
+        probs = self.get_probs(board)
         if self.train:
             m = Categorical(probs)
             while True:

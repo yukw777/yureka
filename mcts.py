@@ -3,6 +3,10 @@ import chess
 import math
 import collections
 from board_data import get_board_data
+from move_translator import (
+    translate_to_engine_move,
+    get_engine_move_index,
+)
 
 
 @attr.s
@@ -49,13 +53,25 @@ class MCTS():
     root = attr.ib()
     rollout = attr.ib()
     value = attr.ib()
+    policy = attr.ib()
     terminate_search = attr.ib()
+
+    def expand(self, node):
+        if not self.children:
+            raise Exception(f'Cannot expand a non-leaf node: {self}')
+        priors = self.policy.get_probs(node.board).squeeze()
+        for move in node.board.legal_moves:
+            engine_move = translate_to_engine_move(move)
+            index = get_engine_move_index(engine_move)
+            prior = priors.data[index]
+            self.add_child(move, prior=prior)
 
     def search(self):
         while not self.terminate_search():
             leaf = self.select()
-            nodes = leaf.expand()
-            self.simulate_and_backup(nodes)
+            self.expand(leaf)
+            terminal = self.simulate(leaf)
+            self.backup(terminal)
 
     def move(self):
         self.search()
