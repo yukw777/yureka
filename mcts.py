@@ -51,5 +51,10 @@ class MCTS():
 
     def search(self):
         while not self.terminate_search():
-            self.select()
-            self.expand()
+            leaf = self.select()
+            nodes = leaf.expand()
+            self.simulate_and_backup(nodes)
+
+    def move(self):
+        self.search()
+        # pick according to the formula
