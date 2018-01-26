@@ -8,6 +8,7 @@ from board_data import get_board_data
 @attr.s
 class Node():
     children = attr.ib(default={})
+    parent = attr.ib(default=None)
     prior = attr.ib(default=0)
     result = attr.ib(default=0)
     value = attr.ib(default=0)
@@ -36,6 +37,7 @@ class Node():
         b = chess.Board(fen=self.board.fen())
         b.push(move)
         self.children[move] = Node(
+            parent=self,
             board=b,
             transpositions=self.transpositions,
             **kwargs

@@ -45,7 +45,9 @@ def test_node_add_child():
     child1 = root.children[chess.Move.from_uci('a2a4')]
     child2 = root.children[chess.Move.from_uci('b2b4')]
     assert child1.prior == 0.5
+    assert child1.parent == root
     assert child2.prior == 0.3
+    assert child2.parent == root
 
     b = chess.Board()
     b.push_uci('a2a4')
