@@ -227,21 +227,26 @@ class UCIPolicyEngine():
         self.init_engine(init_model=False)
 
     def position(self, args):
-        m = re.match(r'startpos\s+moves\s+(.+)', args)
+        m = re.match(r'startpos(\s+moves\s+(.+))?', args)
         if m:
             fen = chess.STARTING_FEN
-            moves = m.group(1).split()
+            if m.group(2):
+                moves = m.group(2).split()
+            else:
+                moves = []
         else:
-            m = re.match(r'(.+)\s+moves\s+(.+)', args)
+            m = re.match(r'fen\s+(.+)\s+moves\s+(.+)', args)
             if m:
                 fen = m.group(1)
-                moves = m.group(1).split()
-            elif args.strip() == 'startpos':
-                fen = chess.STARTING_FEN
-                moves = []
+                moves = m.group(2).split()
             else:
-                self.unknown_handler(args)
-                return
+                m = re.match(r'fen\s+(.+)', args)
+                if m:
+                    fen = m.group(1)
+                    moves = []
+                else:
+                    self.unknown_handler(args)
+                    return
         self.board = chess.Board(fen=fen)
         for uci in moves:
             self.board.push_uci(uci)
