@@ -209,7 +209,9 @@ class UCIPolicyEngine():
         else:
             self.unknown_handler(args)
             return
-        option = self.options[name]
+        option = self.options.get(name)
+        if not option:
+            return
         setattr(self, option['attr_name'], option['py_type'](value))
         self.option_changed = True
 
