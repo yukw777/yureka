@@ -1,13 +1,13 @@
 
-File: eval_results/YurekaSL/YurekaSL-Stockfish0.pgn
+File: YurekaSL/YurekaSL-Stockfish0.pgn
 Loading data (2000 games x dot): 
 
 |
 
 Total games                 100
- - White wins                38
- - Draws                     27
- - Black wins                35
+ - White wins                32
+ - Draws                     47
+ - Black wins                21
  - Truncated/Discarded        0
 Unique head to head        2.00%
 Reference rating      1000.0 (set to "Stockfish0")
@@ -23,15 +23,19 @@ players w/ all losses = 0
 Convergence rating calculation (cycle #1)
 
 phase iteration    deviation    resolution
-  0       3     52.764022721      42.78163
-  1       2     43.563450738      34.67772
-  2       5     33.811001592      26.80658
-  3       7     24.621284665      19.49065
-  4       9     16.240187379      12.84018
-  5      13      8.709765473       6.88256
-  6      24      2.363681912       1.86696
-  7      86      0.000990404       0.00078
-  8      25      0.000000098       0.00000
+  0       2     87.610673574      55.36197
+  1       1     87.610673574      50.30659
+  2       2     81.883657266      44.36850
+  3       2     68.923083857      37.10361
+  4       2     56.037184291      30.21393
+  5       4     45.386393487      24.31837
+  6       5     34.995970480      18.73792
+  7       7     25.565415953      13.68670
+  8       9     17.016063669       9.10721
+  9      12      9.355134203       5.00365
+ 10      22      2.845851871       1.52206
+ 11      77      0.004389531       0.00235
+ 12      32      0.000000083       0.00000
 done
 
 White Advantage = 0.0
@@ -39,8 +43,8 @@ Draw Rate (eq.) = 50.0 %
 
 
    # PLAYER        :  RATING  POINTS  PLAYED   (%)
-   1 Stockfish0    :  1000.0    80.5     100    80
-   2 YurekaSL      :   751.5    19.5     100    20
+   1 Stockfish0    :  1000.0    63.5     100    64
+   2 YurekaSL      :   903.0    36.5     100    36
 
 White advantage = 0.00
 Draw rate (equal opponents) = 50.00 %
