@@ -69,7 +69,7 @@ class StateGenerator():
 
 
 @attr.s
-class UnbiasedStateGenerator(StateGenerator):
+class SimSampledStateGenerator(StateGenerator):
     sl_engine = attr.ib()
     rl_engine = attr.ib()
     num_games = attr.ib()
@@ -164,7 +164,7 @@ def unbiased(args):
     rl = models.create(args.rl_engine_name)
     rl.load_state_dict(torch.load(args.rl_engine_file))
     rl = chess_engine.ChessEngine(rl)
-    u = UnbiasedStateGenerator(args.out_csv_file, sl, rl, args.num_games)
+    u = SimSampledStateGenerator(args.out_csv_file, sl, rl, args.num_games)
     u.generate(write=True)
 
 

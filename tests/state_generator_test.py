@@ -2,7 +2,7 @@ import pandas as pd
 import chess
 import chess.pgn
 import unittest.mock as mock
-from state_generator import ExpertStateGenerator, UnbiasedStateGenerator
+from state_generator import ExpertStateGenerator, SimSampledStateGenerator
 
 
 def test_expert_get_correct_num_games():
@@ -26,7 +26,7 @@ def test_unbiased_get_game():
         mock.patch('state_generator.random.randint', return_value=step), \
             mock.patch('state_generator.random.choice', return_value=1), \
             mock.patch('state_generator.chess.pgn.Game.from_board'):
-        state_gen = UnbiasedStateGenerator(
+        state_gen = SimSampledStateGenerator(
             "bogus", sl_engine, rl_engine, num_games)
         games = list(state_gen.get_game())
         assert len(games) == num_games
@@ -39,14 +39,14 @@ def test_unbiased_get_game():
 def test_unbiased_get_game_data():
     with open('tests/test.pgn') as f:
         g = chess.pgn.read_game(f)
-    state_gen = UnbiasedStateGenerator("bogus", "bogus", "bogus", "bogus")
+    state_gen = SimSampledStateGenerator("bogus", "bogus", "bogus", "bogus")
     step = 10
     data = state_gen.get_game_data((g, step, True))
     assert len(data) == 1
 
 
 def test_unbiased_get_label_data():
-    state_gen = UnbiasedStateGenerator("bogus", "bogus", "bogus", "bogus")
+    state_gen = SimSampledStateGenerator("bogus", "bogus", "bogus", "bogus")
     data = state_gen.get_label_data((0, 0, 1))
     assert len(data) == 1
     assert data[0]['value'] == 1
