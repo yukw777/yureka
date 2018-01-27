@@ -176,7 +176,11 @@ class ExpertSampledStateGenerator(ExpertStateGenerator):
             color = board.turn
             # have to get the result from the headers b/c people resign
             result = game.headers['Result']
-            reward = get_reward(result, color)
+            try:
+                reward = get_reward(result, color)
+            except Exception as e:
+                print(e)
+                continue
             yield game, sampled, reward
 
     def get_game_data(self, data):
