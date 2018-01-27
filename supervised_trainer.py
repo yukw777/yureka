@@ -28,6 +28,7 @@ class SupervisedTrainer():
     model = attr.ib()
     train_data = attr.ib()
     test_data = attr.ib()
+    value = attr.ib(default=False)
     logger = attr.ib(default=logging.getLogger(__name__))
     log_interval = attr.ib(default=2000)
     batch_size = attr.ib(default=16)
@@ -64,7 +65,10 @@ class SupervisedTrainer():
         self.logger.info(f'Learning rate: {self.learning_rate}')
 
     def get_data_loader(self, data_file):
-        dataset = ChessDataset(data_file)
+        if self.value:
+            dataset = ChessDataset(data_file, label_name='value')
+        else:
+            dataset = ChessDataset(data_file)
         return data.DataLoader(
             dataset,
             batch_size=self.batch_size,
@@ -168,7 +172,10 @@ class SupervisedTrainer():
         self.logger.info('Training...')
         self.model.train()
 
-        criterion = nn.CrossEntropyLoss()
+        if self.value:
+            criterion = nn.MSELoss()
+        else:
+            criterion = nn.CrossEntropyLoss()
         optimizer = optim.SGD(
             self.model.parameters(),
             lr=self.learning_rate,
@@ -186,7 +193,8 @@ class SupervisedTrainer():
 
             # forward + backward + optimize
             outputs = self.model(inputs)
-            outputs = outputs.view(outputs.shape[0], -1)
+            if not self.value:
+                outputs = outputs.view(outputs.shape[0], -1)
 
             loss = criterion(outputs, labels)
             if np.isnan(loss.data[0]):
@@ -211,6 +219,7 @@ def run():
     parser.add_argument('model')
     parser.add_argument('train_data')
     parser.add_argument('test_data')
+    parser.add_argument('-v', '--value', action='store_true')
     parser.add_argument('-i', '--log-interval', type=int)
     parser.add_argument('-b', '--batch-size', type=int)
     parser.add_argument('-e', '--num-epochs', type=int)
@@ -241,6 +250,8 @@ def run():
         'test_data': args.test_data,
         'logger': logger,
     }
+    if args.value:
+        trainer_setting['value'] = args.value
     if args.log_interval:
         trainer_setting['log_interval'] = args.log_interval
     if args.batch_size:

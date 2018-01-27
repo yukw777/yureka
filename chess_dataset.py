@@ -14,6 +14,7 @@ SIZE = (1, ) + BOARD_SIZE
 @attr.s
 class ChessDataset(Dataset):
     data_file = attr.ib()
+    label_name = attr.ib(default='move')
 
     def __attrs_post_init__(self):
         self.df = pd.read_csv(self.data_file)
@@ -25,7 +26,7 @@ class ChessDataset(Dataset):
         row = self.df.iloc[index]
         return (
             get_tensor_from_row(row),
-            move_translator.get_engine_move_index(row['move']),
+            move_translator.get_engine_move_index(row[self.label_name]),
         )
 
 
