@@ -69,7 +69,7 @@ class StateGenerator():
 
 
 @attr.s
-class UnbiasedStateGenerator(StateGenerator):
+class SimSampledStateGenerator(StateGenerator):
     sl_engine = attr.ib()
     rl_engine = attr.ib()
     num_games = attr.ib()
@@ -79,42 +79,52 @@ class UnbiasedStateGenerator(StateGenerator):
             while True:
                 # based on this statistics
                 # https://chess.stackexchange.com/questions/2506/what-is-the-average-length-of-a-game-of-chess
-                step = random.randint(1, 100)
+                sampled = random.randint(1, 100)
                 board = chess.Board()
-                t = 1
+                t = 0
                 while not board.is_game_over(claim_draw=True):
-                    if t < step:
+                    if t < sampled - 1:
                         move, _ = self.sl_engine.get_move(board)
-                    elif t == step:
+                    elif t == sampled - 1:
                         move = random.choice(list(board.legal_moves))
-                        color = board.turn
                     else:
+                        if t == sampled:
+                            color = board.turn
                         move, _ = self.rl_engine.get_move(board)
                     board.push(move)
                     t += 1
-                if t <= step:
-                    print(f'We drew {step} steps but the game only got to {t}')
+                if t <= sampled:
+                    print(f'We drew {sampled} state '
+                          f'but the game only got to {t}')
                     print("Let's try again")
                 else:
                     break
             result = board.result(claim_draw=True)
             reward = get_reward(result, color)
-            yield chess.pgn.Game.from_board(board), step, reward
+            yield chess.pgn.Game.from_board(board), sampled, reward
 
     def get_game_data(self, data):
-        game, step, _ = data
-        board = game.board()
-        transpositions = collections.Counter()
-        t = 1
-        for move in game.main_line():
-            if t == step + 1:
-                return [get_board_data(board, transpositions)]
-            board.push(move)
-            t += 1
+        return sample_state_from_game(data)
 
     def get_label_data(self, data):
-        _, _, reward = data
-        return [{'value': reward}]
+        return get_value_from_game(data)
+
+
+def sample_state_from_game(data):
+    game, sampled, _ = data
+    board = game.board()
+    transpositions = collections.Counter()
+    moves = game.main_line()
+    for i in range(sampled):
+        transpositions.update((board._transposition_key(), ))
+        board.push(next(moves))
+    game_df = get_board_data(board, transpositions)
+    return [game_df]
+
+
+def get_value_from_game(data):
+    _, _, reward = data
+    return [{'value': reward}]
 
 
 @attr.s
@@ -152,20 +162,50 @@ class ExpertStateGenerator(StateGenerator):
             sys.exit()
 
 
+@attr.s
+class ExpertSampledStateGenerator(ExpertStateGenerator):
+
+    def get_game(self):
+        for game in super(ExpertSampledStateGenerator, self).get_game():
+            moves = list(game.main_line())
+            sampled = random.randint(1, len(moves))
+            board = chess.Board()
+            color = None
+            for i in range(sampled):
+                board.push(moves[i])
+            color = board.turn
+            # have to get the result from the headers b/c people resign
+            result = game.headers['Result']
+            reward = get_reward(result, color)
+            yield game, sampled, reward
+
+    def get_game_data(self, data):
+        return sample_state_from_game(data)
+
+    def get_label_data(self, game):
+        return get_value_from_game(game)
+
+
 def expert(args):
     s = ExpertStateGenerator(args.out_csv_file, args.pgn_file, args.num_states)
     s.generate(write=True)
 
 
-def unbiased(args):
+def sim_sampled(args):
     sl = models.create(args.sl_engine_name)
     sl.load_state_dict(torch.load(args.sl_engine_file))
     sl = chess_engine.ChessEngine(sl)
     rl = models.create(args.rl_engine_name)
     rl.load_state_dict(torch.load(args.rl_engine_file))
     rl = chess_engine.ChessEngine(rl)
-    u = UnbiasedStateGenerator(args.out_csv_file, sl, rl, args.num_games)
+    u = SimSampledStateGenerator(args.out_csv_file, sl, rl, args.num_games)
     u.generate(write=True)
+
+
+def expert_sampled(args):
+    s = ExpertSampledStateGenerator(
+        args.out_csv_file, args.pgn_file, args.num_states)
+    s.generate(write=True)
 
 
 if __name__ == '__main__':
@@ -179,13 +219,19 @@ if __name__ == '__main__':
     parser_expert.add_argument('num_states', type=int)
     parser_expert.set_defaults(func=expert)
 
-    parser_unbiased = subparsers.add_parser('unbiased')
-    parser_unbiased.add_argument('sl_engine_name')
-    parser_unbiased.add_argument('sl_engine_file')
-    parser_unbiased.add_argument('rl_engine_name')
-    parser_unbiased.add_argument('rl_engine_file')
-    parser_unbiased.add_argument('num_games', type=int)
-    parser_unbiased.add_argument('out_csv_file')
-    parser_unbiased.set_defaults(func=unbiased)
+    parser_sim_sampled = subparsers.add_parser('sim_sampled')
+    parser_sim_sampled.add_argument('sl_engine_name')
+    parser_sim_sampled.add_argument('sl_engine_file')
+    parser_sim_sampled.add_argument('rl_engine_name')
+    parser_sim_sampled.add_argument('rl_engine_file')
+    parser_sim_sampled.add_argument('num_games', type=int)
+    parser_sim_sampled.add_argument('out_csv_file')
+    parser_sim_sampled.set_defaults(func=sim_sampled)
+
+    parser_expert_sampled = subparsers.add_parser('expert_sampled')
+    parser_expert_sampled.add_argument('pgn_file')
+    parser_expert_sampled.add_argument('out_csv_file')
+    parser_expert_sampled.add_argument('num_states', type=int)
+    parser_expert_sampled.set_defaults(func=expert_sampled)
     args = parser.parse_args()
     args.func(args)
