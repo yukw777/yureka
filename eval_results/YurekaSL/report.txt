@@ -1,13 +1,13 @@
 
-File: YurekaSL/YurekaSL-Stockfish0.pgn
+File: YurekaSL-Stockfish0.pgn
 Loading data (2000 games x dot): 
 
 |
 
 Total games                 100
  - White wins                32
- - Draws                     47
- - Black wins                21
+ - Draws                     42
+ - Black wins                26
  - Truncated/Discarded        0
 Unique head to head        2.00%
 Reference rating      1000.0 (set to "Stockfish0")
@@ -23,19 +23,19 @@ players w/ all losses = 0
 Convergence rating calculation (cycle #1)
 
 phase iteration    deviation    resolution
-  0       2     87.610673574      55.36197
-  1       1     87.610673574      50.30659
-  2       2     81.883657266      44.36850
-  3       2     68.923083857      37.10361
-  4       2     56.037184291      30.21393
-  5       4     45.386393487      24.31837
-  6       5     34.995970480      18.73792
-  7       7     25.565415953      13.68670
-  8       9     17.016063669       9.10721
-  9      12      9.355134203       5.00365
- 10      22      2.845851871       1.52206
- 11      77      0.004389531       0.00235
- 12      32      0.000000083       0.00000
+  0       2    100.651171096      58.76029
+  1       2    100.558482987      53.39815
+  2       2     83.688209265      44.81606
+  3       2     69.539987907      37.27097
+  4       3     58.840190497      31.05540
+  5       4     47.281981920      24.92631
+  6       5     36.718748484      19.34424
+  7       6     27.122195525      14.27777
+  8       8     18.423046651       9.69592
+  9      11     10.604559074       5.57908
+ 10      19      3.840538087       2.02034
+ 11      61      0.044590897       0.02345
+ 12      46      0.000000091       0.00000
 done
 
 White Advantage = 0.0
@@ -43,8 +43,8 @@ Draw Rate (eq.) = 50.0 %
 
 
    # PLAYER        :  RATING  POINTS  PLAYED   (%)
-   1 Stockfish0    :  1000.0    63.5     100    64
-   2 YurekaSL      :   903.0    36.5     100    36
+   1 Stockfish0    :  1000.0    62.0     100    62
+   2 YurekaSL      :   914.2    38.0     100    38
 
 White advantage = 0.00
 Draw rate (equal opponents) = 50.00 %

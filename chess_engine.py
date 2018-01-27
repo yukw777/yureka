@@ -5,7 +5,6 @@ import models
 import sys
 import os
 import re
-import collections
 import chess
 import chess_dataset
 import numpy as np
@@ -36,7 +35,6 @@ class ChessEngine():
     model = attr.ib()
     cuda = attr.ib(default=True)
     cuda_device = attr.ib(default=None)
-    transpositions = attr.ib(default=collections.Counter())
     train = attr.ib(default=True)
 
     def __attrs_post_init__(self):
@@ -47,10 +45,9 @@ class ChessEngine():
             self.model.train()
         else:
             self.model.eval()
-        self.transpositions = collections.Counter()
 
     def get_probs(self, board):
-        board_data = get_board_data(board, self.transpositions)
+        board_data = get_board_data(board)
         tensor = chess_dataset.get_tensor_from_row(board_data)
         tensor = tensor.view(1, *tensor.shape)
         volatile = not self.model.training
