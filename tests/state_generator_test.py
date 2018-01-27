@@ -2,11 +2,7 @@ import pandas as pd
 import chess
 import chess.pgn
 import unittest.mock as mock
-from state_generator import (
-    ExpertStateGenerator,
-    SimSampledStateGenerator,
-    sample_state_from_game,
-)
+from state_generator import ExpertStateGenerator, SimSampledStateGenerator
 
 
 def test_expert_get_correct_num_games():
