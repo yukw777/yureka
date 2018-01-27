@@ -1,6 +1,5 @@
 import attr
 import random
-import collections
 import chess
 import chess.pgn
 import pandas as pd
@@ -113,12 +112,10 @@ class SimSampledStateGenerator(StateGenerator):
 def sample_state_from_game(data):
     game, sampled, _ = data
     board = game.board()
-    transpositions = collections.Counter()
     moves = game.main_line()
     for i in range(sampled):
-        transpositions.update((board._transposition_key(), ))
         board.push(next(moves))
-    game_df = get_board_data(board, transpositions)
+    game_df = get_board_data(board)
     return [game_df]
 
 
@@ -144,9 +141,8 @@ class ExpertStateGenerator(StateGenerator):
 
     def get_game_data(self, game):
         board = game.board()
-        transpositions = collections.Counter()
         for move in game.main_line():
-            yield get_board_data(board, transpositions)
+            yield get_board_data(board)
             board.push(move)
 
     def get_label_data(self, game):

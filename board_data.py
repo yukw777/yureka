@@ -1,4 +1,5 @@
 import chess
+import collections
 import move_translator
 
 
@@ -41,10 +42,10 @@ def get_reward(result, color, award_tie=True):
         raise Exception(f'Unknown result: {result}, {color}')
 
 
-def get_board_data(board, transpositions):
+def get_board_data(board):
     row = {}
     row.update(get_square_piece_data(board))
-    row.update(get_repetition_data(board, transpositions))
+    row.update(get_repetition_data(board))
     row.update(get_turn_data(board))
     row.update(get_move_count_data(board))
     row.update(get_castling_data(board))
@@ -81,18 +82,34 @@ def get_turn_data(board):
     return {'turn': 1 if board.turn else 0}  # 1 if white else 0
 
 
-def get_repetition_data(board, transpositions):
-    key = board._transposition_key()
-    transpositions.update((key, ))
+def get_repetition_data(board):
+    transposition_key = board._transposition_key()
+    transpositions = collections.Counter()
+    transpositions.update((transposition_key, ))
+
+    # Count positions.
+    switchyard = collections.deque()
+    while board.move_stack:
+        move = board.pop()
+        switchyard.append(move)
+
+        if board.is_irreversible(move):
+            break
+
+        transpositions.update((board._transposition_key(), ))
+
+    while switchyard:
+        board.push(switchyard.pop())
+
     data_dict = {
         'rep_2': 0,
         'rep_3': 0,
     }
-    if transpositions[key] >= 3:
+    if transpositions[transposition_key] >= 3:
         # this position repeated at least three times
         data_dict['rep_2'] = 1
         data_dict['rep_3'] = 1
-    elif transpositions[key] >= 2:
+    elif transpositions[transposition_key] >= 2:
         # this position repeated at least twice
         data_dict['rep_2'] = 1
     return data_dict
