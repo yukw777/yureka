@@ -16,7 +16,7 @@ def test_expert_get_correct_num_games():
 
 def test_simulated_get_game():
     # create mock sl_engine and rl_engine
-    step = 6
+    sampled = 6
     sl_engine = mock.MagicMock()
     sl_engine.get_move = mock.Mock(return_value=(1, 2))
     rl_engine = mock.MagicMock()
@@ -27,17 +27,20 @@ def test_simulated_get_game():
     mock_board.turn = chess.WHITE
     mock_board.result.return_value = '1-0'
     with mock.patch('state_generator.chess.Board', return_value=mock_board), \
-        mock.patch('state_generator.random.randint', return_value=step), \
-            mock.patch('state_generator.random.choice', return_value=1), \
+        mock.patch('state_generator.random.randint', return_value=sampled), \
+            mock.patch('state_generator.random.choice', return_value=1) as c, \
             mock.patch('state_generator.chess.pgn.Game.from_board'):
         state_gen = SimSampledStateGenerator(
             "bogus", sl_engine, rl_engine, num_games)
         games = list(state_gen.get_game())
         assert len(games) == num_games
         for game in games:
-            assert len(game) == 3
-        assert sl_engine.get_move.call_count == num_games * step
-        assert rl_engine.get_move.call_count == num_games * (10 - step - 2)
+            g, s, r = game
+            assert s == sampled
+            assert r == 1   # sampled is white, and white won
+        assert sl_engine.get_move.call_count == num_games * (sampled - 1)
+        assert rl_engine.get_move.call_count == num_games * (10 - sampled - 1)
+        assert c.call_count == num_games
 
 
 def test_simulated_get_game_data():
@@ -45,7 +48,7 @@ def test_simulated_get_game_data():
         g = chess.pgn.read_game(f)
     state_gen = SimSampledStateGenerator("bogus", "bogus", "bogus", "bogus")
     step = 10
-    data = state_gen.get_game_data((g, step, True))
+    data = state_gen.get_game_data((g, step, chess.WHITE))
     assert len(data) == 1
 
 
@@ -54,11 +57,6 @@ def test_simulated_get_label_data():
     data = state_gen.get_label_data((0, 0, 1))
     assert len(data) == 1
     assert data[0]['value'] == 1
-
-
-def test_sample_state_from_game():
-    # sample_state_from_game()
-    pass
 
 
 def test_generate_correct_sq_piece_data():

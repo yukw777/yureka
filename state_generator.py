@@ -79,16 +79,16 @@ class SimSampledStateGenerator(StateGenerator):
             while True:
                 # based on this statistics
                 # https://chess.stackexchange.com/questions/2506/what-is-the-average-length-of-a-game-of-chess
-                sampled = random.randint(0, 100)
+                sampled = random.randint(1, 100)
                 board = chess.Board()
                 t = 0
                 while not board.is_game_over(claim_draw=True):
-                    if t < sampled:
+                    if t < sampled - 1:
                         move, _ = self.sl_engine.get_move(board)
-                    elif t == sampled:
+                    elif t == sampled - 1:
                         move = random.choice(list(board.legal_moves))
                     else:
-                        if t == sampled + 1:
+                        if t == sampled:
                             color = board.turn
                         move, _ = self.rl_engine.get_move(board)
                     board.push(move)
@@ -114,16 +114,10 @@ def sample_state_from_game(data):
     game, sampled, _ = data
     board = game.board()
     transpositions = collections.Counter()
-    t = 0
-    for move in game.main_line():
-        if t == sampled + 1:
-            game_df = get_board_data(board, transpositions)
-            return [game_df]
-        else:
-            transpositions.update((board._transposition_key(), ))
-        board.push(move)
-        t += 1
-    # we now have to sample the very last board state
+    moves = game.main_line()
+    for i in range(sampled):
+        transpositions.update((board._transposition_key(), ))
+        board.push(next(moves))
     game_df = get_board_data(board, transpositions)
     return [game_df]
 
@@ -174,18 +168,12 @@ class ExpertSampledStateGenerator(ExpertStateGenerator):
     def get_game(self):
         for game in super(ExpertSampledStateGenerator, self).get_game():
             moves = list(game.main_line())
-            sampled = random.randint(0, len(moves) - 1)
+            sampled = random.randint(1, len(moves))
             board = chess.Board()
-            t = 0
             color = None
-            for move in moves:
-                if t == sampled + 1:
-                    color = board.turn
-                    break
-                board.push(move)
-                t += 1
-            if not color:
-                color = board.turn
+            for i in range(sampled):
+                board.push(moves[i])
+            color = board.turn
             # have to get the result from the headers b/c people resign
             result = game.headers['Result']
             reward = get_reward(result, color)
