@@ -1,6 +1,13 @@
 import mcts
 import chess
 import unittest.mock as mock
+import pytest
+import torch
+from torch.autograd import Variable
+from move_translator import (
+    translate_to_engine_move,
+    get_engine_move_index,
+)
 
 
 def test_node_calculations():
@@ -75,3 +82,25 @@ def test_select():
     root.children = {i: children[i] for i in range(3)}
     selected = m.select()
     assert selected == children[-1]
+
+
+def test_expand():
+    mock_policy = mock.MagicMock()
+    probs = torch.randn(1, 4672)
+    mock_policy.get_probs.return_value = Variable(probs)
+    m = mcts.MCTS('', '', '', mock_policy, '', '')
+    # no children at this point
+    n = mcts.Node()
+
+    m.expand(n)
+    # should have children now. 20 to be exact since we just expanded the root
+    # with priors initialized by the policy network
+    assert len(n.children) == 20
+    for move, c in n.children.items():
+        engine_move = translate_to_engine_move(move, chess.WHITE)
+        index = get_engine_move_index(engine_move)
+        assert c.prior == probs[0, index]
+
+    # can't expand if it already has been expanded
+    with pytest.raises(mcts.ExpandError):
+        m.expand(n)

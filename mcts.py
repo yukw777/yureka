@@ -46,6 +46,12 @@ class Node():
 
 
 @attr.s
+class ExpandError(Exception):
+    node = attr.ib()
+    message = attr.ib()
+
+
+@attr.s
 class MCTS():
     root = attr.ib()
     rollout = attr.ib()
@@ -67,14 +73,14 @@ class MCTS():
         return node
 
     def expand(self, node):
-        if not self.children:
-            raise Exception(f'Cannot expand a non-leaf node: {self}')
+        if node.children:
+            raise ExpandError(node, 'Cannot expand a non-leaf node')
         priors = self.policy.get_probs(node.board).squeeze()
         for move in node.board.legal_moves:
-            engine_move = translate_to_engine_move(move)
+            engine_move = translate_to_engine_move(move, node.board.turn)
             index = get_engine_move_index(engine_move)
             prior = priors.data[index]
-            self.add_child(move, prior=prior)
+            node.add_child(move, prior=prior)
 
     def search(self):
         while not self.terminate_search():
