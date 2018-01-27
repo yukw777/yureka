@@ -2,7 +2,11 @@ import pandas as pd
 import chess
 import chess.pgn
 import unittest.mock as mock
-from state_generator import ExpertStateGenerator, SimSampledStateGenerator
+from state_generator import (
+    ExpertStateGenerator,
+    SimSampledStateGenerator,
+    sample_state_from_game,
+)
 
 
 def test_expert_get_correct_num_games():
@@ -10,7 +14,7 @@ def test_expert_get_correct_num_games():
     assert len(list(state_gen.get_game())) == 2
 
 
-def test_unbiased_get_game():
+def test_simulated_get_game():
     # create mock sl_engine and rl_engine
     step = 6
     sl_engine = mock.MagicMock()
@@ -36,7 +40,7 @@ def test_unbiased_get_game():
         assert rl_engine.get_move.call_count == num_games * (10 - step - 2)
 
 
-def test_unbiased_get_game_data():
+def test_simulated_get_game_data():
     with open('tests/test.pgn') as f:
         g = chess.pgn.read_game(f)
     state_gen = SimSampledStateGenerator("bogus", "bogus", "bogus", "bogus")
@@ -45,11 +49,16 @@ def test_unbiased_get_game_data():
     assert len(data) == 1
 
 
-def test_unbiased_get_label_data():
+def test_simulated_get_label_data():
     state_gen = SimSampledStateGenerator("bogus", "bogus", "bogus", "bogus")
     data = state_gen.get_label_data((0, 0, 1))
     assert len(data) == 1
     assert data[0]['value'] == 1
+
+
+def test_sample_state_from_game():
+    # sample_state_from_game()
+    pass
 
 
 def test_generate_correct_sq_piece_data():
