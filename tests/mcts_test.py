@@ -1,5 +1,6 @@
 import mcts
 import chess
+import unittest.mock as mock
 
 
 def test_node_calculations():
@@ -55,3 +56,22 @@ def test_node_add_child():
     assert child2.board == b
     b = chess.Board()
     assert root.board == b
+
+
+def test_select():
+    children = []
+    for i in range(3):
+        n = mcts.Node()
+        n.ucb = mock.MagicMock(return_value=i)
+        children.append(n)
+    root = mcts.Node()
+    m = mcts.MCTS(root, '', '', '', '', '')
+
+    # if root is already a leaf, return that
+    selected = m.select()
+    assert root == selected
+
+    # traverse the tree, picking the node with the biggest ucb
+    root.children = {i: children[i] for i in range(3)}
+    selected = m.select()
+    assert selected == children[-1]

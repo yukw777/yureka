@@ -11,7 +11,7 @@ from move_translator import (
 
 @attr.s
 class Node():
-    children = attr.ib(default={})
+    children = attr.ib(default=attr.Factory(dict))
     parent = attr.ib(default=None)
     prior = attr.ib(default=0)
     result = attr.ib(default=0)
@@ -54,6 +54,17 @@ class MCTS():
     terminate_search = attr.ib()
     lambda_c = attr.ib(default=0.5)
     confidence = attr.ib(default=1)
+
+    def select(self):
+        node = self.root
+        while node.children:
+            child_nodes = node.children.values()
+            visit_sum = sum([n.visit for n in child_nodes])
+            node = max(
+                child_nodes,
+                key=lambda n: n.ucb(self.lambda_c, self.confidence, visit_sum)
+            )
+        return node
 
     def expand(self, node):
         if not self.children:
