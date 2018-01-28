@@ -55,7 +55,6 @@ class MCTS():
     rollout = attr.ib()
     value = attr.ib()
     policy = attr.ib()
-    terminate_search = attr.ib()
     lambda_c = attr.ib(default=0.5)
     confidence = attr.ib(default=1)
 
@@ -105,7 +104,10 @@ class MCTS():
             walker = walker.parent
 
     def search(self, duration):
-        while continue_search(duration):
+        search_time = continue_search(duration)
+        for t in search_time:
+            if not t:
+                break
             leaf = self.select()
             self.expand(leaf)
             terminal = self.simulate(leaf)
