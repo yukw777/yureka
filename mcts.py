@@ -3,17 +3,12 @@ import chess
 import math
 import time
 from board_data import get_board_data, get_reward
-from move_translator import (
-    translate_to_engine_move,
-    get_engine_move_index,
-)
 
 
 @attr.s
 class Node():
     children = attr.ib(default=attr.Factory(dict))
     parent = attr.ib(default=None)
-    prior = attr.ib(default=0)
     result = attr.ib(default=0)
     value = attr.ib(default=0)
     visit = attr.ib(default=0)
@@ -72,12 +67,8 @@ class MCTS():
     def expand(self, node):
         if node.children:
             raise MCTSError(node, 'Cannot expand a non-leaf node')
-        priors = self.policy.get_probs(node.board).squeeze()
         for move in node.board.legal_moves:
-            engine_move = translate_to_engine_move(move, node.board.turn)
-            index = get_engine_move_index(engine_move)
-            prior = priors.data[index]
-            node.add_child(move, prior=prior)
+            node.add_child(move)
 
     def simulate(self, node):
         if node.children:
@@ -119,6 +110,15 @@ class MCTS():
             self.root.children,
             key=lambda m: self.root.children[m].visit
         )
+
+    def advance_root(self, move):
+        child = self.root.children.get(move)
+        if child:
+            self.root = child
+        else:
+            self.root.add_child(move)
+            self.root = self.root.children[move]
+        self.root.parent = None
 
 
 def continue_search(duration):

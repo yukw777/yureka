@@ -5,10 +5,6 @@ import pytest
 import torch
 import time
 from torch.autograd import Variable
-from move_translator import (
-    translate_to_engine_move,
-    get_engine_move_index,
-)
 
 
 def test_node_calculations():
@@ -46,14 +42,14 @@ def test_node_calculations():
 def test_node_add_child():
     root = mcts.Node()
     assert root.children == {}
-    root.add_child(chess.Move.from_uci('a2a4'), prior=0.5)
-    root.add_child(chess.Move.from_uci('b2b4'), prior=0.3)
+    root.add_child(chess.Move.from_uci('a2a4'), value=0.5)
+    root.add_child(chess.Move.from_uci('b2b4'), value=0.3)
 
     child1 = root.children[chess.Move.from_uci('a2a4')]
     child2 = root.children[chess.Move.from_uci('b2b4')]
-    assert child1.prior == 0.5
+    assert child1.value == 0.5
     assert child1.parent == root
-    assert child2.prior == 0.3
+    assert child2.value == 0.3
     assert child2.parent == root
 
     b = chess.Board()
@@ -95,12 +91,7 @@ def test_expand():
 
     m.expand(n)
     # should have children now. 20 to be exact since we just expanded the root
-    # with priors initialized by the policy network
     assert len(n.children) == 20
-    for move, c in n.children.items():
-        engine_move = translate_to_engine_move(move, chess.WHITE)
-        index = get_engine_move_index(engine_move)
-        assert c.prior == probs[0, index]
 
     # can't expand if it already has been expanded
     with pytest.raises(mcts.MCTSError):
@@ -168,3 +159,18 @@ def test_get_move():
     m = mcts.MCTS(mcts.Node(), '', '', '')
     with pytest.raises(mcts.MCTSError):
         m.get_move()
+
+
+def test_advance_root():
+    children = {i: mcts.Node() for i in range(5)}
+    root_with_children = mcts.Node(children=children)
+    m = mcts.MCTS(root_with_children, '', '', '')
+    m.advance_root(1)
+    assert m.root.parent is None
+    assert m.root == children[1]
+
+    m = mcts.MCTS(mcts.Node(), '', '', '')
+    move = chess.Move.from_uci('f2f3')
+    m.advance_root(move)
+    assert m.root.parent is None
+    assert m.root.board.move_stack == [move]
