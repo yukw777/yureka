@@ -166,3 +166,19 @@ def test_continue_search():
         count += 1
         time.sleep(1)
     assert count == 2
+
+
+def test_get_move():
+    children = {
+        'm1': mcts.Node(visit=1),
+        'm2': mcts.Node(visit=0),
+        'm3': mcts.Node(visit=3),
+        'm4': mcts.Node(visit=2),
+    }
+    root = mcts.Node(children=children)
+    m = mcts.MCTS(root, '', '', '')
+    assert m.get_move() == 'm3'
+
+    m = mcts.MCTS(mcts.Node(), '', '', '')
+    with pytest.raises(mcts.MCTSError):
+        m.get_move()

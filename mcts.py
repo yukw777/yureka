@@ -113,9 +113,14 @@ class MCTS():
             terminal = self.simulate(leaf)
             self.backup(terminal)
 
-    def move(self):
-        self.search()
-        # pick according to the formula
+    def get_move(self):
+        # pick the move with the max visit from the root
+        if not self.root.children:
+            raise MCTSError(self.root, 'You should search before get_move')
+        return max(
+            self.root.children,
+            key=lambda m: self.root.children[m].visit
+        )
 
 
 def continue_search(duration):
