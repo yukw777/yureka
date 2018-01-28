@@ -1,6 +1,7 @@
 import attr
 import chess
 import math
+import time
 from board_data import get_board_data, get_reward
 from move_translator import (
     translate_to_engine_move,
@@ -103,8 +104,8 @@ class MCTS():
             walker.value += value
             walker = walker.parent
 
-    def search(self):
-        while not self.terminate_search():
+    def search(self, duration):
+        while continue_search(duration):
             leaf = self.select()
             self.expand(leaf)
             terminal = self.simulate(leaf)
@@ -113,3 +114,14 @@ class MCTS():
     def move(self):
         self.search()
         # pick according to the formula
+
+
+def continue_search(duration):
+    # search for {duration} seconds
+    remaining = duration
+    while remaining >= 0:
+        start = time.time()
+        yield True
+        end = time.time()
+        remaining -= end - start
+    yield False
