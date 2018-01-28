@@ -22,7 +22,7 @@ pieces = [
 BOARD_SIZE = (len(chess.FILE_NAMES), len(chess.RANK_NAMES))
 
 
-def get_reward(result, color, award_tie=True):
+def get_reward(result, color, award_tie=False):
     points = result.split('-')
     if color == chess.WHITE:
         player_point = points[0]
