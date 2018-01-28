@@ -25,8 +25,8 @@ DEFAULT_MODEL = 'Policy.v0'
 DEFAULT_MODEL_FILE = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     'saved_models',
-    'RL',
-    'ChessEngine_2018-01-23_19:22:59_1000.model',
+    'SL_endgame',
+    'Policy_2018-01-27_07:09:34_14.model',
 )
 
 
