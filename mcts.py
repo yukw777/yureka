@@ -1,7 +1,6 @@
 import attr
 import chess
 import math
-import collections
 from board_data import get_board_data
 from move_translator import (
     translate_to_engine_move,
@@ -18,10 +17,9 @@ class Node():
     value = attr.ib(default=0)
     visit = attr.ib(default=0)
     board = attr.ib(default=chess.Board())
-    transpositions = attr.ib(default=collections.Counter())
 
     def __attrs_post_init__(self):
-        self.board_data = get_board_data(self.board, self.transpositions)
+        self.board_data = get_board_data(self.board)
 
     def q(self, lambda_c):
         q = (1 - lambda_c) * self.value / self.visit
@@ -40,7 +38,6 @@ class Node():
         self.children[move] = Node(
             parent=self,
             board=b,
-            transpositions=self.transpositions,
             **kwargs
         )
 
