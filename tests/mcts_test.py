@@ -107,8 +107,8 @@ def test_expand():
 
 
 def test_simulate():
-    mock_rollout = mock.MagicMock()
     # use fool's mate to test
+    mock_rollout = mock.MagicMock()
     mock_rollout.get_move.side_effect = [
         chess.Move.from_uci('f2f3'),
         chess.Move.from_uci('e7e5'),
@@ -123,3 +123,34 @@ def test_simulate():
 
     with pytest.raises(mcts.MCTSError):
         m.simulate(n)
+
+
+def test_backup():
+    # use fool's mate to test
+    mock_rollout = mock.MagicMock()
+    mock_rollout.get_move.side_effect = [
+        chess.Move.from_uci('f2f3'),
+        chess.Move.from_uci('e7e5'),
+        chess.Move.from_uci('g2g4'),
+        chess.Move.from_uci('d8h4'),
+    ]
+    mock_value = mock.MagicMock()
+    mock_value.get_value.return_value = -0.9
+    n = mcts.Node()
+    m = mcts.MCTS(n, mock_rollout, mock_value, '', '', '')
+    terminal = m.simulate(n)
+
+    walker = terminal
+    while walker:
+        assert walker.result == 0
+        assert walker.value == 0
+        assert walker.visit == 0
+        walker = walker.parent
+    m.backup(terminal)
+    # root is white, so everything is from white's perspective
+    walker = terminal
+    while walker:
+        assert walker.result == -1
+        assert walker.value == -0.9
+        assert walker.visit == 1
+        walker = walker.parent

@@ -1,7 +1,7 @@
 import attr
 import chess
 import math
-from board_data import get_board_data
+from board_data import get_board_data, get_reward
 from move_translator import (
     translate_to_engine_move,
     get_engine_move_index,
@@ -91,6 +91,17 @@ class MCTS():
             walker = walker.children[move]
 
         return walker
+
+    def backup(self, terminal):
+        result = terminal.board.result(claim_draw=True)
+        reward = get_reward(result, self.root.board.turn)
+        value = self.value.get_value(terminal.board)
+        walker = terminal
+        while walker:
+            walker.visit += 1
+            walker.result += reward
+            walker.value += value
+            walker = walker.parent
 
     def search(self):
         while not self.terminate_search():
