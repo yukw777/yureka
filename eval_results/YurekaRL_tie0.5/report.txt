@@ -1,0 +1,53 @@
+
+File: eval_results/YurekaRL_tie0.5/YurekaRL_tie0.5-Stockfish0.pgn
+Loading data (2000 games x dot): 
+
+|
+
+Total games                 100
+ - White wins                30
+ - Draws                     37
+ - Black wins                33
+ - Truncated/Discarded        0
+Unique head to head        2.00%
+Reference rating      1000.0 (set to "Stockfish0")
+
+Loose Anchors = none
+Relative Anchors = none
+
+
+players with no games = 0
+players with all wins = 0
+players w/ all losses = 0
+
+Convergence rating calculation (cycle #1)
+
+phase iteration    deviation    resolution
+  0       2    111.998098320      61.32243
+  1       2    100.084464394      53.29400
+  2       2     86.169088383      45.41455
+  3       2     71.418727572      37.77167
+  4       3     60.685751942      31.57911
+  5       4     48.957092031      25.44748
+  6       5     38.242282689      19.86442
+  7       6     28.500121662      14.79402
+  8       8     19.668387269      10.20792
+  9      11     11.713566966       6.07890
+ 10      17      4.758573638       2.46769
+ 11      49      0.187096528       0.09703
+ 12      62      0.000000093       0.00000
+done
+
+White Advantage = 0.0
+Draw Rate (eq.) = 50.0 %
+
+
+   # PLAYER        :  RATING  POINTS  PLAYED   (%)
+   1 Stockfish0    :  1000.0    60.5     100    60
+   2 YurekaRL      :   925.3    39.5     100    40
+
+White advantage = 0.00
+Draw rate (equal opponents) = 50.00 %
+
+
+done!
