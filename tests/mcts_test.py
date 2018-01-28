@@ -116,43 +116,29 @@ def test_simulate():
         chess.Move.from_uci('g2g4'),
         chess.Move.from_uci('d8h4'),
     ]
-    n = mcts.Node()
-    m = mcts.MCTS('', mock_rollout, '', '', '', '')
-    terminal = m.simulate(n)
-    assert terminal.board.is_game_over(claim_draw=True)
-    assert terminal.parent.parent.parent.parent == n
-
-    with pytest.raises(mcts.MCTSError):
-        m.simulate(n)
-
-
-def test_backup():
-    # use fool's mate to test
-    mock_rollout = mock.MagicMock()
-    mock_rollout.get_move.side_effect = [
-        chess.Move.from_uci('f2f3'),
-        chess.Move.from_uci('e7e5'),
-        chess.Move.from_uci('g2g4'),
-        chess.Move.from_uci('d8h4'),
-    ]
     mock_value = mock.MagicMock()
     mock_value.get_value.return_value = -0.9
     n = mcts.Node()
     m = mcts.MCTS(n, mock_rollout, mock_value, '', '', '')
-    terminal = m.simulate(n)
+    reward, value = m.simulate(n)
+    assert reward == -1
+    assert value == -0.9
 
-    walker = terminal
+    with pytest.raises(mcts.MCTSError):
+        n.children[1] = mcts.Node()
+        m.simulate(n)
+
+
+def test_backup():
+    node = mcts.Node()
+    node.parent = mcts.Node()
+    node.parent.parent = mcts.Node()
+    m = mcts.MCTS('', '', '', '', '', '')
+    m.backup(node, 1, 0.9)
+    walker = node
     while walker:
-        assert walker.result == 0
-        assert walker.value == 0
-        assert walker.visit == 0
-        walker = walker.parent
-    m.backup(terminal)
-    # root is white, so everything is from white's perspective
-    walker = terminal
-    while walker:
-        assert walker.result == -1
-        assert walker.value == -0.9
+        assert walker.result == 1
+        assert walker.value == 0.9
         assert walker.visit == 1
         walker = walker.parent
 

@@ -82,21 +82,19 @@ class MCTS():
     def simulate(self, node):
         if node.children:
             raise MCTSError(node, 'cannot simulate from a non-leaf')
-        walker = node
         board = chess.Board(fen=node.board.fen())
         while not board.is_game_over(claim_draw=True):
             move = self.rollout.get_move(board)
             board.push(move)
-            walker.add_child(move)
-            walker = walker.children[move]
 
-        return walker
-
-    def backup(self, terminal):
-        result = terminal.board.result(claim_draw=True)
+        result = board.result(claim_draw=True)
         reward = get_reward(result, self.root.board.turn)
-        value = self.value.get_value(terminal.board)
-        walker = terminal
+        value = self.value.get_value(board)
+
+        return reward, value
+
+    def backup(self, node, reward, value):
+        walker = node
         while walker:
             walker.visit += 1
             walker.result += reward
@@ -110,8 +108,8 @@ class MCTS():
                 break
             leaf = self.select()
             self.expand(leaf)
-            terminal = self.simulate(leaf)
-            self.backup(terminal)
+            reward, value = self.simulate(leaf)
+            self.backup(leaf, reward, value)
 
     def get_move(self):
         # pick the move with the max visit from the root
