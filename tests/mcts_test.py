@@ -102,5 +102,24 @@ def test_expand():
         assert c.prior == probs[0, index]
 
     # can't expand if it already has been expanded
-    with pytest.raises(mcts.ExpandError):
+    with pytest.raises(mcts.MCTSError):
         m.expand(n)
+
+
+def test_simulate():
+    mock_rollout = mock.MagicMock()
+    # use fool's mate to test
+    mock_rollout.get_move.side_effect = [
+        chess.Move.from_uci('f2f3'),
+        chess.Move.from_uci('e7e5'),
+        chess.Move.from_uci('g2g4'),
+        chess.Move.from_uci('d8h4'),
+    ]
+    n = mcts.Node()
+    m = mcts.MCTS('', mock_rollout, '', '', '', '')
+    terminal = m.simulate(n)
+    assert terminal.board.is_game_over(claim_draw=True)
+    assert terminal.parent.parent.parent.parent == n
+
+    with pytest.raises(mcts.MCTSError):
+        m.simulate(n)

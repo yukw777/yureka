@@ -43,7 +43,7 @@ class Node():
 
 
 @attr.s
-class ExpandError(Exception):
+class MCTSError(Exception):
     node = attr.ib()
     message = attr.ib()
 
@@ -71,13 +71,26 @@ class MCTS():
 
     def expand(self, node):
         if node.children:
-            raise ExpandError(node, 'Cannot expand a non-leaf node')
+            raise MCTSError(node, 'Cannot expand a non-leaf node')
         priors = self.policy.get_probs(node.board).squeeze()
         for move in node.board.legal_moves:
             engine_move = translate_to_engine_move(move, node.board.turn)
             index = get_engine_move_index(engine_move)
             prior = priors.data[index]
             node.add_child(move, prior=prior)
+
+    def simulate(self, node):
+        if node.children:
+            raise MCTSError(node, 'cannot simulate from a non-leaf')
+        walker = node
+        board = chess.Board(fen=node.board.fen())
+        while not board.is_game_over(claim_draw=True):
+            move = self.rollout.get_move(board)
+            board.push(move)
+            walker.add_child(move)
+            walker = walker.children[move]
+
+        return walker
 
     def search(self):
         while not self.terminate_search():
