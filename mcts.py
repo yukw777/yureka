@@ -23,7 +23,7 @@ DEFAULT_ROLLOUT_FILE = os.path.join(
     'SL_endgame',
     'Policy_2018-01-27_07:09:34_14.model',
 )
-RANDOM_ROLLOUT = 'random'
+RANDOM_POLICY = 'random'
 DEFAULT_VALUE = 'Value.v0'
 DEFAULT_VALUE_FILE = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -198,7 +198,7 @@ class ZeroValue():
         return 0
 
 
-class RandomRollout():
+class RandomPolicy():
     def get_move(self, board, sample=True):
         return random.choice(list(board.legal_moves))
 
@@ -281,8 +281,8 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
         return model
 
     def init_models(self):
-        if self.rollout_name == RANDOM_ROLLOUT:
-            self.rollout = RandomRollout()
+        if self.rollout_name == RANDOM_POLICY:
+            self.rollout = RandomPolicy()
         else:
             self.rollout = self.init_model(
                 self.rollout_name, self.rollout_file)
@@ -291,8 +291,11 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
             self.value = ZeroValue()
         else:
             self.value = self.init_model(self.value_name, self.value_file)
-        self.policy = self.init_model(self.policy_name, self.policy_file)
-        self.policy = chess_engine.ChessEngine(self.policy, train=False)
+        if self.policy_name == RANDOM_POLICY:
+            self.policy = RandomPolicy()
+        else:
+            self.policy = self.init_model(self.policy_name, self.policy_file)
+            self.policy = chess_engine.ChessEngine(self.policy, train=False)
 
     def init_engine(self, board=None):
         if board:
