@@ -8,6 +8,10 @@ import torch
 import random
 import os
 from board_data import get_board_data, get_reward
+from move_translator import (
+    translate_to_engine_move,
+    get_engine_move_index,
+)
 
 
 DEFAULT_ROLLOUT = 'Policy.v0'
@@ -40,6 +44,7 @@ DEFAULT_CONFIDENCE = 1
 class Node():
     children = attr.ib(default=attr.Factory(dict))
     parent = attr.ib(default=None)
+    prior = attr.ib(default=0)
     result = attr.ib(default=0)
     value = attr.ib(default=0)
     visit = attr.ib(default=0)
@@ -56,7 +61,8 @@ class Node():
     def ucb(self, lambda_c, confidence, visit_sum):
         # alpha go version
         ucb = self.q(lambda_c)
-        ucb += confidence * math.sqrt(visit_sum) / (1 + self.visit)
+        ucb += confidence * self.prior * math.sqrt(visit_sum)
+        ucb /= (1 + self.visit)
         return ucb
 
     def add_child(self, move, **kwargs):
@@ -98,8 +104,12 @@ class MCTS():
     def expand(self, node):
         if node.children:
             raise MCTSError(node, 'Cannot expand a non-leaf node')
+        priors = self.policy.get_probs(node.board).squeeze()
         for move in node.board.legal_moves:
-            node.add_child(move)
+            engine_move = translate_to_engine_move(move, node.board.turn)
+            index = get_engine_move_index(engine_move)
+            prior = priors.data[index]
+            node.add_child(move, prior=prior)
         return random.choice(list(node.children.values()))
 
     def simulate(self, node):

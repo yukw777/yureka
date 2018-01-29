@@ -5,6 +5,10 @@ import pytest
 import torch
 import time
 from torch.autograd import Variable
+from move_translator import (
+    translate_to_engine_move,
+    get_engine_move_index,
+)
 
 
 def test_node_calculations():
@@ -15,17 +19,19 @@ def test_node_calculations():
             'visit': 4,
             'result': 1,
             'confidence': 4,
+            'prior': 0.5,
             'expected_q': 0.1825,
-            'expected_ucb': 8.1825,
+            'expected_ucb': 4.0365,
         },
         {
-            'lambda': 0.9,
-            'value': -0.5,
-            'visit': 5,
+            'lambda': 0.8,
+            'value': -0.4,
+            'visit': 1,
             'result': -1,
             'confidence': 6,
-            'expected_q': -0.19,
-            'expected_ucb': 9.81,
+            'prior': 0.3,
+            'expected_q': -0.88,
+            'expected_ucb': 8.56,
         },
     ]
 
@@ -34,6 +40,7 @@ def test_node_calculations():
             value=tc['value'],
             visit=tc['visit'],
             result=tc['result'],
+            prior=tc['prior'],
         )
         assert n.q(tc['lambda']) == tc['expected_q']
         assert n.ucb(tc['lambda'], tc['confidence'], 100) == tc['expected_ucb']
@@ -42,14 +49,14 @@ def test_node_calculations():
 def test_node_add_child():
     root = mcts.Node()
     assert root.children == {}
-    root.add_child(chess.Move.from_uci('a2a4'), value=0.5)
-    root.add_child(chess.Move.from_uci('b2b4'), value=0.3)
+    root.add_child(chess.Move.from_uci('a2a4'), prior=0.5)
+    root.add_child(chess.Move.from_uci('b2b4'), prior=0.3)
 
     child1 = root.children[chess.Move.from_uci('a2a4')]
     child2 = root.children[chess.Move.from_uci('b2b4')]
-    assert child1.value == 0.5
+    assert child1.prior == 0.5
     assert child1.parent == root
-    assert child2.value == 0.3
+    assert child2.prior == 0.3
     assert child2.parent == root
 
     b = chess.Board()
@@ -92,6 +99,10 @@ def test_expand():
     random_child = m.expand(n)
     # should have children now. 20 to be exact since we just expanded the root
     assert len(n.children) == 20
+    for move, c in n.children.items():
+        engine_move = translate_to_engine_move(move, chess.WHITE)
+        index = get_engine_move_index(engine_move)
+        assert c.prior == probs[0, index]
     assert random_child in n.children.values()
 
     # can't expand if it already has been expanded
