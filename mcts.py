@@ -42,8 +42,8 @@ DEFAULT_POLICY_FILE = os.path.join(
     'SL_endgame',
     'Policy_2018-01-27_07:09:34_14.model',
 )
-DEFAULT_LAMBDA = 0.5
-DEFAULT_CONFIDENCE = 1
+DEFAULT_LAMBDA = 1.0
+DEFAULT_CONFIDENCE = math.sqrt(2)
 
 
 def timeit(method):
@@ -106,8 +106,8 @@ class MCTS():
     rollout = attr.ib()
     value = attr.ib()
     policy = attr.ib()
-    lambda_c = attr.ib(default=0.5)
-    confidence = attr.ib(default=1)
+    lambda_c = attr.ib(default=DEFAULT_LAMBDA)
+    confidence = attr.ib(default=DEFAULT_CONFIDENCE)
 
     def select(self):
         node = self.root
