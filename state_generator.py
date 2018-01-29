@@ -36,6 +36,8 @@ class StateGenerator():
         for game in self.get_game():
             count += 1
             if skip and count <= skip:
+                if count % 100 == 0:
+                    print(f'Skipped {count}')
                 continue
             try:
                 game_df = pd.DataFrame(self.get_game_data(game))
