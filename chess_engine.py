@@ -153,7 +153,8 @@ class UCIEngine():
             'setoption': self.setoption,
             'quit': self.quit,
         }
-        self.option_changed = True
+        self.model_option_changed = True
+        self.engine_option_changed = True
 
     def init_engine(self):
         raise NotImplemented
@@ -184,16 +185,21 @@ class UCIEngine():
         if not option:
             return
         setattr(self, option['attr_name'], option['py_type'](value))
-        self.option_changed = True
+        if option['model']:
+            self.model_option_changed = True
+        else:
+            self.engine_option_changed = True
 
     def stop(self, args):
         pass
 
     def isready(self, args):
-        if self.option_changed:
+        if self.model_option_changed:
             self.init_models()
+            self.model_option_changed = False
+        if self.engine_option_changed:
             self.init_engine()
-            self.option_changed = False
+            self.engine_option_changed = False
         print('readyok')
 
     def ucinewgame(self, args):
@@ -220,9 +226,11 @@ class UCIEngine():
                 else:
                     self.unknown_handler(args)
                     return
-        self.board = chess.Board(fen=fen)
-        for uci in moves:
-            self.board.push_uci(uci)
+
+        self.new_position(fen, moves)
+
+    def new_position(self, fen, moves):
+        raise NotImplemented
 
     def go(self, args):
         raise NotImplemented
@@ -269,18 +277,21 @@ class UCIPolicyEngine(UCIEngine):
                 'default': DEFAULT_MODEL,
                 'attr_name': 'model_name',
                 'py_type': str,
+                'model': True,
             },
             'Model File': {
                 'type': 'string',
                 'default': DEFAULT_MODEL_FILE,
                 'attr_name': 'model_file',
                 'py_type': str,
+                'model': True,
             },
             'CUDA Device': {
                 'type': 'string',
                 'default': '0',
                 'attr_name': 'cuda_device',
                 'py_type': int,
+                'model': True,
             },
         }
         self.model = None
@@ -294,6 +305,11 @@ class UCIPolicyEngine(UCIEngine):
         self.engine = ChessEngine(
             self.model, train=False, cuda_device=self.cuda_device)
         self.board = chess.Board()
+
+    def new_position(self, fen, moves):
+        self.board = chess.Board(fen=fen)
+        for uci in moves:
+            self.board.push_uci(uci)
 
     def go(self, args):
         move = self.engine.get_move(self.board)
