@@ -5,6 +5,7 @@ import math
 import models
 import time
 import torch
+import random
 import os
 from board_data import get_board_data, get_reward
 
@@ -99,6 +100,7 @@ class MCTS():
             raise MCTSError(node, 'Cannot expand a non-leaf node')
         for move in node.board.legal_moves:
             node.add_child(move)
+        return random.choice(list(node.children.values()))
 
     def simulate(self, node):
         if node.children:
@@ -128,7 +130,7 @@ class MCTS():
             if not t:
                 break
             leaf = self.select()
-            self.expand(leaf)
+            leaf = self.expand(leaf)
             reward, value = self.simulate(leaf)
             self.backup(leaf, reward, value)
 

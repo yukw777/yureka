@@ -89,9 +89,10 @@ def test_expand():
     # no children at this point
     n = mcts.Node()
 
-    m.expand(n)
+    random_child = m.expand(n)
     # should have children now. 20 to be exact since we just expanded the root
     assert len(n.children) == 20
+    assert random_child in n.children.values()
 
     # can't expand if it already has been expanded
     with pytest.raises(mcts.MCTSError):
