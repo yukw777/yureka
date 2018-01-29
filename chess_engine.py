@@ -63,9 +63,9 @@ class ChessEngine():
             probs = probs.clamp(min=1e-12)
         return self.filter_illegal_moves(board, probs)
 
-    def get_move(self, board):
+    def get_move(self, board, sample=False):
         probs = self.get_probs(board)
-        if self.train:
+        if self.train or sample:
             m = Categorical(probs)
             while True:
                 move_index = m.sample()
