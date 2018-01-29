@@ -1,3 +1,5 @@
+#!/home/keunwoo/Documents/Projects/chess-engine/venv/bin/python
+
 import attr
 import chess
 import chess_engine
@@ -287,15 +289,16 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
         for uci in moves:
             board.push_uci(uci)
 
-        # check if the new board differs by only one move from the current one
-        # we have in the engine
-        top = board.pop()
-        if self.engine.root.board == board:
-            # don't throw away the search so far, but advance the root
-            self.engine.advance_root(top)
-        else:
-            board.push(top)
-            self.init_engine(board=board)
+        if moves:
+            # check if the new board with moves differs by only
+            # one move from the current one we have in the engine
+            top = board.pop()
+            if self.engine.root.board == board:
+                # don't throw away the search so far, but advance the root
+                self.engine.advance_root(top)
+            else:
+                board.push(top)
+                self.init_engine(board=board)
 
     def go(self, args):
         self.engine.search(3)
