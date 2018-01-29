@@ -141,11 +141,7 @@ def queen_promotion_if_possible(board, move):
 
 
 @attr.s
-class UCIPolicyEngine():
-    model_name = attr.ib(default=DEFAULT_MODEL)
-    model_file = attr.ib(default=DEFAULT_MODEL_FILE)
-    cuda_device = attr.ib(default=None)
-
+class UCIEngine():
     def __attrs_post_init__(self):
         self.handlers = {
             'uci': self.uci,
@@ -157,38 +153,10 @@ class UCIPolicyEngine():
             'setoption': self.setoption,
             'quit': self.quit,
         }
-        self.options = {
-            'Model Name': {
-                'type': 'string',
-                'default': DEFAULT_MODEL,
-                'attr_name': 'model_name',
-                'py_type': str,
-            },
-            'Model File': {
-                'type': 'string',
-                'default': DEFAULT_MODEL_FILE,
-                'attr_name': 'model_file',
-                'py_type': str,
-            },
-            'CUDA Device': {
-                'type': 'string',
-                'default': '0',
-                'attr_name': 'cuda_device',
-                'py_type': int,
-            },
-        }
-        self.model = None
         self.option_changed = False
 
     def init_engine(self, init_model=True):
-        if init_model:
-            self.model = models.create(self.model_name)
-            self.model.load_state_dict(
-                torch.load(os.path.expanduser(self.model_file)))
-        self.engine = ChessEngine(
-            self.model, train=False, cuda_device=self.cuda_device)
-        self.board = chess.Board()
-        self.option_changed = False
+        raise NotImplemented
 
     def uci(self, args):
         print('id name Yureka 0.1')
@@ -252,8 +220,7 @@ class UCIPolicyEngine():
             self.board.push_uci(uci)
 
     def go(self, args):
-        move = self.engine.get_move(self.board)
-        print(f'bestmove {move.uci()}')
+        raise NotImplemented
 
     def quit(self, args):
         sys.exit()
@@ -281,6 +248,50 @@ class UCIPolicyEngine():
         while True:
             command = input()
             self.handle(command)
+
+
+@attr.s
+class UCIPolicyEngine(UCIEngine):
+    model_name = attr.ib(default=DEFAULT_MODEL)
+    model_file = attr.ib(default=DEFAULT_MODEL_FILE)
+    cuda_device = attr.ib(default=None)
+
+    def __attrs_post_init__(self):
+        self.options = {
+            'Model Name': {
+                'type': 'string',
+                'default': DEFAULT_MODEL,
+                'attr_name': 'model_name',
+                'py_type': str,
+            },
+            'Model File': {
+                'type': 'string',
+                'default': DEFAULT_MODEL_FILE,
+                'attr_name': 'model_file',
+                'py_type': str,
+            },
+            'CUDA Device': {
+                'type': 'string',
+                'default': '0',
+                'attr_name': 'cuda_device',
+                'py_type': int,
+            },
+        }
+        self.model = None
+
+    def init_engine(self, init_model=True):
+        if init_model:
+            self.model = models.create(self.model_name)
+            self.model.load_state_dict(
+                torch.load(os.path.expanduser(self.model_file)))
+        self.engine = ChessEngine(
+            self.model, train=False, cuda_device=self.cuda_device)
+        self.board = chess.Board()
+        self.option_changed = False
+
+    def go(self, args):
+        move = self.engine.get_move(self.board)
+        print(f'bestmove {move.uci()}')
 
 
 if __name__ == '__main__':
