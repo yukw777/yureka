@@ -54,6 +54,8 @@ class Node():
         self.board_data = get_board_data(self.board)
 
     def q(self, lambda_c):
+        if self.visit == 0:
+            return math.inf
         q = (1 - lambda_c) * self.value / self.visit
         q += lambda_c * self.result / self.visit
         return q

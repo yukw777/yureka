@@ -1,5 +1,6 @@
 import mcts
 import chess
+import math
 import unittest.mock as mock
 import pytest
 import torch
@@ -32,6 +33,16 @@ def test_node_calculations():
             'prior': 0.3,
             'expected_q': -0.88,
             'expected_ucb': 8.56,
+        },
+        {
+            'lambda': 0.8,
+            'value': -0.4,
+            'visit': 0,
+            'result': -1,
+            'confidence': 6,
+            'prior': 0.3,
+            'expected_q': math.inf,
+            'expected_ucb': math.inf,
         },
     ]
 
