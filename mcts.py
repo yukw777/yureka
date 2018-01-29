@@ -43,6 +43,17 @@ DEFAULT_LAMBDA = 0.5
 DEFAULT_CONFIDENCE = 1
 
 
+def timeit(method):
+    def timed(*args, **kwargs):
+        ts = time.time()
+        result = method(*args, **kwargs)
+        te = time.time()
+        print('%r  %2.2f ms' %
+              (method.__name__, (te - ts) * 1000))
+        return result
+    return timed
+
+
 @attr.s
 class Node():
     children = attr.ib(default=attr.Factory(dict))
