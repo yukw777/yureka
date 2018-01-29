@@ -223,3 +223,41 @@ def test_engine_new_position():
     assert e.engine.root.board == expected
     assert e.engine.root.parent is None
     assert len(e.engine.root.children) == 0
+
+
+def test_parse_time_control():
+    test_cases = [
+        {
+            'args': 'movetime 10000',
+            'turn': chess.WHITE,
+            'duration': 10,
+        },
+        {
+            'args': 'wtime 15000 btime 30000 movestogo 15',
+            'turn': chess.WHITE,
+            'duration': 1,
+        },
+        {
+            'args': 'wtime 15000 btime 30000 movestogo 15',
+            'turn': chess.BLACK,
+            'duration': 2,
+        },
+        {
+            'args': 'wtime 10000 btime 20000',
+            'turn': chess.WHITE,
+            'duration': 10,
+        },
+        {
+            'args': 'wtime 10000 btime 20000',
+            'turn': chess.BLACK,
+            'duration': 20,
+        },
+        {
+            'args': 'unknown',
+            'turn': chess.BLACK,
+            'duration': None,
+        },
+    ]
+    for tc in test_cases:
+        parsed = mcts.parse_time_control(tc['turn'], tc['args'])
+        assert parsed == tc['duration']

@@ -10,6 +10,7 @@ import torch
 from torch.autograd import Variable
 import random
 import os
+import re
 from board_data import get_board_data, get_reward
 from move_translator import (
     TOTAL_MOVES,
@@ -195,6 +196,23 @@ def continue_search(duration):
     yield False
 
 
+def parse_time_control(turn, args):
+    m = re.match(r'movetime\s+([0-9]+)', args)
+    if m:
+        return float(m.group(1)) / 1000
+    m = re.match(
+        r'wtime\s+([0-9]+)\s+btime\s([0-9]+)(?:\s+movestogo\s+([0-9]+))?',
+        args
+    )
+    if m:
+        duration = float(m.group(1)) if turn == chess.WHITE else \
+            float(m.group(2))
+        duration /= 1000
+        if m.group(3):
+            duration /= float(m.group(3))
+        return duration
+
+
 class ZeroValue():
     def get_value(self, board):
         return 0
@@ -335,7 +353,12 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
             self.init_engine(board=board)
 
     def go(self, args):
-        self.engine.search(3)
+        duration = parse_time_control(self.engine.root.board.turn, args)
+        if not duration:
+            self.unknown_handler(args)
+            return
+        print(f'info string search for {duration} seconds')
+        self.engine.search(duration)
         move = self.engine.get_move()
         print(f'bestmove {move.uci()}')
 
