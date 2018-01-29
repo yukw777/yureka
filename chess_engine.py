@@ -153,7 +153,7 @@ class UCIEngine():
             'setoption': self.setoption,
             'quit': self.quit,
         }
-        self.option_changed = False
+        self.option_changed = True
 
     def init_engine(self):
         raise NotImplemented
@@ -190,9 +190,10 @@ class UCIEngine():
         pass
 
     def isready(self, args):
-        if not self.model or self.option_changed:
+        if self.option_changed:
             self.init_models()
             self.init_engine()
+            self.option_changed = False
         print('readyok')
 
     def ucinewgame(self, args):
@@ -293,7 +294,6 @@ class UCIPolicyEngine(UCIEngine):
         self.engine = ChessEngine(
             self.model, train=False, cuda_device=self.cuda_device)
         self.board = chess.Board()
-        self.option_changed = False
 
     def go(self, args):
         move = self.engine.get_move(self.board)
