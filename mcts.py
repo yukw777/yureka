@@ -7,10 +7,12 @@ import math
 import models
 import time
 import torch
+from torch.autograd import Variable
 import random
 import os
 from board_data import get_board_data, get_reward
 from move_translator import (
+    TOTAL_MOVES,
     translate_to_engine_move,
     get_engine_move_index,
 )
@@ -202,6 +204,18 @@ class RandomPolicy():
     def get_move(self, board, sample=True):
         return random.choice(list(board.legal_moves))
 
+    def get_probs(self, board):
+        moves = list(board.legal_moves)
+        prob = 1/len(moves)
+        probs = Variable(torch.zeros(1, TOTAL_MOVES))
+        indexes = []
+        for move in moves:
+            engine_move = translate_to_engine_move(move, board.turn)
+            index = get_engine_move_index(engine_move)
+            indexes.append(index)
+        probs.index_fill_(1, Variable(torch.LongTensor(indexes)), prob)
+        return probs
+
 
 @attr.s
 class UCIMCTSEngine(chess_engine.UCIEngine):
@@ -314,21 +328,11 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
     def new_position(self, fen, moves):
         board = chess.Board(fen=fen)
         for uci in moves:
+            if board == self.engine.root.board:
+                self.engine.advance_root(chess.Move.from_uci(uci))
             board.push_uci(uci)
-
-        if len(moves) >= 2:
-            # check if the new board with moves differs by only
-            # two moves from the current one we have in the engine
-            top1 = board.pop()
-            top2 = board.pop()
-            if self.engine.root.board == board:
-                # don't throw away the search so far, but advance the root
-                self.engine.advance_root(top2)
-                self.engine.advance_root(top1)
-            else:
-                board.push(top2)
-                board.push(top1)
-                self.init_engine(board=board)
+        if board != self.engine.root.board:
+            self.init_engine(board=board)
 
     def go(self, args):
         self.engine.search(3)

@@ -197,3 +197,29 @@ def test_advance_root():
     m.advance_root(move)
     assert m.root.parent is None
     assert m.root.board.move_stack == [move]
+
+
+def test_engine_new_position():
+    e = mcts.UCIMCTSEngine(
+        rollout_name=mcts.RANDOM_POLICY,
+        value_name=mcts.ZERO_VALUE,
+        policy_name=mcts.RANDOM_POLICY,
+    )
+    e.init_models()
+    e.init_engine()
+    e.engine.expand(e.engine.root)
+    e.engine.expand(e.engine.root.children[chess.Move.from_uci('e2e4')])
+
+    e.new_position(chess.STARTING_FEN, ['e2e4'])
+    expected = chess.Board()
+    expected.push_uci('e2e4')
+    assert e.engine.root.board == expected
+    assert e.engine.root.parent is None
+    assert len(e.engine.root.children) != 0
+
+    e.new_position(chess.STARTING_FEN, ['a2a4'])
+    expected = chess.Board()
+    expected.push_uci('a2a4')
+    assert e.engine.root.board == expected
+    assert e.engine.root.parent is None
+    assert len(e.engine.root.children) == 0
