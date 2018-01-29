@@ -23,6 +23,7 @@ DEFAULT_ROLLOUT_FILE = os.path.join(
     'SL_endgame',
     'Policy_2018-01-27_07:09:34_14.model',
 )
+RANDOM_ROLLOUT = 'random'
 DEFAULT_VALUE = 'Value.v0'
 DEFAULT_VALUE_FILE = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -140,13 +141,16 @@ class MCTS():
 
     def search(self, duration):
         search_time = continue_search(duration)
+        count = 0
         for t in search_time:
             if not t:
                 break
+            print(f'info string search iterations: {count}')
             leaf = self.select()
             leaf = self.expand(leaf)
             reward, value = self.simulate(leaf)
             self.backup(leaf, reward, value)
+            count += 1
 
     def get_move(self):
         # pick the move with the max visit from the root
@@ -183,6 +187,11 @@ class ZeroValue():
         return 0
 
 
+class RandomRollout():
+    def get_move(self, board, sample=True):
+        return random.choice(list(board.legal_moves))
+
+
 @attr.s
 class UCIMCTSEngine(chess_engine.UCIEngine):
     rollout_name = attr.ib(default=DEFAULT_ROLLOUT)
@@ -200,14 +209,14 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
             'Rollout Name': {
                 'type': 'string',
                 'default': DEFAULT_ROLLOUT,
-                'attr_name': 'model_name',
+                'attr_name': 'rollout_name',
                 'py_type': str,
                 'model': True,
             },
             'Rollout File': {
                 'type': 'string',
                 'default': DEFAULT_ROLLOUT_FILE,
-                'attr_name': 'model_file',
+                'attr_name': 'rollout_file',
                 'py_type': str,
                 'model': True,
             },
@@ -242,7 +251,7 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
             'Lambda': {
                 'type': 'string',
                 'default': DEFAULT_LAMBDA,
-                'attr_name': 'lambda',
+                'attr_name': 'lambda_c',
                 'py_type': float,
                 'model': False,
             },
@@ -261,8 +270,12 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
         return model
 
     def init_models(self):
-        self.rollout = self.init_model(self.rollout_name, self.rollout_file)
-        self.rollout = chess_engine.ChessEngine(self.rollout, train=False)
+        if self.rollout_name == RANDOM_ROLLOUT:
+            self.rollout = RandomRollout()
+        else:
+            self.rollout = self.init_model(
+                self.rollout_name, self.rollout_file)
+            self.rollout = chess_engine.ChessEngine(self.rollout, train=False)
         if self.value_name == ZERO_VALUE:
             self.value = ZeroValue()
         else:
