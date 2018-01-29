@@ -34,11 +34,15 @@ class StateGenerator():
         header = True
         for game in self.get_game():
             count += 1
-            game_df = pd.DataFrame(self.get_game_data(game))
-            game_df = pd.concat([
-                game_df,
-                pd.DataFrame(self.get_label_data(game))
-            ], axis=1)
+            try:
+                game_df = pd.DataFrame(self.get_game_data(game))
+                game_df = pd.concat([
+                    game_df,
+                    pd.DataFrame(self.get_label_data(game))
+                ], axis=1)
+            except ValueError as e:
+                print(e)
+                continue
             df = pd.concat([df, game_df])
             if count % 100 == 0:
                 if write:
