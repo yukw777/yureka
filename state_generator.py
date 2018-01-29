@@ -27,13 +27,16 @@ class StateGenerator():
     def stop(self, game_count, state_count):
         pass
 
-    def generate(self, write=False):
+    def generate(self, skip=None, write=False):
         count = 0
         state_count = 0
         df = pd.DataFrame()
         header = True
+        print(f'skipping: {skip}')
         for game in self.get_game():
             count += 1
+            if skip and count <= skip:
+                continue
             try:
                 game_df = pd.DataFrame(self.get_game_data(game))
                 game_df = pd.concat([
@@ -196,7 +199,7 @@ class ExpertSampledStateGenerator(ExpertStateGenerator):
 
 def expert(args):
     s = ExpertStateGenerator(args.out_csv_file, args.pgn_file, args.num_states)
-    s.generate(write=True)
+    s.generate(write=True, skip=args.skip)
 
 
 def sim_sampled(args):
@@ -213,7 +216,7 @@ def sim_sampled(args):
 def expert_sampled(args):
     s = ExpertSampledStateGenerator(
         args.out_csv_file, args.pgn_file, args.num_states)
-    s.generate(write=True)
+    s.generate(write=True, skip=args.skip)
 
 
 if __name__ == '__main__':
@@ -225,6 +228,7 @@ if __name__ == '__main__':
     parser_expert.add_argument('pgn_file')
     parser_expert.add_argument('out_csv_file')
     parser_expert.add_argument('num_states', type=int)
+    parser_expert.add_argument('-s', '--skip', type=int)
     parser_expert.set_defaults(func=expert)
 
     parser_sim_sampled = subparsers.add_parser('sim_sampled')
@@ -240,6 +244,7 @@ if __name__ == '__main__':
     parser_expert_sampled.add_argument('pgn_file')
     parser_expert_sampled.add_argument('out_csv_file')
     parser_expert_sampled.add_argument('num_states', type=int)
+    parser_expert_sampled.add_argument('-s', '--skip', type=int)
     parser_expert_sampled.set_defaults(func=expert_sampled)
     args = parser.parse_args()
     args.func(args)
