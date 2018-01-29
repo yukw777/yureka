@@ -164,7 +164,11 @@ class ExpertSampledStateGenerator(ExpertStateGenerator):
     def get_game(self):
         for game in super(ExpertSampledStateGenerator, self).get_game():
             moves = list(game.main_line())
-            sampled = random.randint(1, len(moves))
+            try:
+                sampled = random.randint(1, len(moves))
+            except ValueError as e:
+                print(e)
+                continue
             board = chess.Board()
             color = None
             for i in range(sampled):
