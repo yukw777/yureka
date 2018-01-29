@@ -313,22 +313,24 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
         for uci in moves:
             board.push_uci(uci)
 
-        if moves:
+        if len(moves) >= 2:
             # check if the new board with moves differs by only
-            # one move from the current one we have in the engine
-            top = board.pop()
+            # two moves from the current one we have in the engine
+            top1 = board.pop()
+            top2 = board.pop()
             if self.engine.root.board == board:
                 # don't throw away the search so far, but advance the root
-                self.engine.advance_root(top)
+                self.engine.advance_root(top2)
+                self.engine.advance_root(top1)
             else:
-                board.push(top)
+                board.push(top2)
+                board.push(top1)
                 self.init_engine(board=board)
 
     def go(self, args):
         self.engine.search(3)
         move = self.engine.get_move()
         print(f'bestmove {move.uci()}')
-        self.engine.advance_root(move)
 
 
 if __name__ == '__main__':
