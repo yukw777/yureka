@@ -10,7 +10,6 @@ import torch
 from torch.autograd import Variable
 import random
 import os
-import re
 from board_data import get_board_data, get_reward
 from move_translator import (
     TOTAL_MOVES,
@@ -185,6 +184,81 @@ class MCTS():
         self.root.parent = None
 
 
+TC_WTIME = 'wtime'
+TC_BTIME = 'btime'
+TC_WINC = 'winc'
+TC_BINC = 'binc'
+TC_MOVESTOGO = 'movestogo'
+TC_MOVETIME = 'movetime'
+TC_KEYS = [
+    TC_WTIME,
+    TC_BTIME,
+    TC_WINC,
+    TC_BINC,
+    TC_MOVESTOGO,
+    TC_MOVETIME,
+]
+
+
+@attr.s
+class TimeManager():
+    total_time = attr.ib(default=None)
+    total_moves = attr.ib(default=None)
+
+    def handle_movetime(self, data):
+        return data[TC_MOVETIME]
+
+    def handle_fischer(self, color, data):
+        if color == chess.WHITE:
+            time = data[TC_WTIME]
+            otime = data[TC_BTIME]
+            inc = data[TC_WINC]
+        else:
+            time = data[TC_BTIME]
+            otime = data[TC_WTIME]
+            inc = data[TC_BINC]
+
+        ratio = max(otime/time, 1.0)
+        # assume we have 16 moves to go
+        moves = 16 * min(2.0, ratio)
+        return time / moves + 3 / 4 * inc
+
+    def handle_classic(self, color, data):
+        if self.total_time is None and self.total_moves is None:
+            # first time getting time control information
+            # assume this is the start
+            self.total_moves = data.get(TC_MOVESTOGO)
+            if color == chess.WHITE:
+                self.total_time = data[TC_WTIME]
+            else:
+                self.total_time = data[TC_BTIME]
+        if color == chess.WHITE:
+            time = data[TC_WTIME]
+        else:
+            time = data[TC_BTIME]
+        moves = data.get(TC_MOVESTOGO, 20)
+        tc = time / moves
+        if self.total_moves:
+            tc_cf = time + self.total_time
+            tc_cf /= moves + self.total_moves
+        else:
+            tc_cf = math.inf
+        return min(tc, tc_cf)
+
+    def handle(self, color, args):
+        data = parse_time_control(args)
+        return self.calculate_duration(color, data)
+
+    def calculate_duration(self, color, data):
+        if TC_MOVETIME in data:
+            duration = self.handle_movetime(data)
+        elif TC_WINC in data and TC_BINC in data:
+            duration = self.handle_fischer(color, data)
+        else:
+            duration = self.handle_classic(color, data)
+        return duration / 1000
+
+
 def continue_search(duration):
     # search for {duration} seconds
     remaining = duration
@@ -196,21 +270,14 @@ def continue_search(duration):
     yield False
 
 
-def parse_time_control(turn, args):
-    m = re.match(r'movetime\s+([0-9]+)', args)
-    if m:
-        return float(m.group(1)) / 1000
-    m = re.match(
-        r'wtime\s+([0-9]+)\s+btime\s([0-9]+)(?:\s+movestogo\s+([0-9]+))?',
-        args
-    )
-    if m:
-        duration = float(m.group(1)) if turn == chess.WHITE else \
-            float(m.group(2))
-        duration /= 1000
-        if m.group(3):
-            duration /= float(m.group(3))
-        return duration
+def parse_time_control(args):
+    data = {}
+    args = args.split()
+    for i in range(len(args)):
+        token = args[i]
+        if token in TC_KEYS:
+            data[token] = float(args[i+1])
+    return data
 
 
 class ZeroValue():
@@ -342,6 +409,7 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
             self.lambda_c,
             self.confidence,
         )
+        self.time_manager = TimeManager()
 
     def new_position(self, fen, moves):
         board = chess.Board(fen=fen)
@@ -353,7 +421,7 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
             self.init_engine(board=board)
 
     def go(self, args):
-        duration = parse_time_control(self.engine.root.board.turn, args)
+        duration = self.time_manager.handle(self.engine.root.board.turn, args)
         if not duration:
             self.unknown_handler(args)
             return
