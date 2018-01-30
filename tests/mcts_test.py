@@ -261,3 +261,75 @@ def test_parse_time_control():
     for tc in test_cases:
         parsed = mcts.parse_time_control(tc['turn'], tc['args'])
         assert parsed == tc['duration']
+
+
+def test_time_manager():
+    test_cases = [
+        {
+            'data': [
+                {
+                    'movetime': 10,
+                    'color': chess.WHITE,
+                },
+                {
+                    'movetime': 20,
+                    'color': chess.WHITE,
+                },
+            ],
+            'expected': [10, 20],
+        },
+        {
+            'data': [
+                {
+                    'wtime': 10,
+                    'btime': 20,
+                    'winc': 1,
+                    'binc': 1,
+                    'color': chess.WHITE,
+                },
+                {
+                    'wtime': 10,
+                    'btime': 20,
+                    'winc': 1,
+                    'binc': 1,
+                    'color': chess.BLACK,
+                },
+                {
+                    'wtime': 10,
+                    'btime': 30,
+                    'winc': 1,
+                    'binc': 1,
+                    'color': chess.BLACK,
+                },
+            ],
+            'expected': [1.0625, 2.0, 2.625],
+        },
+        {
+            'data': [
+                {
+                    'wtime': 100,
+                    'btime': 200,
+                    'movestogo': 20,
+                    'color': chess.WHITE,
+                },
+                {
+                    'wtime': 100,
+                    'btime': 200,
+                    'movestogo': 20,
+                    'color': chess.BLACK,
+                },
+                {
+                    'wtime': 300,
+                    'btime': 200,
+                    'color': chess.WHITE,
+                },
+            ],
+            'expected': [5.0, 7.5, 10],
+        }
+    ]
+
+    for tc in test_cases:
+        tm = mcts.TimeManager()
+        for d, e in zip(tc['data'], tc['expected']):
+            duration = tm.calculate_duration(d['color'], d)
+            assert duration == e
