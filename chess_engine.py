@@ -163,15 +163,15 @@ class UCIEngine():
         raise NotImplemented
 
     def uci(self, args):
-        print('id name Yureka 0.1')
-        print('id author Peter Yu')
+        print_flush('id name Yureka 0.1')
+        print_flush('id author Peter Yu')
         self.print_options()
-        print('uciok')
+        print_flush('uciok')
 
     def print_options(self):
         for name, option in self.options.items():
-            print(f"option name {name} type {option['type']} default"
-                  f" {option['default']}")
+            print_flush(f"option name {name} type {option['type']} default"
+                        f" {option['default']}")
 
     def setoption(self, args):
         m = re.match(r'name\s+(.+)\s+value\s+(.+)', args)
@@ -200,7 +200,7 @@ class UCIEngine():
         if self.engine_option_changed:
             self.init_engine()
             self.engine_option_changed = False
-        print('readyok')
+        print_flush('readyok')
 
     def ucinewgame(self, args):
         self.init_engine()
@@ -239,7 +239,7 @@ class UCIEngine():
         sys.exit()
 
     def unknown_handler(self, command):
-        print(f'Unknown command: {command}')
+        print_flush(f'Unknown command: {command}')
 
     def parse_command(self, raw_command):
         parts = raw_command.split(maxsplit=1)
@@ -313,7 +313,11 @@ class UCIPolicyEngine(UCIEngine):
 
     def go(self, args):
         move = self.engine.get_move(self.board)
-        print(f'bestmove {move.uci()}')
+        print_flush(f'bestmove {move.uci()}')
+
+
+def print_flush(*args, **kwargs):
+    print(*args, flush=True, **kwargs)
 
 
 if __name__ == '__main__':

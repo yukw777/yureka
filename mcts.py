@@ -2,7 +2,6 @@
 
 import attr
 import chess
-import chess_engine
 import math
 import models
 import time
@@ -11,6 +10,11 @@ from torch.autograd import Variable
 import random
 import os
 from board_data import get_board_data, get_reward
+from chess_engine import (
+    print_flush,
+    ChessEngine,
+    UCIEngine,
+)
 from move_translator import (
     TOTAL_MOVES,
     translate_to_engine_move,
@@ -158,7 +162,7 @@ class MCTS():
         for t in search_time:
             if not t:
                 break
-            print(f'info string search iterations: {count}')
+            print_flush(f'info string search iterations: {count}')
             leaf = self.select()
             leaf = self.expand(leaf)
             reward, value = self.simulate(leaf)
@@ -303,7 +307,7 @@ class RandomPolicy():
 
 
 @attr.s
-class UCIMCTSEngine(chess_engine.UCIEngine):
+class UCIMCTSEngine(UCIEngine):
     rollout_name = attr.ib(default=DEFAULT_ROLLOUT)
     rollout_file = attr.ib(default=DEFAULT_ROLLOUT_FILE)
     value_name = attr.ib(default=ZERO_VALUE)
@@ -385,7 +389,7 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
         else:
             self.rollout = self.init_model(
                 self.rollout_name, self.rollout_file)
-            self.rollout = chess_engine.ChessEngine(self.rollout, train=False)
+            self.rollout = ChessEngine(self.rollout, train=False)
         if self.value_name == ZERO_VALUE:
             self.value = ZeroValue()
         else:
@@ -394,7 +398,7 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
             self.policy = RandomPolicy()
         else:
             self.policy = self.init_model(self.policy_name, self.policy_file)
-            self.policy = chess_engine.ChessEngine(self.policy, train=False)
+            self.policy = ChessEngine(self.policy, train=False)
 
     def init_engine(self, board=None):
         if board:
@@ -425,12 +429,12 @@ class UCIMCTSEngine(chess_engine.UCIEngine):
         if not duration:
             self.unknown_handler(args)
             return
-        print(f'info string search for {duration} seconds')
+        print_flush(f'info string search for {duration} seconds')
         self.engine.search(duration)
         move = self.engine.get_move()
-        print(f'bestmove {move.uci()}')
+        print_flush(f'bestmove {move.uci()}')
 
 
 if __name__ == '__main__':
-    print('Yureka!')
+    print_flush('Yureka!')
     UCIMCTSEngine().listen()
