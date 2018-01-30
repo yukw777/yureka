@@ -7,7 +7,6 @@ import torch
 import torch.utils.data as data
 import torch.optim as optim
 import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 import models
 import sklearn.metrics as metrics
@@ -35,6 +34,7 @@ class SupervisedTrainer():
     cuda = attr.ib(default=True)
     parallel = attr.ib(default=False)
     learning_rate = attr.ib(default=1e-4)
+    value = attr.ib(default=False)
 
     def __attrs_post_init__(self):
         self.cuda = self.cuda and torch.cuda.is_available()
@@ -53,6 +53,7 @@ class SupervisedTrainer():
 
         self.lr_reduced = False
         self.original_learning_rate = self.learning_rate
+        self.criterion = nn.MSELoss() if self.value else nn.CrossEntropyLoss()
 
     def print_summary(self):
         self.logger.info(f'Train data: {self.train_data}')
@@ -64,7 +65,10 @@ class SupervisedTrainer():
         self.logger.info(f'Learning rate: {self.learning_rate}')
 
     def get_data_loader(self, data_file):
-        dataset = ChessDataset(data_file)
+        if self.value:
+            dataset = ChessDataset(data_file, value=True)
+        else:
+            dataset = ChessDataset(data_file)
         return data.DataLoader(
             dataset,
             batch_size=self.batch_size,
@@ -89,7 +93,9 @@ class SupervisedTrainer():
 
     def predict(self, inputs):
         outputs = self.model(inputs)
-        return outputs.view(outputs.shape[0], -1)
+        if not self.value:
+            return outputs.view(outputs.shape[0], -1)
+        return outputs
 
     def run(self):
         for epoch in range(self.num_epochs):
@@ -131,44 +137,51 @@ class SupervisedTrainer():
         torch.save(self.model.state_dict(), filepath)
         self.logger.info('Done saving')
 
+    def calculate_loss(self, outputs, labels):
+        pass
+
     def test(self, epoch):
         self.logger.info('Testing...')
         self.model.eval()
 
         losses = []
-        predictions = np.array([])
-        answers = np.array([])
+        if not self.value:
+            predictions = np.array([])
+            answers = np.array([])
         for i, row in enumerate(self.test_data):
             inputs, labels = self.get_variables_from_inputs(row)
 
             # loss
             outputs = self.predict(inputs)
-            loss = F.cross_entropy(outputs, labels)
+            loss = self.criterion(outputs, labels)
             losses.append(loss.data)
 
-            _, prediction = outputs.max(1)
-            predictions = np.append(predictions, prediction.data)
-            answers = np.append(answers, labels.data)
+            if not self.value:
+                _, prediction = outputs.max(1)
+                predictions = np.append(predictions, prediction.data)
+                answers = np.append(answers, labels.data)
 
         avg_loss = np.average(losses)
-        precision = metrics.precision_score(
-            answers,
-            predictions,
-            average='micro'
-        )
-        recall = metrics.recall_score(answers, predictions, average='micro')
-        f1_score = metrics.f1_score(answers, predictions, average='micro')
+        if not self.value:
+            precision = metrics.precision_score(
+                answers,
+                predictions,
+                average='micro'
+            )
+            recall = metrics.recall_score(
+                answers, predictions, average='micro')
+            f1_score = metrics.f1_score(answers, predictions, average='micro')
         self.logger.info(f'Avg. loss at epoch {epoch}: {avg_loss}')
-        self.logger.info(f'Precision at epoch {epoch}: {precision}')
-        self.logger.info(f'Recall at epoch {epoch}: {recall}')
-        self.logger.info(f'F1 score at epoch {epoch}: {f1_score}')
+        if not self.value:
+            self.logger.info(f'Precision at epoch {epoch}: {precision}')
+            self.logger.info(f'Recall at epoch {epoch}: {recall}')
+            self.logger.info(f'F1 score at epoch {epoch}: {f1_score}')
         self.logger.info('Testing finished')
 
     def train(self, epoch):
         self.logger.info('Training...')
         self.model.train()
 
-        criterion = nn.CrossEntropyLoss()
         optimizer = optim.SGD(
             self.model.parameters(),
             lr=self.learning_rate,
@@ -185,10 +198,9 @@ class SupervisedTrainer():
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            outputs = self.model(inputs)
-            outputs = outputs.view(outputs.shape[0], -1)
+            outputs = self.predict(inputs)
 
-            loss = criterion(outputs, labels)
+            loss = self.criterion(outputs, labels)
             if np.isnan(loss.data[0]):
                 # oops, loss is nan, probably means gradient exploded
                 # let's try again with a lower learning rate
@@ -218,6 +230,7 @@ def run():
     parser.add_argument('-l', '--log-file')
     parser.add_argument('-s', '--saved-model')
     parser.add_argument('-r', '--learning-rate', type=float)
+    parser.add_argument('-v', '--value', action='store_true')
 
     args = parser.parse_args()
 
@@ -251,6 +264,8 @@ def run():
         trainer_setting['parallel'] = args.parallel
     if args.learning_rate:
         trainer_setting['learning_rate'] = args.learning_rate
+    if args.value:
+        trainer_setting['value'] = args.value
     trainer = SupervisedTrainer(**trainer_setting)
     trainer.run()
 

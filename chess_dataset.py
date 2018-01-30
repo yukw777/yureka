@@ -14,6 +14,7 @@ SIZE = (1, ) + BOARD_SIZE
 @attr.s
 class ChessDataset(Dataset):
     data_file = attr.ib()
+    value = attr.ib(default=False)
 
     def __attrs_post_init__(self):
         self.df = pd.read_csv(self.data_file)
@@ -23,9 +24,13 @@ class ChessDataset(Dataset):
 
     def __getitem__(self, index):
         row = self.df.iloc[index]
+        if self.value:
+            label = torch.Tensor([float(row['value'])])
+        else:
+            label = move_translator.get_engine_move_index(row['move'])
         return (
             get_tensor_from_row(row),
-            move_translator.get_engine_move_index(row['move']),
+            label,
         )
 
 
