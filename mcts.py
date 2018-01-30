@@ -126,13 +126,17 @@ class MCTS():
     def expand(self, node):
         if node.children:
             raise MCTSError(node, 'Cannot expand a non-leaf node')
-        priors = self.policy.get_probs(node.board).squeeze()
-        for move in node.board.legal_moves:
-            engine_move = translate_to_engine_move(move, node.board.turn)
-            index = get_engine_move_index(engine_move)
-            prior = priors.data[index]
-            node.add_child(move, prior=prior)
-        return random.choice(list(node.children.values()))
+        if node.board.legal_moves:
+            priors = self.policy.get_probs(node.board).squeeze()
+            for move in node.board.legal_moves:
+                engine_move = translate_to_engine_move(move, node.board.turn)
+                index = get_engine_move_index(engine_move)
+                prior = priors.data[index]
+                node.add_child(move, prior=prior)
+            return random.choice(list(node.children.values()))
+        else:
+            # terminal state, just return itself
+            return node
 
     def simulate(self, node):
         if node.children:

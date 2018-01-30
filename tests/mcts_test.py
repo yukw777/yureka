@@ -120,6 +120,12 @@ def test_expand():
     with pytest.raises(mcts.MCTSError):
         m.expand(n)
 
+    # if expanding a terminal state, just return the node
+    n = mcts.Node(board=chess.Board(
+        fen='3b1q1q/1N2PRQ1/rR3KBr/B4PP1/2Pk1r1b/1P2P1N1/2P2P2/8 '
+            'b - - 0 1'))
+    assert n == m.expand(n)
+
 
 def test_simulate():
     # use fool's mate to test
