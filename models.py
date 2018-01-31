@@ -101,6 +101,11 @@ models = {
         'args': (23, 128, 11, 128),
         'kwargs': {},
     },
+    'Rollout.v0': {
+        'class': Policy,
+        'args': (23, 128, 3),
+        'kwargs': {},
+    },
 }
 
 
