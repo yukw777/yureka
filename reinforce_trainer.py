@@ -167,7 +167,7 @@ class ReinforceTrainer():
         self.logger.info('Training done')
 
     def save(self, iteration):
-        filename = self.trainee_model.__class__.__name__
+        filename = self.trainee_model.name
         filename += f"_{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}"
         filename += f"_{iteration}.model"
         filepath = os.path.join(

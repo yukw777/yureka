@@ -6,12 +6,14 @@ from move_translator import NUM_MOVE_PLANES
 class Policy(nn.Module):
     def __init__(
         self,
+        name,
         in_channels,
         out_channels,
         hidden_conv_layers,
         batch_norm=False
     ):
         super(Policy, self).__init__()
+        self.name = name
         self.batch_norm = batch_norm
         self.conv1 = self.create_conv_layer(
             in_channels,
@@ -59,6 +61,7 @@ class Policy(nn.Module):
 class Value(Policy):
     def __init__(
         self,
+        name,
         in_channels,
         out_channels,
         hidden_conv_layers,
@@ -66,6 +69,7 @@ class Value(Policy):
         batch_norm=False
     ):
         super(Value, self).__init__(
+            name,
             in_channels,
             out_channels,
             hidden_conv_layers,
@@ -106,12 +110,18 @@ models = {
         'args': (23, 128, 3),
         'kwargs': {},
     },
+    'Rollout.v1': {
+        'class': Policy,
+        'args': (23, 64, 1),
+        'kwargs': {},
+    },
 }
 
 
 def create(model_name):
     model_setting = models[model_name]
     return model_setting['class'](
+        model_name,
         *model_setting['args'],
         **model_setting['kwargs'],
     )

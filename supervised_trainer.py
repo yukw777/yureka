@@ -125,7 +125,7 @@ class SupervisedTrainer():
             self.test(epoch)
 
     def save(self, epoch):
-        filename = self.model.__class__.__name__
+        filename = self.model.name
         filename += f"_{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}"
         filename += f"_{epoch}.model"
         filepath = os.path.join(
