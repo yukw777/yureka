@@ -160,8 +160,8 @@ class MCTS():
         count = 0
         for t in search_time:
             if not t:
+                print_flush(f'info string search iterations: {count}')
                 break
-            print_flush(f'info string search iterations: {count}')
             leaf = self.select()
             leaf = self.expand(leaf)
             reward, value = self.simulate(leaf)
