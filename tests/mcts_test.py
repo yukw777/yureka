@@ -136,17 +136,27 @@ def test_simulate():
         chess.Move.from_uci('g2g4'),
         chess.Move.from_uci('d8h4'),
     ]
-    mock_value = mock.MagicMock()
-    mock_value.get_value.return_value = -0.9
     n = mcts.Node()
-    m = mcts.MCTS(n, mock_rollout, mock_value, '', '', '')
-    reward, value = m.simulate(n)
+    m = mcts.MCTS(n, mock_rollout, '', '', '')
+    reward = m.simulate(n)
     assert reward == -1
-    assert value == -0.9
 
     with pytest.raises(mcts.MCTSError):
         n.children[1] = mcts.Node()
         m.simulate(n)
+
+
+def test_calculate_value():
+    mock_value = mock.MagicMock()
+    mock_value.get_value.return_value = -0.9
+    n = mcts.Node()
+    m = mcts.MCTS(n, '', mock_value, '', '', '')
+    value = m.calculate_value(n)
+    assert value == -0.9
+
+    with pytest.raises(mcts.MCTSError):
+        n.children[1] = mcts.Node()
+        m.calculate_value(n)
 
 
 def test_backup():

@@ -127,25 +127,32 @@ class MCTS():
 
     def simulate(self, node):
         if node.children:
+            # TODO: needs to be removed if parallel
             raise MCTSError(node, 'cannot simulate from a non-leaf')
-        board = chess.Board(fen=node.board.fen())
         if self.lambda_c == 0:
             # it will be zero either way, so no need to simulate
             reward = 0
         else:
+            board = chess.Board(fen=node.board.fen())
             while not board.is_game_over(claim_draw=True):
                 move = self.rollout.get_move(board, sample=True)
                 board.push(move)
 
             result = board.result(claim_draw=True)
             reward = get_reward(result, self.root.board.turn)
+
+        return reward
+
+    def calculate_value(self, node):
+        if node.children:
+            # TODO: needs to be removed if parallel
+            raise MCTSError(node, 'cannot simulate from a non-leaf')
+        board = chess.Board(fen=node.board.fen())
         if self.lambda_c == 1:
             # it will be zero either way, so no need to calculate
-            value = 0
+            return 0
         else:
-            value = self.value.get_value(board)
-
-        return reward, value
+            return self.value.get_value(board)
 
     def backup(self, node, reward, value):
         walker = node
@@ -164,7 +171,8 @@ class MCTS():
                 break
             leaf = self.select()
             leaf = self.expand(leaf)
-            reward, value = self.simulate(leaf)
+            reward = self.simulate(leaf)
+            value = self.calculate_value(leaf)
             self.backup(leaf, reward, value)
             count += 1
 
