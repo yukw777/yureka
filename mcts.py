@@ -312,6 +312,7 @@ class ValueNetwork():
     cuda_device = attr.ib(default=None)
 
     def __attrs_post_init__(self):
+        self.value.eval()
         self.cuda = self.cuda and torch.cuda.is_available()
         if self.cuda:
             self.value.cuda(self.cuda_device)
