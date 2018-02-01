@@ -3,6 +3,7 @@
 import attr
 import chess
 import chess_dataset
+import multiprocessing as mp
 import math
 import models
 import time
@@ -98,6 +99,8 @@ class MCTS():
     policy = attr.ib()
     lambda_c = attr.ib(default=DEFAULT_LAMBDA)
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
+    board_queue = attr.ib(default=attr.Factory(mp.Queue))
+    move_queue = attr.ib(default=attr.Factory(mp.Queue))
 
     def select(self):
         node = self.root
