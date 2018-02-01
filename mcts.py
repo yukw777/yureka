@@ -60,9 +60,6 @@ class Node():
     visit = attr.ib(default=0)
     board = attr.ib(default=chess.Board())
 
-    def __attrs_post_init__(self):
-        self.board_data = get_board_data(self.board)
-
     def q(self, lambda_c):
         if self.visit == 0:
             return math.inf
