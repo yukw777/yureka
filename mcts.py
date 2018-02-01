@@ -128,11 +128,11 @@ class MCTS():
     def simulate(self, node):
         if node.children:
             raise MCTSError(node, 'cannot simulate from a non-leaf')
+        board = chess.Board(fen=node.board.fen())
         if self.lambda_c == 0:
             # it will be zero either way, so no need to simulate
             reward = 0
         else:
-            board = chess.Board(fen=node.board.fen())
             while not board.is_game_over(claim_draw=True):
                 move = self.rollout.get_move(board, sample=True)
                 board.push(move)
