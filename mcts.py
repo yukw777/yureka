@@ -46,7 +46,7 @@ DEFAULT_POLICY_FILE = os.path.join(
     'SL_endgame',
     'Policy_2018-01-27_07:09:34_14.model',
 )
-DEFAULT_LAMBDA = 0.5
+DEFAULT_LAMBDA = 0
 DEFAULT_CONFIDENCE = math.sqrt(2)
 
 
