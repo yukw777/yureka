@@ -2,6 +2,7 @@
 
 import attr
 import chess
+import chess_dataset
 import math
 import models
 import time
@@ -22,12 +23,12 @@ from move_translator import (
 )
 
 
-DEFAULT_ROLLOUT = 'Policy.v0'
+DEFAULT_ROLLOUT = 'Rollout.v0'
 DEFAULT_ROLLOUT_FILE = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     'saved_models',
-    'SL_endgame',
-    'Policy_2018-01-27_07:09:34_14.model',
+    'Rollout',
+    'Policy_2018-01-31_21:13:39_7.model',
 )
 RANDOM_POLICY = 'random'
 DEFAULT_VALUE = 'Value.v0'
@@ -35,7 +36,7 @@ DEFAULT_VALUE_FILE = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     'saved_models',
     'Value',
-    'Policy_2018-01-27_07:09:34_14.model',
+    'Value_2018-01-31_14:20:50_4.model',
 )
 ZERO_VALUE = 'zero'
 DEFAULT_POLICY = 'Policy.v0'
@@ -45,7 +46,7 @@ DEFAULT_POLICY_FILE = os.path.join(
     'SL_endgame',
     'Policy_2018-01-27_07:09:34_14.model',
 )
-DEFAULT_LAMBDA = 1.0
+DEFAULT_LAMBDA = 0.5
 DEFAULT_CONFIDENCE = math.sqrt(2)
 
 
@@ -300,10 +301,29 @@ class RandomPolicy():
 
 
 @attr.s
+class ValueNetwork():
+    value = attr.ib()
+    cuda = attr.ib(default=True)
+    cuda_device = attr.ib(default=None)
+
+    def __attrs_post_init__(self):
+        self.cuda = self.cuda and torch.cuda.is_available()
+        if self.cuda:
+            self.value.cuda(self.cuda_device)
+
+    def get_value(self, board):
+        board_data = get_board_data(board)
+        tensor = chess_dataset.get_tensor_from_row(board_data)
+        tensor = tensor.unsqueeze(0)
+        value = self.value(Variable(tensor.cuda(), volatile=True))
+        return value.squeeze().data[0]
+
+
+@attr.s
 class UCIMCTSEngine(UCIEngine):
     rollout_name = attr.ib(default=DEFAULT_ROLLOUT)
     rollout_file = attr.ib(default=DEFAULT_ROLLOUT_FILE)
-    value_name = attr.ib(default=ZERO_VALUE)
+    value_name = attr.ib(default=DEFAULT_VALUE)
     value_file = attr.ib(default=DEFAULT_VALUE_FILE)
     policy_name = attr.ib(default=DEFAULT_POLICY)
     policy_file = attr.ib(default=DEFAULT_POLICY_FILE)
@@ -329,7 +349,7 @@ class UCIMCTSEngine(UCIEngine):
             },
             'Value Name': {
                 'type': 'string',
-                'default': ZERO_VALUE,
+                'default': DEFAULT_VALUE,
                 'attr_name': 'value_name',
                 'py_type': str,
                 'model': True,
@@ -387,6 +407,7 @@ class UCIMCTSEngine(UCIEngine):
             self.value = ZeroValue()
         else:
             self.value = self.init_model(self.value_name, self.value_file)
+            self.value = ValueNetwork(self.value)
         if self.policy_name == RANDOM_POLICY:
             self.policy = RandomPolicy()
         else:
