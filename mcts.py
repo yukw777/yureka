@@ -99,6 +99,8 @@ class MCTS():
     policy = attr.ib()
     lambda_c = attr.ib(default=DEFAULT_LAMBDA)
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
+    node_queue = attr.ib(default=attr.Factory(mp.Queue))
+    reward_queue = attr.ib(default=attr.Factory(mp.Queue))
     board_queue = attr.ib(default=attr.Factory(mp.Queue))
     move_queue = attr.ib(default=attr.Factory(mp.Queue))
 
