@@ -47,8 +47,11 @@ DEFAULT_POLICY_FILE = os.path.join(
     'SL_endgame',
     'Policy_2018-01-27_07:09:34_14.model',
 )
-DEFAULT_LAMBDA = 0
+DEFAULT_LAMBDA = 0.5
 DEFAULT_CONFIDENCE = math.sqrt(2)
+
+BACKUP_TYPE_REWARD = 'reward'
+BACKUP_TYPE_VALUE = 'value'
 
 
 @attr.s
@@ -100,9 +103,28 @@ class MCTS():
     lambda_c = attr.ib(default=DEFAULT_LAMBDA)
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
     node_queue = attr.ib(default=attr.Factory(mp.Queue))
-    reward_queue = attr.ib(default=attr.Factory(mp.Queue))
-    board_queue = attr.ib(default=attr.Factory(mp.Queue))
-    move_queue = attr.ib(default=attr.Factory(mp.Queue))
+    backup_queue = attr.ib(default=attr.Factory(mp.Queue))
+    parallel = attr.ib(default=True)
+
+    def __attrs_post_init__(self):
+        if self.parallel:
+            for i in range(mp.cpu_count()):
+                Simulator(
+                    self.lambda_c,
+                    self.node_queue,
+                    self.backup_queue,
+                    self.rollout[0],
+                    self.rollout[1]
+                ).start()
+            mp.Process(
+                target=process_backup, args=(self.backup_queue, )).start()
+
+    def __del__(self):
+        if self.parallel:
+            print_flush('info string pass None to node_queue')
+            self.node_queue.put(None)
+            print_flush('info string pass None to backup_queue')
+            self.node_queue.put(None)
 
     def select(self):
         node = self.root
@@ -130,24 +152,6 @@ class MCTS():
             # terminal state, just return itself
             return node
 
-    def simulate(self, node):
-        if node.children:
-            # TODO: needs to be removed if parallel
-            raise MCTSError(node, 'cannot simulate from a non-leaf')
-        if self.lambda_c == 0:
-            # it will be zero either way, so no need to simulate
-            reward = 0
-        else:
-            board = chess.Board(fen=node.board.fen())
-            while not board.is_game_over(claim_draw=True):
-                move = self.rollout.get_move(board, sample=True)
-                board.push(move)
-
-            result = board.result(claim_draw=True)
-            reward = get_reward(result, self.root.board.turn)
-
-        return reward
-
     def calculate_value(self, node):
         if node.children:
             # TODO: needs to be removed if parallel
@@ -159,13 +163,14 @@ class MCTS():
         else:
             return self.value.get_value(board)
 
-    def backup(self, node, reward, value):
-        walker = node
-        while walker:
-            walker.visit += 1
-            walker.result += reward
-            walker.value += value
-            walker = walker.parent
+    def backup_value(self, node, value):
+        backup(node, value=value)
+
+    def backup_reward(self, node, reward):
+        backup(node, reward=reward)
+
+    def simulate_async(self, node):
+        self.node_queue.put((node, self.root.board.turn))
 
     def search(self, duration):
         search_time = continue_search(duration)
@@ -176,9 +181,14 @@ class MCTS():
                 break
             leaf = self.select()
             leaf = self.expand(leaf)
-            reward = self.simulate(leaf)
+            if self.parallel:
+                self.simulate_async(leaf)
+            else:
+                reward = simulate(
+                    leaf, self.lambda_c, self.rollout, self.root.board.turn)
+                self.backup_reward(leaf, reward)
             value = self.calculate_value(leaf)
-            self.backup(leaf, reward, value)
+            self.backup_value(leaf, value)
             count += 1
 
     def get_move(self):
@@ -198,6 +208,81 @@ class MCTS():
             self.root.add_child(move)
             self.root = self.root.children[move]
         self.root.parent = None
+
+
+def init_model(name, path):
+    model = models.create(name)
+    model.load_state_dict(torch.load(os.path.expanduser(path)))
+    return model
+
+
+class Simulator(mp.Process):
+    def __init__(
+        self,
+        lambda_c,
+        node_queue,
+        backup_queue,
+        rollout_name,
+        rollout_file
+    ):
+        super().__init__()
+        self.lambda_c = lambda_c
+        self.node_queue = node_queue
+        self.backup_queue = backup_queue
+        if rollout_name == RANDOM_POLICY:
+            self.rollout = RandomPolicy()
+        else:
+            self.rollout = init_model(
+                rollout_name, rollout_file)
+            self.rollout = ChessEngine(self.rollout, train=False)
+
+    def run(self):
+        for node, turn in iter(self.node_queue.get, None):
+            reward = simulate(node, self.lambda_c, self.rollout, turn)
+            print_flush(f'info string putting reward {reward} to the queue')
+            self.backup_queue.put((BACKUP_TYPE_REWARD, reward, node))
+            print_flush(f'node queue size: {self.node_queue.qsize()}')
+        print_flush('info string None in node queue. exiting...')
+
+
+def simulate(node, lambda_c, rollout, turn):
+    if lambda_c == 0:
+        # it will be zero either way, so no need to simulate
+        reward = 0
+    else:
+        board = chess.Board(fen=node.board.fen())
+        while not board.is_game_over(claim_draw=True):
+            move = rollout.get_move(board, sample=True)
+            board.push(move)
+
+        result = board.result(claim_draw=True)
+        reward = get_reward(result, turn)
+
+    return reward
+
+
+def process_backup(queue):
+    for t, v, node in iter(queue.get, None):
+        print_flush(f'info string backing up type {t} with value {v}')
+        if t == BACKUP_TYPE_REWARD:
+            backup(node, reward=v)
+        elif t == BACKUP_TYPE_VALUE:
+            backup(node, value=v)
+        else:
+            print_flush(f'Unknown backup type: {t}')
+        print_flush(f'backup queue size: {queue.qsize()}')
+    print_flush('info string None in backup queue. exiting...')
+
+
+def backup(node, reward=None, value=None):
+    walker = node
+    while walker:
+        walker.visit += 1
+        if reward:
+            walker.result += reward
+        if value:
+            walker.value += value
+        walker = walker.parent
 
 
 TC_WTIME = 'wtime'
@@ -348,6 +433,7 @@ class UCIMCTSEngine(UCIEngine):
     policy_file = attr.ib(default=DEFAULT_POLICY_FILE)
     lambda_c = attr.ib(default=DEFAULT_LAMBDA)
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
+    parallel = attr.ib(default=True)
 
     def __attrs_post_init__(self):
         super().__attrs_post_init__()
@@ -409,28 +495,27 @@ class UCIMCTSEngine(UCIEngine):
                 'model': False,
             },
         }
-
-    def init_model(self, name, path):
-        model = models.create(name)
-        model.load_state_dict(torch.load(os.path.expanduser(path)))
-        return model
+        self.engine = None
 
     def init_models(self):
-        if self.rollout_name == RANDOM_POLICY:
-            self.rollout = RandomPolicy()
+        if self.parallel:
+            self.rollout = (self.rollout_name, self.rollout_file)
         else:
-            self.rollout = self.init_model(
-                self.rollout_name, self.rollout_file)
-            self.rollout = ChessEngine(self.rollout, train=False)
+            if self.rollout_name == RANDOM_POLICY:
+                self.rollout = RandomPolicy()
+            else:
+                self.rollout = init_model(
+                    self.rollout_name, self.rollout_file)
+                self.rollout = ChessEngine(self.rollout, train=False)
         if self.value_name == ZERO_VALUE:
             self.value = ZeroValue()
         else:
-            self.value = self.init_model(self.value_name, self.value_file)
+            self.value = init_model(self.value_name, self.value_file)
             self.value = ValueNetwork(self.value)
         if self.policy_name == RANDOM_POLICY:
             self.policy = RandomPolicy()
         else:
-            self.policy = self.init_model(self.policy_name, self.policy_file)
+            self.policy = init_model(self.policy_name, self.policy_file)
             self.policy = ChessEngine(self.policy, train=False)
 
     def init_engine(self, board=None):
@@ -438,6 +523,7 @@ class UCIMCTSEngine(UCIEngine):
             root = Node(board=board)
         else:
             root = Node()
+        del self.engine
         self.engine = MCTS(
             root,
             self.rollout,
@@ -445,6 +531,7 @@ class UCIMCTSEngine(UCIEngine):
             self.policy,
             self.lambda_c,
             self.confidence,
+            parallel=self.parallel
         )
         self.time_manager = TimeManager()
 
@@ -469,5 +556,6 @@ class UCIMCTSEngine(UCIEngine):
 
 
 if __name__ == '__main__':
+    mp.set_start_method('spawn')
     print_flush('Yureka!')
     UCIMCTSEngine().listen()

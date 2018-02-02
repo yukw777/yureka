@@ -87,7 +87,7 @@ def test_select():
         n.ucb = mock.MagicMock(return_value=i)
         children.append(n)
     root = mcts.Node()
-    m = mcts.MCTS(root, '', '', '', '', '')
+    m = mcts.MCTS(root, '', '', '', '', '', '', parallel=False)
 
     # if root is already a leaf, return that
     selected = m.select()
@@ -103,7 +103,7 @@ def test_expand():
     mock_policy = mock.MagicMock()
     probs = torch.randn(1, 4672)
     mock_policy.get_probs.return_value = Variable(probs)
-    m = mcts.MCTS('', '', '', mock_policy, '', '')
+    m = mcts.MCTS('', '', '', mock_policy, '', '', parallel=False)
     # no children at this point
     n = mcts.Node()
 
@@ -137,20 +137,15 @@ def test_simulate():
         chess.Move.from_uci('d8h4'),
     ]
     n = mcts.Node()
-    m = mcts.MCTS(n, mock_rollout, '', '', '')
-    reward = m.simulate(n)
+    reward = mcts.simulate(n, 0.5, mock_rollout, n.board.turn)
     assert reward == -1
-
-    with pytest.raises(mcts.MCTSError):
-        n.children[1] = mcts.Node()
-        m.simulate(n)
 
 
 def test_calculate_value():
     mock_value = mock.MagicMock()
     mock_value.get_value.return_value = -0.9
     n = mcts.Node()
-    m = mcts.MCTS(n, '', mock_value, '', '', '')
+    m = mcts.MCTS(n, '', mock_value, '', '', '', parallel=False)
     value = m.calculate_value(n)
     assert value == -0.9
 
@@ -163,8 +158,7 @@ def test_backup():
     node = mcts.Node()
     node.parent = mcts.Node()
     node.parent.parent = mcts.Node()
-    m = mcts.MCTS('', '', '', '', '', '')
-    m.backup(node, 1, 0.9)
+    mcts.backup(node, reward=1, value=0.9)
     walker = node
     while walker:
         assert walker.result == 1
@@ -192,10 +186,10 @@ def test_get_move():
         'm4': mcts.Node(visit=2),
     }
     root = mcts.Node(children=children)
-    m = mcts.MCTS(root, '', '', '')
+    m = mcts.MCTS(root, '', '', '', parallel=False)
     assert m.get_move() == 'm3'
 
-    m = mcts.MCTS(mcts.Node(), '', '', '')
+    m = mcts.MCTS(mcts.Node(), '', '', '', parallel=False)
     with pytest.raises(mcts.MCTSError):
         m.get_move()
 
@@ -203,12 +197,12 @@ def test_get_move():
 def test_advance_root():
     children = {i: mcts.Node() for i in range(5)}
     root_with_children = mcts.Node(children=children)
-    m = mcts.MCTS(root_with_children, '', '', '')
+    m = mcts.MCTS(root_with_children, '', '', '', parallel=False)
     m.advance_root(1)
     assert m.root.parent is None
     assert m.root == children[1]
 
-    m = mcts.MCTS(mcts.Node(), '', '', '')
+    m = mcts.MCTS(mcts.Node(), '', '', '', parallel=False)
     move = chess.Move.from_uci('f2f3')
     m.advance_root(move)
     assert m.root.parent is None
@@ -220,6 +214,7 @@ def test_engine_new_position():
         rollout_name=mcts.RANDOM_POLICY,
         value_name=mcts.ZERO_VALUE,
         policy_name=mcts.RANDOM_POLICY,
+        parallel=False
     )
     e.init_models()
     e.init_engine()
