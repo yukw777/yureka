@@ -46,8 +46,8 @@ class ChessEngine():
         else:
             self.model.eval()
 
-    def get_probs(self, board):
-        board_data = get_board_data(board)
+    def get_probs(self, board, repetition_data=True):
+        board_data = get_board_data(board, repetition_data)
         tensor = chess_dataset.get_tensor_from_row(board_data)
         tensor = tensor.view(1, *tensor.shape)
         volatile = not self.model.training
@@ -63,8 +63,8 @@ class ChessEngine():
             probs = probs.clamp(min=1e-12)
         return self.filter_illegal_moves(board, probs)
 
-    def get_move(self, board, sample=False):
-        probs = self.get_probs(board)
+    def get_move(self, board, sample=False, repetition_data=True):
+        probs = self.get_probs(board, repetition_data)
         if self.train or sample:
             m = Categorical(probs)
             while True:

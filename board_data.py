@@ -1,5 +1,4 @@
 import chess
-import time
 import collections
 import move_translator
 
@@ -43,10 +42,16 @@ def get_reward(result, color, award_tie=False):
         raise Exception(f'Unknown result: {result}, {color}')
 
 
-def get_board_data(board):
+def get_board_data(board, repetition_data=True):
     row = {}
     row.update(get_square_piece_data(board))
-    row.update(get_repetition_data(board))
+    if repetition_data:
+        row.update(get_repetition_data(board))
+    else:
+        row.update({
+            'rep_2': 0,
+            'rep_3': 0,
+        })
     row.update(get_turn_data(board))
     row.update(get_move_count_data(board))
     row.update(get_castling_data(board))

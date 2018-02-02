@@ -269,7 +269,7 @@ def simulate(node, lambda_c, rollout, turn):
     else:
         board = chess.Board(fen=node.board.fen())
         while not board.is_game_over(claim_draw=True):
-            move = rollout.get_move(board, sample=True)
+            move = rollout.get_move(board, sample=True, repetition_data=False)
             board.push(move)
 
         result = board.result(claim_draw=True)
