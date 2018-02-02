@@ -15,30 +15,33 @@ from move_translator import (
 def test_node_calculations():
     test_cases = [
         {
-            'lambda': 0.1,
-            'value': 0.7,
-            'visit': 4,
-            'result': 1,
+            'lambda': 0.6,
+            'value': 0.8,
+            'value_visit': 4,
+            'reward_visit': 3,
+            'reward': 1,
             'confidence': 4,
             'prior': 0.5,
-            'expected_q': 0.1825,
-            'expected_ucb': 4.0365,
+            'expected_q': 0.28,
+            'expected_ucb': 5.07,
         },
         {
             'lambda': 0.8,
             'value': -0.4,
-            'visit': 1,
-            'result': -1,
+            'value_visit': 1,
+            'reward_visit': 2,
+            'reward': -1,
             'confidence': 6,
             'prior': 0.3,
-            'expected_q': -0.88,
-            'expected_ucb': 8.56,
+            'expected_q': -0.48,
+            'expected_ucb': 5.84,
         },
         {
             'lambda': 0.8,
             'value': -0.4,
-            'visit': 0,
-            'result': -1,
+            'value_visit': 0,
+            'reward_visit': 1,
+            'reward': -1,
             'confidence': 6,
             'prior': 0.3,
             'expected_q': math.inf,
@@ -49,8 +52,9 @@ def test_node_calculations():
     for tc in test_cases:
         n = mcts.Node(
             value=tc['value'],
-            visit=tc['visit'],
-            result=tc['result'],
+            value_visit=tc['value_visit'],
+            reward_visit=tc['reward_visit'],
+            reward=tc['reward'],
             prior=tc['prior'],
         )
         assert n.q(tc['lambda']) == tc['expected_q']
@@ -154,16 +158,31 @@ def test_calculate_value():
         m.calculate_value(n)
 
 
-def test_backup():
+def test_backup_reward():
     node = mcts.Node()
     node.parent = mcts.Node()
     node.parent.parent = mcts.Node()
-    mcts.backup(node, reward=1, value=0.9)
+    mcts.backup(node, reward=1)
     walker = node
     while walker:
-        assert walker.result == 1
+        assert walker.value == 0
+        assert walker.reward == 1
+        assert walker.reward_visit == 1
+        assert walker.value_visit == 0
+        walker = walker.parent
+
+
+def test_backup_value():
+    node = mcts.Node()
+    node.parent = mcts.Node()
+    node.parent.parent = mcts.Node()
+    mcts.backup(node, value=0.9)
+    walker = node
+    while walker:
+        assert walker.reward == 0
         assert walker.value == 0.9
-        assert walker.visit == 1
+        assert walker.reward_visit == 0
+        assert walker.value_visit == 1
         walker = walker.parent
 
 
@@ -180,10 +199,10 @@ def test_continue_search():
 
 def test_get_move():
     children = {
-        'm1': mcts.Node(visit=1),
-        'm2': mcts.Node(visit=0),
-        'm3': mcts.Node(visit=3),
-        'm4': mcts.Node(visit=2),
+        'm1': mcts.Node(reward_visit=1, value_visit=1),
+        'm2': mcts.Node(reward_visit=0, value_visit=1),
+        'm3': mcts.Node(reward_visit=3, value_visit=4),
+        'm4': mcts.Node(reward_visit=5, value_visit=1),
     }
     root = mcts.Node(children=children)
     m = mcts.MCTS(root, '', '', '', parallel=False)

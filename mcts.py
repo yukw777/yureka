@@ -59,23 +59,24 @@ class Node():
     children = attr.ib(default=attr.Factory(dict))
     parent = attr.ib(default=None)
     prior = attr.ib(default=0)
-    result = attr.ib(default=0)
+    reward = attr.ib(default=0)
     value = attr.ib(default=0)
-    visit = attr.ib(default=0)
+    reward_visit = attr.ib(default=0)
+    value_visit = attr.ib(default=0)
     board = attr.ib(default=chess.Board())
 
     def q(self, lambda_c):
-        if self.visit == 0:
+        if self.value_visit == 0 or self.reward_visit == 0:
             return math.inf
-        q = (1 - lambda_c) * self.value / self.visit
-        q += lambda_c * self.result / self.visit
+        q = (1 - lambda_c) * self.value / self.value_visit
+        q += lambda_c * self.reward / self.reward_visit
         return q
 
     def ucb(self, lambda_c, confidence, visit_sum):
         # alpha go version
         ucb = self.q(lambda_c)
         ucb += confidence * self.prior * math.sqrt(visit_sum)
-        ucb /= (1 + self.visit)
+        ucb /= (1 + self.reward_visit)
         return ucb
 
     def add_child(self, move, **kwargs):
@@ -130,7 +131,7 @@ class MCTS():
         node = self.root
         while node.children:
             child_nodes = node.children.values()
-            visit_sum = sum([n.visit for n in child_nodes])
+            visit_sum = sum([n.reward_visit for n in child_nodes])
             node = max(
                 child_nodes,
                 key=lambda n: n.ucb(self.lambda_c, self.confidence, visit_sum)
@@ -197,7 +198,8 @@ class MCTS():
             raise MCTSError(self.root, 'You should search before get_move')
         return max(
             self.root.children,
-            key=lambda m: self.root.children[m].visit
+            key=lambda m: self.root.children[m].value_visit +
+            self.root.children[m].reward_visit
         )
 
     def advance_root(self, move):
@@ -277,11 +279,12 @@ def process_backup(queue):
 def backup(node, reward=None, value=None):
     walker = node
     while walker:
-        walker.visit += 1
         if reward:
-            walker.result += reward
+            walker.reward += reward
+            walker.reward_visit += 1
         if value:
             walker.value += value
+            walker.value_visit += 1
         walker = walker.parent
 
 
