@@ -171,6 +171,19 @@ def test_backup_reward():
         assert walker.value_visit == 0
         walker = walker.parent
 
+    # with virtual loss
+    node = mcts.Node()
+    node.parent = mcts.Node()
+    node.parent.parent = mcts.Node()
+    mcts.backup(node, reward=1, virtual_loss=3)
+    walker = node
+    while walker:
+        assert walker.value == 0
+        assert walker.reward == 4
+        assert walker.reward_visit == -2
+        assert walker.value_visit == 0
+        walker = walker.parent
+
 
 def test_backup_value():
     node = mcts.Node()

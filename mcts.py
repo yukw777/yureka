@@ -49,6 +49,7 @@ DEFAULT_POLICY_FILE = os.path.join(
 )
 DEFAULT_LAMBDA = 0.5
 DEFAULT_CONFIDENCE = math.sqrt(2)
+DEFAULT_VIRTUAL_LOSS = 3
 
 BACKUP_TYPE_REWARD = 'reward'
 BACKUP_TYPE_VALUE = 'value'
@@ -105,6 +106,7 @@ class MCTS():
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
     node_queue = attr.ib(default=attr.Factory(mp.Queue))
     backup_queue = attr.ib(default=attr.Factory(mp.Queue))
+    virtual_loss = attr.ib(default=DEFAULT_VIRTUAL_LOSS)
     parallel = attr.ib(default=True)
 
     def __attrs_post_init__(self):
@@ -171,7 +173,12 @@ class MCTS():
         backup(node, reward=reward)
 
     def simulate_async(self, node):
-        self.node_queue.put((node, self.root.board.turn))
+        walker = node
+        while walker:
+            walker.reward_visit += self.virtual_loss
+            walker.reward -= self.virtual_loss
+            walker = walker.parent
+        self.node_queue.put((node, self.root.board.turn, self.virtual_loss))
 
     def search(self, duration):
         search_time = continue_search(duration)
@@ -239,10 +246,10 @@ class Simulator(mp.Process):
             self.rollout = ChessEngine(self.rollout, train=False)
 
     def run(self):
-        for node, turn in iter(self.node_queue.get, None):
+        for node, turn, vl in iter(self.node_queue.get, None):
             reward = simulate(node, self.lambda_c, self.rollout, turn)
             print_flush(f'info string putting reward {reward} to the queue')
-            self.backup_queue.put((BACKUP_TYPE_REWARD, reward, node))
+            self.backup_queue.put((BACKUP_TYPE_REWARD, reward, node, vl))
             print_flush(f'node queue size: {self.node_queue.qsize()}')
         print_flush('info string None in node queue. exiting...')
 
@@ -264,10 +271,10 @@ def simulate(node, lambda_c, rollout, turn):
 
 
 def process_backup(queue):
-    for t, v, node in iter(queue.get, None):
+    for t, v, node, vl in iter(queue.get, None):
         print_flush(f'info string backing up type {t} with value {v}')
         if t == BACKUP_TYPE_REWARD:
-            backup(node, reward=v)
+            backup(node, reward=v, virtual_loss=vl)
         elif t == BACKUP_TYPE_VALUE:
             backup(node, value=v)
         else:
@@ -276,10 +283,13 @@ def process_backup(queue):
     print_flush('info string None in backup queue. exiting...')
 
 
-def backup(node, reward=None, value=None):
+def backup(node, reward=None, value=None, virtual_loss=None):
     walker = node
     while walker:
         if reward:
+            if virtual_loss:
+                walker.reward += virtual_loss
+                walker.reward_visit -= virtual_loss
             walker.reward += reward
             walker.reward_visit += 1
         if value:
