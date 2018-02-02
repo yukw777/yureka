@@ -47,7 +47,7 @@ DEFAULT_POLICY_FILE = os.path.join(
     'Policy_2018-01-27_07:09:34_14.model',
 )
 DEFAULT_LAMBDA = 0
-DEFAULT_CONFIDENCE = math.sqrt(2)
+DEFAULT_CONFIDENCE = 5
 
 
 @attr.s
