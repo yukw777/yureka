@@ -126,9 +126,10 @@ class MCTS():
     def __del__(self):
         if self.parallel:
             print_flush('info string pass None to node_queue')
-            self.node_queue.put(None)
+            for _ in range(mp.cpu_count()):
+                self.node_queue.put(None)
             print_flush('info string pass None to backup_queue')
-            self.node_queue.put(None)
+            self.backup_queue.put(None)
 
     def select(self):
         node = self.root
