@@ -111,25 +111,30 @@ class MCTS():
     parallel = attr.ib(default=bool(DEFAULT_PARALLEL))
 
     def __attrs_post_init__(self):
+        self.subprocesses = []
         if self.parallel:
             for i in range(mp.cpu_count()):
-                Simulator(
+                p = Simulator(
                     self.lambda_c,
                     self.node_queue,
                     self.backup_queue,
                     self.rollout[0],
                     self.rollout[1]
-                ).start()
-            mp.Process(
-                target=process_backup, args=(self.backup_queue, )).start()
+                )
+                self.subprocesses.append(p)
+                p.start()
+            p = mp.Process(
+                target=process_backup, args=(self.backup_queue, ))
+            self.subprocesses.append(p)
+            p.start()
+
+    def cleanup(self):
+        for p in self.subprocesses:
+            print('info string terminating subprocesses')
+            p.terminate()
 
     def __del__(self):
-        if self.parallel:
-            print_flush('info string pass None to node_queue')
-            for _ in range(mp.cpu_count()):
-                self.node_queue.put(None)
-            print_flush('info string pass None to backup_queue')
-            self.backup_queue.put(None)
+        self.cleanup()
 
     def select(self):
         node = self.root
@@ -252,7 +257,8 @@ class Simulator(mp.Process):
             reward = simulate(node, self.lambda_c, self.rollout, turn)
             print_flush(f'info string putting reward {reward} to the queue')
             self.backup_queue.put((BACKUP_TYPE_REWARD, reward, node, vl))
-            print_flush(f'node queue size: {self.node_queue.qsize()}')
+            print_flush(
+                f'info string node queue size: {self.node_queue.qsize()}')
         print_flush('info string None in node queue. exiting...')
 
 
@@ -281,7 +287,7 @@ def process_backup(queue):
             backup(node, value=v)
         else:
             print_flush(f'Unknown backup type: {t}')
-        print_flush(f'backup queue size: {queue.qsize()}')
+        print_flush(f'info string backup queue size: {queue.qsize()}')
     print_flush('info string None in backup queue. exiting...')
 
 
@@ -572,6 +578,8 @@ class UCIMCTSEngine(UCIEngine):
             self.unknown_handler(args)
             return
         print_flush(f'info string search for {duration} seconds')
+        print_flush(
+            f'info string {len(self.engine.subprocesses)} subprocesses')
         self.engine.search(duration)
         move = self.engine.get_move()
         print_flush(f'bestmove {move.uci()}')
