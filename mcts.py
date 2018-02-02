@@ -50,6 +50,7 @@ DEFAULT_POLICY_FILE = os.path.join(
 DEFAULT_LAMBDA = 0.5
 DEFAULT_CONFIDENCE = 5
 DEFAULT_VIRTUAL_LOSS = 3
+DEFAULT_PARALLEL = 'true'
 
 BACKUP_TYPE_REWARD = 'reward'
 BACKUP_TYPE_VALUE = 'value'
@@ -107,7 +108,7 @@ class MCTS():
     node_queue = attr.ib(default=attr.Factory(mp.Queue))
     backup_queue = attr.ib(default=attr.Factory(mp.Queue))
     virtual_loss = attr.ib(default=DEFAULT_VIRTUAL_LOSS)
-    parallel = attr.ib(default=True)
+    parallel = attr.ib(default=bool(DEFAULT_PARALLEL))
 
     def __attrs_post_init__(self):
         if self.parallel:
@@ -446,7 +447,7 @@ class UCIMCTSEngine(UCIEngine):
     policy_file = attr.ib(default=DEFAULT_POLICY_FILE)
     lambda_c = attr.ib(default=DEFAULT_LAMBDA)
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
-    parallel = attr.ib(default=True)
+    parallel = attr.ib(default=bool(DEFAULT_PARALLEL))
 
     def __attrs_post_init__(self):
         super().__attrs_post_init__()
@@ -505,6 +506,13 @@ class UCIMCTSEngine(UCIEngine):
                 'default': DEFAULT_CONFIDENCE,
                 'attr_name': 'confidence',
                 'py_type': float,
+                'model': False,
+            },
+            'Parallel': {
+                'type': 'check',
+                'default': DEFAULT_PARALLEL,
+                'attr_name': 'parallel',
+                'py_type': lambda x: x == DEFAULT_PARALLEL,
                 'model': False,
             },
         }
