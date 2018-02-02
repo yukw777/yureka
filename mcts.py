@@ -121,11 +121,13 @@ class MCTS():
                     self.rollout[0],
                     self.rollout[1]
                 )
+                p.daemon = True
                 self.subprocesses.append(p)
                 p.start()
             for i in range(int(mp.cpu_count()/2)):
                 p = mp.Process(
                     target=process_backup, args=(self.backup_queue, ))
+                p.daemon = True
                 self.subprocesses.append(p)
                 p.start()
 
