@@ -47,10 +47,10 @@ DEFAULT_POLICY_FILE = os.path.join(
     'SL_endgame',
     'Policy_2018-01-27_07:09:34_14.model',
 )
-DEFAULT_LAMBDA = 0.5
+DEFAULT_LAMBDA = 0
 DEFAULT_CONFIDENCE = 5
 DEFAULT_VIRTUAL_LOSS = 3
-DEFAULT_PARALLEL = 'true'
+DEFAULT_PARALLEL = 'false'
 
 BACKUP_TYPE_REWARD = 'reward'
 BACKUP_TYPE_VALUE = 'value'
@@ -519,7 +519,7 @@ class UCIMCTSEngine(UCIEngine):
                 'type': 'check',
                 'default': DEFAULT_PARALLEL,
                 'attr_name': 'parallel',
-                'py_type': lambda x: x == DEFAULT_PARALLEL,
+                'py_type': lambda x: x != DEFAULT_PARALLEL,
                 'model': False,
             },
         }
