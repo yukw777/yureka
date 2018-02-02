@@ -1,4 +1,5 @@
 import chess
+import time
 import collections
 import move_translator
 
@@ -119,31 +120,20 @@ def get_square_piece_data(board):
     piece_map = board.piece_map()
     white_data = []
     black_data = []
-    for sq, sq_name in enumerate(chess.SQUARE_NAMES):
+
+    for sq, piece in piece_map.items():
         if board.turn == chess.WHITE:
-            sq_name_for_player = sq_name
+            sq_name_for_player = chess.SQUARE_NAMES[sq]
         else:
             inv_square = move_translator.square_invert(sq)
             sq_name_for_player = chess.SQUARE_NAMES[inv_square]
-        for piece in pieces:
-            occupied = get_square_piece_value(
-                piece_map, sq, piece)
+        key = f'{sq_name_for_player}-{piece.symbol()}'
+        if piece.color == chess.WHITE:
+            white_data.append(key)
+        else:
+            black_data.append(key)
 
-            key = f'{sq_name_for_player}-{piece.symbol()}'
-            if occupied:
-                if piece.color == chess.WHITE:
-                    white_data.append(key)
-                else:
-                    black_data.append(key)
     return {
         'white_square_piece': ','.join(white_data),
         'black_square_piece': ','.join(black_data),
     }
-
-
-def get_square_piece_value(piece_map, square, piece):
-    p = piece_map.get(square)
-    if p and p == piece:
-        return True
-    else:
-        return False
