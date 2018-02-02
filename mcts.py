@@ -125,8 +125,10 @@ class MCTS():
 
     def __del__(self):
         if self.parallel:
+            print_flush('info string pass None to node_queue')
             for _ in range(mp.cpu_count()):
                 self.node_queue.put(None)
+            print_flush('info string pass None to backup_queue')
             self.backup_queue.put(None)
 
     def select(self):
@@ -248,7 +250,10 @@ class Simulator(mp.Process):
     def run(self):
         for node, turn, vl in iter(self.node_queue.get, None):
             reward = simulate(node, self.lambda_c, self.rollout, turn)
+            print_flush(f'info string putting reward {reward} to the queue')
             self.backup_queue.put((BACKUP_TYPE_REWARD, reward, node, vl))
+            print_flush(f'node queue size: {self.node_queue.qsize()}')
+        print_flush('info string None in node queue. exiting...')
 
 
 def simulate(node, lambda_c, rollout, turn):
@@ -269,10 +274,15 @@ def simulate(node, lambda_c, rollout, turn):
 
 def process_backup(queue):
     for t, v, node, vl in iter(queue.get, None):
+        print_flush(f'info string backing up type {t} with value {v}')
         if t == BACKUP_TYPE_REWARD:
             backup(node, reward=v, virtual_loss=vl)
         elif t == BACKUP_TYPE_VALUE:
             backup(node, value=v)
+        else:
+            print_flush(f'Unknown backup type: {t}')
+        print_flush(f'backup queue size: {queue.qsize()}')
+    print_flush('info string None in backup queue. exiting...')
 
 
 def backup(node, reward=None, value=None, virtual_loss=None):
