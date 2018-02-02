@@ -24,14 +24,14 @@ from move_translator import (
 )
 
 
-DEFAULT_ROLLOUT = 'Rollout.v0'
+RANDOM_POLICY = 'random'
+DEFAULT_ROLLOUT = RANDOM_POLICY
 DEFAULT_ROLLOUT_FILE = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     'saved_models',
     'Rollout',
     'Policy_2018-01-31_21:13:39_7.model',
 )
-RANDOM_POLICY = 'random'
 DEFAULT_VALUE = 'Value.v0'
 DEFAULT_VALUE_FILE = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -113,7 +113,7 @@ class MCTS():
     def __attrs_post_init__(self):
         self.subprocesses = []
         if self.parallel:
-            for i in range(mp.cpu_count()):
+            for i in range(int(mp.cpu_count()/2)):
                 p = Simulator(
                     self.lambda_c,
                     self.node_queue,
@@ -123,10 +123,11 @@ class MCTS():
                 )
                 self.subprocesses.append(p)
                 p.start()
-            p = mp.Process(
-                target=process_backup, args=(self.backup_queue, ))
-            self.subprocesses.append(p)
-            p.start()
+            for i in range(int(mp.cpu_count()/2)):
+                p = mp.Process(
+                    target=process_backup, args=(self.backup_queue, ))
+                self.subprocesses.append(p)
+                p.start()
 
     def cleanup(self):
         for p in self.subprocesses:
@@ -408,7 +409,7 @@ class ZeroValue():
 
 
 class RandomPolicy():
-    def get_move(self, board, sample=True):
+    def get_move(self, board, sample=True, repetition_data=True):
         return random.choice(list(board.legal_moves))
 
     def get_probs(self, board):
