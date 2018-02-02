@@ -109,8 +109,14 @@ class ChessEngine():
         for move in board.legal_moves:
             engine_move = translate_to_engine_move(move, board.turn)
             index = get_engine_move_index(engine_move)
-            move_filter.data[0, index] = 1
             move_indeces.append(index)
+        if self.cuda:
+            indeces = Variable(torch.LongTensor(move_indeces)).cuda(
+                self.cuda_device)
+        else:
+            indeces = Variable(torch.LongTensor(move_indeces))
+        move_filter.index_fill_(1, indeces, 1)
+
         filtered = probs * move_filter
         if not filtered.nonzero().size():
             # all the moves have zero probs. so make it uniform
@@ -120,8 +126,7 @@ class ChessEngine():
                     self.cuda_device))
             else:
                 move_filter = Variable(torch.zeros(probs.shape))
-            for i in move_indeces:
-                move_filter.data[0, i] = 1
+            move_filter.index_fill_(1, indeces, 1)
             filtered = filtered + move_filter
         return filtered
 
