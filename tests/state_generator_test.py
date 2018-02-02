@@ -59,22 +59,22 @@ def test_generate_correct_sq_piece_data():
     state_gen = ExpertStateGenerator("bogus", "tests/test.pgn")
     g = next(state_gen.get_game())
     df = pd.DataFrame(state_gen.get_game_data(g))
-    assert df.loc[0, 'white_square_piece'] == (
+    assert set(df.loc[0, 'white_square_piece'].split(',')) == set((
         'a1-R,b1-N,c1-B,d1-Q,e1-K,f1-B,g1-N,h1-R,a2-P,b2-P,c2-P,'
         'd2-P,e2-P,f2-P,g2-P,h2-P'
-    )
-    assert df.loc[0, 'black_square_piece'] == (
+    ).split(','))
+    assert set(df.loc[0, 'black_square_piece'].split(',')) == set((
         'a7-p,b7-p,c7-p,d7-p,e7-p,f7-p,g7-p,h7-p,a8-r,b8-n,c8-b,'
         'd8-q,e8-k,f8-b,g8-n,h8-r'
-    )
-    assert df.loc[1, 'white_square_piece'] == (
+    ).split(','))
+    assert set(df.loc[1, 'white_square_piece'].split(',')) == set((
         'h8-R,g8-N,f8-B,e8-Q,d8-K,c8-B,b8-N,a8-R,h7-P,g7-P,f7-P,'
         'e7-P,c7-P,b7-P,a7-P,d5-P'
-    )
-    assert df.loc[1, 'black_square_piece'] == (
+    ).split(','))
+    assert set(df.loc[1, 'black_square_piece'].split(',')) == set((
         'h2-p,g2-p,f2-p,e2-p,d2-p,c2-p,b2-p,a2-p,h1-r,g1-n,f1-b,'
         'e1-q,d1-k,c1-b,b1-n,a1-r'
-    )
+    ).split(','))
 
 
 def test_repetition_data():
