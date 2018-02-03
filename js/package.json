@@ -5,5 +5,10 @@
   "main": "lichess.js",
   "repository": "https://github.com/yukw777/yureka",
   "author": "Peter Yu",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.17.1",
+    "node-uci": "^1.3.0",
+    "ws": "^4.0.0"
+  }
 }
