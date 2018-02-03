@@ -1,0 +1,9 @@
+{
+  "name": "lichess-uci",
+  "version": "1.0.0",
+  "description": "Lichess integration of your uci engine",
+  "main": "lichess.js",
+  "repository": "https://github.com/yukw777/yureka",
+  "author": "Peter Yu",
+  "license": "MIT"
+}
