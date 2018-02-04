@@ -36,14 +36,15 @@ class LichessClient {
             }
         })
         .then(function(response) {
-            this.cookie = response.headers['set-cookie'].split(';', 1)[0];
+            this.cookie = response.headers['set-cookie'][0].split(';', 1)[0];
             console.log('Login successful');
-        })
+            console.log(this.cookie);
+        }.bind(this))
         .catch(function (error) {
-            throw error;
+            console.log(error.response);
         });
     }
 }
 
-const c = new LichessClient('yureka123', 'L8YI0i$OeSd^9ZT%S@');
+const c = new LichessClient(process.argv[2], process.argv[3]);
 c.login();
