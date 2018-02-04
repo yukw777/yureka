@@ -15,30 +15,24 @@ from move_translator import (
 def test_node_calculations():
     test_cases = [
         {
-            'lambda': 0.1,
             'value': 0.7,
             'visit': 4,
-            'result': 1,
             'confidence': 4,
             'prior': 0.5,
-            'expected_q': 0.1825,
-            'expected_ucb': 4.0365,
+            'expected_q': 0.175,
+            'expected_ucb': 4.035,
         },
         {
-            'lambda': 0.8,
             'value': -0.4,
             'visit': 1,
-            'result': -1,
             'confidence': 6,
             'prior': 0.3,
-            'expected_q': -0.88,
-            'expected_ucb': 8.56,
+            'expected_q': -0.4,
+            'expected_ucb': 8.8,
         },
         {
-            'lambda': 0.8,
             'value': -0.4,
             'visit': 0,
-            'result': -1,
             'confidence': 6,
             'prior': 0.3,
             'expected_q': math.inf,
@@ -50,11 +44,10 @@ def test_node_calculations():
         n = mcts.Node(
             value=tc['value'],
             visit=tc['visit'],
-            result=tc['result'],
             prior=tc['prior'],
         )
-        assert n.q(tc['lambda']) == tc['expected_q']
-        assert n.ucb(tc['lambda'], tc['confidence'], 100) == tc['expected_ucb']
+        assert n.q() == tc['expected_q']
+        assert n.ucb(tc['confidence'], 100) == tc['expected_ucb']
 
 
 def test_node_add_child():
@@ -87,7 +80,7 @@ def test_select():
         n.ucb = mock.MagicMock(return_value=i)
         children.append(n)
     root = mcts.Node()
-    m = mcts.MCTS(root, '', '', '', '', '')
+    m = mcts.MCTS(root, '', '', '')
 
     # if root is already a leaf, return that
     selected = m.select()
@@ -103,7 +96,7 @@ def test_expand():
     mock_policy = mock.MagicMock()
     probs = torch.randn(1, 4672)
     mock_policy.get_probs.return_value = Variable(probs)
-    m = mcts.MCTS('', '', '', mock_policy, '', '')
+    m = mcts.MCTS('', '', mock_policy, '')
     # no children at this point
     n = mcts.Node()
 
@@ -128,20 +121,11 @@ def test_expand():
 
 
 def test_simulate():
-    # use fool's mate to test
-    mock_rollout = mock.MagicMock()
-    mock_rollout.get_move.side_effect = [
-        chess.Move.from_uci('f2f3'),
-        chess.Move.from_uci('e7e5'),
-        chess.Move.from_uci('g2g4'),
-        chess.Move.from_uci('d8h4'),
-    ]
     mock_value = mock.MagicMock()
     mock_value.get_value.return_value = -0.9
     n = mcts.Node()
-    m = mcts.MCTS(n, mock_rollout, mock_value, '', '', '')
-    reward, value = m.simulate(n)
-    assert reward == -1
+    m = mcts.MCTS(n, mock_value, '', '')
+    value = m.simulate(n)
     assert value == -0.9
 
     with pytest.raises(mcts.MCTSError):
@@ -153,11 +137,10 @@ def test_backup():
     node = mcts.Node()
     node.parent = mcts.Node()
     node.parent.parent = mcts.Node()
-    m = mcts.MCTS('', '', '', '', '', '')
-    m.backup(node, 1, 0.9)
+    m = mcts.MCTS('', '', '', '')
+    m.backup(node, 0.9)
     walker = node
     while walker:
-        assert walker.result == 1
         assert walker.value == 0.9
         assert walker.visit == 1
         walker = walker.parent
@@ -207,7 +190,6 @@ def test_advance_root():
 
 def test_engine_new_position():
     e = mcts.UCIMCTSEngine(
-        rollout_name=mcts.RANDOM_POLICY,
         value_name=mcts.ZERO_VALUE,
         policy_name=mcts.RANDOM_POLICY,
     )
