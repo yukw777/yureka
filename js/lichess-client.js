@@ -5,9 +5,10 @@ const axios = require('axios');
 const websocket = require('ws');
 
 module.exports = class LichessClient {
-    constructor(username, password) {
+    constructor(username, password, movetime) {
         this.username = username || '';
         this.password = password || '';
+        this.movetime = movetime || 30000;
     }
     login() {
         if (!this.username || !this.password) {
@@ -30,13 +31,13 @@ module.exports = class LichessClient {
             console.log(error.response);
         });
     }
-    sendMove(ws, engine, moves) {
+    sendMove(ws, engine, moves, initialClock, moveClock) {
         console.log('Sending a move. Move stack: ' + moves);
+        const clock = this.parseClock(initialClock, moveClock);
+        console.log('Clock: ' + JSON.stringify(clock));
         return engine.chain()
         .position('startpos', moves)
-        .go({
-            movetime: 30000
-        })
+        .go(clock)
         .then((data) => {
             console.log(data.info);
             const moveData = JSON.stringify({
@@ -48,13 +49,30 @@ module.exports = class LichessClient {
             });
             console.log('Sending: ' + moveData);
             ws.send(moveData);
+            console.log('Save the move to moves...');
+            moves.push(data.bestmove);
+            console.log('moves: ' + moves);
         });
+    }
+    parseClock(initialClock, moveClock) {
+        if (!initialClock || !moveClock) {
+            return {
+                movetime: this.movetime
+            };
+        }
+        return {
+            wtime: Math.round(moveClock.white * 1000),
+            btime: Math.round(moveClock.black * 1000),
+            winc: Math.round(initialClock.increment * 1000),
+            binc: Math.round(initialClock.increment * 1000),
+        };
     }
     play(game, engine_path) {
         const clientId = Math.random().toString(36).substring(2);
         var socketVersion = 0;
         const socketUrl = 'wss://socket.lichess.org:9029/' + game + '/socket/v2?sri=' + clientId;
         const engine = new Engine(engine_path);
+        var initialClock;
         var moves = [];
         engine
         .init()
@@ -68,9 +86,9 @@ module.exports = class LichessClient {
             .then(function(response) {
                 var color;
                 if (response.data.players.black.userId === this.username) {
-                    color = 1;
-                } else if (response.data.players.white.userId === this.username){
                     color = 0;
+                } else if (response.data.players.white.userId === this.username){
+                    color = 1;
                 } else {
                     throw new Error("I'm not part of this game.");
                 }
@@ -79,6 +97,7 @@ module.exports = class LichessClient {
                 } else {
                     console.log('My color is white');
                 }
+                initialClock = response.data.clock;
 
                 return Promise.resolve(color);
             }.bind(this))
@@ -89,15 +108,16 @@ module.exports = class LichessClient {
                         'Cookie': this.cookie,
                     }
                 });
+                var initialMoveTimeout;
                 ws.on('open', () => {
                     setInterval(() => {
                         const data = JSON.stringify({t: 'p', v: socketVersion});
                         console.log('Sending: ' + data);
                         ws.send(data);
                     }, 1000);
-                    setTimeout(() => {
-                        if (socketVersion === color) {
-                            // we haven't received any move (socketVersion is still 0)
+                    initialMoveTimeout = setTimeout(() => {
+                        if (color === 1) {
+                            // we haven't received any move for five seconds
                             // and we're white, so let's make the first move
                             this.sendMove(ws, engine, moves);
                         }
@@ -108,20 +128,29 @@ module.exports = class LichessClient {
                     const parsed = JSON.parse(data);
                     switch (parsed.t) {
                         case 'move':
+                            if (initialMoveTimeout) {
+                                console.log('Move received. Clear initialMoveTimeout');
+                                clearTimeout(initialMoveTimeout);
+                                initialMoveTimeout = null;
+                            }
                             socketVersion = parsed.v;
-                            moves.push(parsed.d.uci);
-                            if (parsed.d.ply % 2 === color) {
-                                this.sendMove(ws, engine, moves);
+                            if (parsed.d.ply % 2 !== color) {
+                                // opponent's move
+                                moves.push(parsed.d.uci);
+                                console.log('Moves: ' + moves);
+                                this.sendMove(ws, engine, moves, initialClock, parsed.d.clock);
                             }
                             break;
                         case 'b':
+                            console.log('Catching up. Clear initialMoveTimeout');
+                            clearTimeout(initialMoveTimeout);
                             // catch up
                             moves = parsed.d.map(d => d.d.uci);
                             // get the last frame
                             const last = parsed.d[parsed.d.length - 1];
                             socketVersion = last.v;
                             if (last.d.ply % 2  !== color) {
-                                this.sendMove(ws, engine, moves);
+                                this.sendMove(ws, engine, moves, initialClock, last.d.clock);
                             }
                             break;
                     }
