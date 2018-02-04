@@ -143,6 +143,11 @@ module.exports = class LichessClient {
                             socketVersion = parsed.v;
                             if (parsed.d.ply % 2 !== color) {
                                 // opponent's move
+                                // sometimes you can receive move messages twice
+                                if (parsed.d.ply <= moves.length) {
+                                    console.log('Already saw this move, skipping...');
+                                    break;
+                                }
                                 moves.push(parsed.d.uci);
                                 console.log('Moves: ' + moves);
                                 this.sendMove(ws, engine, moves, initialClock, parsed.d.clock);
