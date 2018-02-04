@@ -61,10 +61,10 @@ module.exports = class LichessClient {
             };
         }
         return {
-            wtime: Math.round(moveClock.white * 1000),
-            btime: Math.round(moveClock.black * 1000),
-            winc: Math.round(initialClock.increment * 1000),
-            binc: Math.round(initialClock.increment * 1000),
+            wtime: Math.floor(moveClock.white * 1000),
+            btime: Math.floor(moveClock.black * 1000),
+            winc: Math.floor(initialClock.increment * 1000),
+            binc: Math.floor(initialClock.increment * 1000),
         };
     }
     play(game, engine_path) {
@@ -74,6 +74,7 @@ module.exports = class LichessClient {
         const engine = new Engine(engine_path);
         var initialClock;
         var moves = [];
+        var pingCount = 0;
         engine
         .init()
         .then(engine => {
@@ -92,7 +93,7 @@ module.exports = class LichessClient {
                 } else {
                     throw new Error("I'm not part of this game.");
                 }
-                if (color === 1) {
+                if (color === 0) {
                     console.log('My color is black');
                 } else {
                     console.log('My color is white');
@@ -111,9 +112,15 @@ module.exports = class LichessClient {
                 var initialMoveTimeout;
                 ws.on('open', () => {
                     setInterval(() => {
-                        const data = JSON.stringify({t: 'p', v: socketVersion});
-                        console.log('Sending: ' + data);
-                        ws.send(data);
+                        const data = {t: 'p', v: socketVersion};
+                        // supposed to be average lag, but let's just put some bogus number
+                        // https://github.com/ornicar/lila/blob/4a9df899ba37b0651f322e4566a3b14fce1915f5/ui/site/src/socket.js#L141
+                        if (pingCount % 8 === 2) {
+                            data.l = 10;
+                        }
+                        const strData = JSON.stringify(data);
+                        console.log('Sending: ' + strData);
+                        ws.send(strData);
                     }, 1000);
                     initialMoveTimeout = setTimeout(() => {
                         if (color === 1) {
@@ -152,6 +159,9 @@ module.exports = class LichessClient {
                             if (last.d.ply % 2  !== color) {
                                 this.sendMove(ws, engine, moves, initialClock, last.d.clock);
                             }
+                            break;
+                        case 'n':
+                            pingCount++;
                             break;
                     }
                 }.bind(this));
