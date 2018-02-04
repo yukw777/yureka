@@ -30,11 +30,32 @@ class LichessClient {
             console.log(error.response);
         });
     }
+    sendMove(ws, engine, moves) {
+        console.log('Sending a move. Move stack: ' + moves);
+        return engine.chain()
+        .position('startpos', moves)
+        .go({
+            movetime: 30000
+        })
+        .then((data) => {
+            console.log(data.info);
+            const moveData = JSON.stringify({
+                t: 'move',
+                d: {
+                    u: data.bestmove,
+                    b: 1
+                }
+            });
+            console.log('Sending: ' + moveData);
+            ws.send(moveData);
+        });
+    }
     play(game, engine_path) {
         const clientId = Math.random().toString(36).substring(2);
         var socketVersion = 0;
         const socketUrl = 'wss://socket.lichess.org:9029/' + game + '/socket/v2?sri=' + clientId;
         const engine = new Engine(engine_path);
+        var moves = [];
         engine
         .init()
         .then(engine => {
@@ -47,11 +68,17 @@ class LichessClient {
             .then(function(response) {
                 var color;
                 if (response.data.players.black.userId === this.username) {
-                    color = 'black';
+                    color = 1;
                 } else if (response.data.players.white.userId === this.username){
-                    color = 'white';
+                    color = 0;
+                } else {
+                    throw new Error("I'm not part of this game.");
                 }
-                console.log('My color is ' + color);
+                if (color === 1) {
+                    console.log('My color is black');
+                } else {
+                    console.log('My color is white');
+                }
                 return Promise.resolve(color);
             }.bind(this))
             .then(function(color) {
@@ -67,21 +94,37 @@ class LichessClient {
                         console.log('Sending: ' + data);
                         ws.send(data);
                     }, 1000);
+                    setTimeout(() => {
+                        if (socketVersion === color) {
+                            // we haven't received any move (socketVersion is still 0)
+                            // and we're white, so let's make the first move
+                            this.sendMove(ws, engine, moves);
+                        }
+                    }, 5000);
                 });
-                ws.on('message', data => {
+                ws.on('message', function(data) {
                     console.log('Received: ' + data);
                     const parsed = JSON.parse(data);
                     switch (parsed.t) {
                         case 'move':
+                            socketVersion = parsed.v;
+                            moves.push(parsed.d.uci);
+                            if (parsed.d.ply % 2 === color) {
+                                this.sendMove(ws, engine, moves);
+                            }
                             break;
                         case 'b':
                             // catch up
+                            moves = parsed.d.map(d => d.d.uci);
                             // get the last frame
                             const last = parsed.d[parsed.d.length - 1];
                             socketVersion = last.v;
+                            if (last.d.ply % 2  !== color) {
+                                this.sendMove(ws, engine, moves);
+                            }
                             break;
                     }
-                });
+                }.bind(this));
                 ws.on('error', error => {
                     console.log(error);
                 });
@@ -89,14 +132,6 @@ class LichessClient {
             .catch(console.error);
         }.bind(this))
         .catch(console.error);
-        //.position('startpos')
-        //.go({movetime: 10000})
-        //.then(result => {
-            //console.log(result);
-        //})
-        //.catch(error => {
-            //console.log(error);
-        //});
     }
 }
 
