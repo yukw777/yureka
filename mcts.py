@@ -3,6 +3,7 @@
 import attr
 import chess
 import chess_dataset
+import multiprocessing as mp
 import math
 import models
 import time
@@ -47,6 +48,8 @@ DEFAULT_POLICY_FILE = os.path.join(
     'Policy_2018-01-27_07:09:34_14.model',
 )
 DEFAULT_CONFIDENCE = 5
+DEFAULT_VIRTUAL_LOSS = 3
+DEFAULT_PARALLEL = 'true'
 
 
 @attr.s
@@ -92,6 +95,37 @@ class MCTS():
     value = attr.ib()
     policy = attr.ib()
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
+    node_queue = attr.ib(default=attr.Factory(mp.Queue))
+    backup_queue = attr.ib(default=attr.Factory(mp.Queue))
+    virtual_loss = attr.ib(default=DEFAULT_VIRTUAL_LOSS)
+    parallel = attr.ib(default=DEFAULT_PARALLEL)
+    chunksize = attr.ib(default=16)
+
+    def __attrs_post_init__(self):
+        self.subprocesses = []
+        if self.parallel == 'true':
+            for i in range(3):
+                p = ValueCalculator(
+                    self.node_queue,
+                    self.backup_queue,
+                    self.value[0],
+                    self.value[1],
+                    self.chunksize
+                )
+                p.daemon = True
+                self.subprocesses.append(p)
+                p.start()
+            for i in range(1):
+                p = mp.Process(
+                    target=process_backup, args=(self.backup_queue, ))
+                p.daemon = True
+                self.subprocesses.append(p)
+                p.start()
+
+    def cleanup(self):
+        for p in self.subprocesses:
+            print('info string terminating subprocesses')
+            p.terminate()
 
     def select(self):
         node = self.root
@@ -119,17 +153,13 @@ class MCTS():
             # terminal state, just return itself
             return node
 
-    def simulate(self, node):
-        if node.children:
-            raise MCTSError(node, 'cannot simulate from a non-leaf')
-        return self.value.get_value(node.board)
-
-    def backup(self, node, value):
+    def simulate_async(self, node):
         walker = node
         while walker:
-            walker.visit += 1
-            walker.value += value
+            walker.visit += self.virtual_loss
+            walker.value -= self.virtual_loss
             walker = walker.parent
+        self.node_queue.put((node, self.virtual_loss))
 
     def search(self, duration):
         search_time = continue_search(duration)
@@ -140,8 +170,11 @@ class MCTS():
                 break
             leaf = self.select()
             leaf = self.expand(leaf)
-            value = self.simulate(leaf)
-            self.backup(leaf, value)
+            if self.parallel == 'true':
+                self.simulate_async(leaf)
+            else:
+                value = simulate(self.value, leaf)[0]
+                backup(leaf, value)
             count += 1
 
     def get_move(self):
@@ -161,6 +194,63 @@ class MCTS():
             self.root.add_child(move)
             self.root = self.root.children[move]
         self.root.parent = None
+
+
+def simulate(value, node):
+    return value.get_value(node.board)
+
+
+def init_model(name, path):
+    model = models.create(name)
+    model.load_state_dict(torch.load(os.path.expanduser(path)))
+    return model
+
+
+def process_backup(queue):
+    for v, node, vl in iter(queue.get, None):
+        backup(node, v, virtual_loss=vl)
+        print_flush(f'info string backup queue size: {queue.qsize()}')
+
+
+def backup(node, value, virtual_loss=None):
+    walker = node
+    while walker:
+        if virtual_loss:
+            walker.value += virtual_loss
+            walker.visit -= virtual_loss
+        walker.visit += 1
+        walker.value += value
+        walker = walker.parent
+
+
+class ValueCalculator(mp.Process):
+    def __init__(
+        self,
+        node_queue,
+        backup_queue,
+        value_name,
+        value_file,
+        chunksize
+    ):
+        super().__init__()
+        self.chunksize = chunksize
+        self.node_queue = node_queue
+        self.backup_queue = backup_queue
+        self.value = init_model(value_name, value_file)
+        self.value = ValueNetwork(self.value)
+
+    def run(self):
+        chunk = []
+        for n, vl in iter(self.node_queue.get, None):
+            if len(chunk) < self.chunksize:
+                chunk.append((n, vl))
+                continue
+            values = self.value.get_value([n.board for n, _ in chunk])
+            for v, (n, vl) in zip(values, chunk):
+                self.backup_queue.put((v, n, vl))
+            print_flush(
+                f'info string node queue size: {self.node_queue.qsize()}')
+            chunk = []
 
 
 TC_WTIME = 'wtime'
@@ -260,8 +350,8 @@ def parse_time_control(args):
 
 
 class ZeroValue():
-    def get_value(self, board):
-        return 0
+    def get_value(self, boards):
+        return torch.zeros(len(boards))
 
 
 class RandomPolicy():
@@ -293,12 +383,16 @@ class ValueNetwork():
         if self.cuda:
             self.value.cuda(self.cuda_device)
 
-    def get_value(self, board):
-        board_data = get_board_data(board)
-        tensor = chess_dataset.get_tensor_from_row(board_data)
-        tensor = tensor.unsqueeze(0)
+    def get_tensor(self, boards):
+        return torch.stack(
+            [chess_dataset.get_tensor_from_row(get_board_data(b))
+             for b in boards]
+        )
+
+    def get_value(self, boards):
+        tensor = self.get_tensor(boards)
         value = self.value(Variable(tensor.cuda(), volatile=True))
-        return value.squeeze().data[0]
+        return value.squeeze().data
 
 
 @attr.s
@@ -308,6 +402,7 @@ class UCIMCTSEngine(UCIEngine):
     policy_name = attr.ib(default=DEFAULT_POLICY)
     policy_file = attr.ib(default=DEFAULT_POLICY_FILE)
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
+    parallel = attr.ib(default=DEFAULT_PARALLEL)
 
     def __attrs_post_init__(self):
         super().__attrs_post_init__()
@@ -347,23 +442,29 @@ class UCIMCTSEngine(UCIEngine):
                 'py_type': float,
                 'model': False,
             },
+            'Parallel': {
+                'type': 'check',
+                'default': DEFAULT_PARALLEL,
+                'attr_name': 'parallel',
+                'py_type': lambda x: x == 'true',
+                'model': False,
+            },
         }
-
-    def init_model(self, name, path):
-        model = models.create(name)
-        model.load_state_dict(torch.load(os.path.expanduser(path)))
-        return model
+        self.engine = None
 
     def init_models(self):
-        if self.value_name == ZERO_VALUE:
-            self.value = ZeroValue()
+        if self.parallel == 'true':
+            self.value = (self.value_name, self.value_file)
         else:
-            self.value = self.init_model(self.value_name, self.value_file)
-            self.value = ValueNetwork(self.value)
+            if self.value_name == ZERO_VALUE:
+                self.value = ZeroValue()
+            else:
+                self.value = init_model(self.value_name, self.value_file)
+                self.value = ValueNetwork(self.value)
         if self.policy_name == RANDOM_POLICY:
             self.policy = RandomPolicy()
         else:
-            self.policy = self.init_model(self.policy_name, self.policy_file)
+            self.policy = init_model(self.policy_name, self.policy_file)
             self.policy = ChessEngine(self.policy, train=False)
 
     def init_engine(self, board=None):
@@ -371,6 +472,7 @@ class UCIMCTSEngine(UCIEngine):
             root = Node(board=board)
         else:
             root = Node()
+        del self.engine
         self.engine = MCTS(
             root,
             self.value,
@@ -400,5 +502,6 @@ class UCIMCTSEngine(UCIEngine):
 
 
 if __name__ == '__main__':
+    mp.set_start_method('spawn')
     print_flush('Yureka!')
     UCIMCTSEngine().listen()
