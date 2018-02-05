@@ -102,9 +102,8 @@ class MCTS():
     chunksize = attr.ib(default=16)
 
     def __attrs_post_init__(self):
-        self.subprocesses = []
         if self.parallel == 'true':
-            for i in range(3):
+            for i in range(2):
                 p = ValueCalculator(
                     self.node_queue,
                     self.backup_queue,
@@ -113,17 +112,15 @@ class MCTS():
                     self.chunksize
                 )
                 p.daemon = True
-                self.subprocesses.append(p)
                 p.start()
             for i in range(1):
                 p = mp.Process(
                     target=process_backup, args=(self.backup_queue, ))
                 p.daemon = True
-                self.subprocesses.append(p)
                 p.start()
 
     def cleanup(self):
-        for p in self.subprocesses:
+        for p in mp.active_children():
             print('info string terminating subprocesses')
             p.terminate()
 
@@ -209,7 +206,6 @@ def init_model(name, path):
 def process_backup(queue):
     for v, node, vl in iter(queue.get, None):
         backup(node, v, virtual_loss=vl)
-        print_flush(f'info string backup queue size: {queue.qsize()}')
 
 
 def backup(node, value, virtual_loss=None):
@@ -248,8 +244,6 @@ class ValueCalculator(mp.Process):
             values = self.value.get_value([n.board for n, _ in chunk])
             for v, (n, vl) in zip(values, chunk):
                 self.backup_queue.put((v, n, vl))
-            print_flush(
-                f'info string node queue size: {self.node_queue.qsize()}')
             chunk = []
 
 
