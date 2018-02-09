@@ -36,8 +36,11 @@ class Policy(nn.Module):
 
     def initialize_weights(self):
         for m in self.modules():
-            if type(m) in (nn.Conv2d, nn.BatchNorm2d, nn.Linear):
+            if type(m) in (nn.Conv2d, nn.Linear):
                 init.kaiming_normal(m.weight)
+                m.bias.data.zero_()
+            elif type(m) == nn.BatchNorm2d:
+                m.weight.data.fill_(1)
                 m.bias.data.zero_()
 
     def create_conv_layer(self, *args, **kwargs):
@@ -100,10 +103,24 @@ models = {
         'args': (23, 128, 11),
         'kwargs': {},
     },
+    'Policy.v1': {
+        'class': Policy,
+        'args': (23, 128, 20),
+        'kwargs': {
+            'batch_norm': True,
+        },
+    },
     'Value.v0': {
         'class': Value,
         'args': (23, 128, 11, 128),
         'kwargs': {},
+    },
+    'Value.v1': {
+        'class': Value,
+        'args': (23, 128, 20, 128),
+        'kwargs': {
+            'batch_norm': True,
+        },
     },
     'Rollout.v0': {
         'class': Policy,
