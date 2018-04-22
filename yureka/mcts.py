@@ -2,21 +2,21 @@
 
 import attr
 import chess
-import chess_dataset
 import math
-import models
 import time
 import torch
 from torch.autograd import Variable
 import random
 import os
-from board_data import get_board_data
-from chess_engine import (
+from yureka import chess_dataset
+from yureka.board_data import get_board_data
+from yureka import models
+from yureka.chess_engine import (
     print_flush,
     ChessEngine,
     UCIEngine,
 )
-from move_translator import (
+from yureka.move_translator import (
     TOTAL_MOVES,
     translate_to_engine_move,
     get_engine_move_index,

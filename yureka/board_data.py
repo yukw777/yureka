@@ -1,7 +1,6 @@
 import chess
-import time
 import collections
-import move_translator
+from yureka import move_translator
 
 
 pieces = [

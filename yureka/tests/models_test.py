@@ -1,5 +1,5 @@
-import models
 import torch
+from yureka import models
 from torch.autograd import Variable
 
 

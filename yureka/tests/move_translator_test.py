@@ -1,5 +1,5 @@
 import chess
-import move_translator
+from yureka import move_translator
 
 
 def test_underpromotion():

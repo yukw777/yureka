@@ -1,7 +1,7 @@
 import torch
 import math
 import chess
-from chess_engine import (
+from yureka.chess_engine import (
     ChessEngine,
     queen_promotion_if_possible,
     UCIPolicyEngine,
@@ -48,7 +48,7 @@ def test_get_move():
         black_board.push(chess.Move.from_uci("g1f3"))
         e = ChessEngine(model=mock_model, cuda=False, train=tc['train'])
         if tc['train']:
-            with patch('chess_engine.torch.nn.functional.softmax',
+            with patch('yureka.chess_engine.torch.nn.functional.softmax',
                        return_value=Variable(t)):
                 white_move, log_prob = e.get_move(white_board)
                 assert tc['expected_white_move'] == white_move

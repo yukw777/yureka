@@ -1,24 +1,24 @@
 #!/home/keunwoo/Documents/Projects/chess-engine/venv/bin/python
 
 import attr
-import models
 import sys
 import os
 import re
 import chess
-import chess_dataset
+from yureka import chess_dataset
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.distributions import Categorical
-from move_translator import (
+from yureka import models
+from yureka.move_translator import (
     translate_to_engine_move,
     translate_from_engine_move,
     get_engine_move_from_index,
     get_engine_move_index,
 )
-from board_data import get_board_data
+from yureka.board_data import get_board_data
 
 
 DEFAULT_MODEL = 'Policy.v0'

@@ -1,11 +1,11 @@
 import torch
 import numpy as np
-from chess_dataset import ChessDataset
-from board_data import BOARD_SIZE
+from yureka.chess_dataset import ChessDataset
+from yureka.board_data import BOARD_SIZE
 
 
 def test_chess_dataset():
-    dataset = ChessDataset('tests/test.engine.csv')
+    dataset = ChessDataset('yureka/tests/test.engine.csv')
     assert len(dataset) == 165
 
     test_cases = [

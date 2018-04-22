@@ -3,12 +3,14 @@ import random
 import chess
 import chess.pgn
 import pandas as pd
-import move_translator
-import models
 import sys
-import chess_engine
 import torch
-from board_data import get_reward, get_board_data
+from yureka import (
+    models,
+    chess_engine,
+    move_translator,
+)
+from yureka.board_data import get_reward, get_board_data
 
 
 @attr.s

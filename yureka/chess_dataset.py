@@ -3,8 +3,8 @@ import chess
 import pandas as pd
 import numpy as np
 import torch
-import move_translator
-from board_data import BOARD_SIZE
+from yureka import move_translator
+from yureka.board_data import BOARD_SIZE
 from torch.utils.data import Dataset
 
 

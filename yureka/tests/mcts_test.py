@@ -1,4 +1,3 @@
-import mcts
 import chess
 import math
 import unittest.mock as mock
@@ -6,7 +5,8 @@ import pytest
 import torch
 import time
 from torch.autograd import Variable
-from move_translator import (
+from yureka import mcts
+from yureka.move_translator import (
     translate_to_engine_move,
     get_engine_move_index,
 )
