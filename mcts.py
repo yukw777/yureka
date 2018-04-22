@@ -10,7 +10,7 @@ import torch
 from torch.autograd import Variable
 import random
 import os
-from board_data import get_board_data, get_reward
+from board_data import get_board_data
 from chess_engine import (
     print_flush,
     ChessEngine,
@@ -23,13 +23,6 @@ from move_translator import (
 )
 
 
-DEFAULT_ROLLOUT = 'Rollout.v0'
-DEFAULT_ROLLOUT_FILE = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)),
-    'saved_models',
-    'Rollout',
-    'Policy_2018-01-31_21:13:39_7.model',
-)
 RANDOM_POLICY = 'random'
 DEFAULT_VALUE = 'Value.v0'
 DEFAULT_VALUE_FILE = os.path.join(
@@ -46,7 +39,6 @@ DEFAULT_POLICY_FILE = os.path.join(
     'SL_endgame',
     'Policy_2018-01-27_07:09:34_14.model',
 )
-DEFAULT_LAMBDA = 0
 DEFAULT_CONFIDENCE = 5
 
 
@@ -55,21 +47,18 @@ class Node():
     children = attr.ib(default=attr.Factory(dict))
     parent = attr.ib(default=None)
     prior = attr.ib(default=0)
-    result = attr.ib(default=0)
     value = attr.ib(default=0)
     visit = attr.ib(default=0)
     board = attr.ib(default=chess.Board())
 
-    def q(self, lambda_c):
+    def q(self):
         if self.visit == 0:
             return math.inf
-        q = (1 - lambda_c) * self.value / self.visit
-        q += lambda_c * self.result / self.visit
-        return q
+        return self.value / self.visit
 
-    def ucb(self, lambda_c, confidence, visit_sum):
+    def ucb(self, confidence, visit_sum):
         # alpha go version
-        ucb = self.q(lambda_c)
+        ucb = self.q()
         ucb += confidence * self.prior * math.sqrt(visit_sum)
         ucb /= (1 + self.visit)
         return ucb
@@ -93,10 +82,8 @@ class MCTSError(Exception):
 @attr.s
 class MCTS():
     root = attr.ib()
-    rollout = attr.ib()
     value = attr.ib()
     policy = attr.ib()
-    lambda_c = attr.ib(default=DEFAULT_LAMBDA)
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
 
     def select(self):
@@ -106,7 +93,7 @@ class MCTS():
             visit_sum = sum([n.visit for n in child_nodes])
             node = max(
                 child_nodes,
-                key=lambda n: n.ucb(self.lambda_c, self.confidence, visit_sum)
+                key=lambda n: n.ucb(self.confidence, visit_sum)
             )
         return node
 
@@ -129,29 +116,12 @@ class MCTS():
         if node.children:
             raise MCTSError(node, 'cannot simulate from a non-leaf')
         board = chess.Board(fen=node.board.fen())
-        if self.lambda_c == 0:
-            # it will be zero either way, so no need to simulate
-            reward = 0
-        else:
-            while not board.is_game_over(claim_draw=True):
-                move = self.rollout.get_move(board, sample=True)
-                board.push(move)
+        return self.value.get_value(board)
 
-            result = board.result(claim_draw=True)
-            reward = get_reward(result, self.root.board.turn)
-        if self.lambda_c == 1:
-            # it will be zero either way, so no need to calculate
-            value = 0
-        else:
-            value = self.value.get_value(board)
-
-        return reward, value
-
-    def backup(self, node, reward, value):
+    def backup(self, node, value):
         walker = node
         while walker:
             walker.visit += 1
-            walker.result += reward
             walker.value += value
             walker = walker.parent
 
@@ -164,8 +134,8 @@ class MCTS():
                 break
             leaf = self.select()
             leaf = self.expand(leaf)
-            reward, value = self.simulate(leaf)
-            self.backup(leaf, reward, value)
+            value = self.simulate(leaf)
+            self.backup(leaf, value)
             count += 1
 
     def get_move(self):
@@ -327,32 +297,15 @@ class ValueNetwork():
 
 @attr.s
 class UCIMCTSEngine(UCIEngine):
-    rollout_name = attr.ib(default=DEFAULT_ROLLOUT)
-    rollout_file = attr.ib(default=DEFAULT_ROLLOUT_FILE)
     value_name = attr.ib(default=DEFAULT_VALUE)
     value_file = attr.ib(default=DEFAULT_VALUE_FILE)
     policy_name = attr.ib(default=DEFAULT_POLICY)
     policy_file = attr.ib(default=DEFAULT_POLICY_FILE)
-    lambda_c = attr.ib(default=DEFAULT_LAMBDA)
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
 
     def __attrs_post_init__(self):
         super().__attrs_post_init__()
         self.options = {
-            'Rollout Name': {
-                'type': 'string',
-                'default': DEFAULT_ROLLOUT,
-                'attr_name': 'rollout_name',
-                'py_type': str,
-                'model': True,
-            },
-            'Rollout File': {
-                'type': 'string',
-                'default': DEFAULT_ROLLOUT_FILE,
-                'attr_name': 'rollout_file',
-                'py_type': str,
-                'model': True,
-            },
             'Value Name': {
                 'type': 'string',
                 'default': DEFAULT_VALUE,
@@ -381,13 +334,6 @@ class UCIMCTSEngine(UCIEngine):
                 'py_type': str,
                 'model': True,
             },
-            'Lambda': {
-                'type': 'string',
-                'default': DEFAULT_LAMBDA,
-                'attr_name': 'lambda_c',
-                'py_type': float,
-                'model': False,
-            },
             'Confidence': {
                 'type': 'string',
                 'default': DEFAULT_CONFIDENCE,
@@ -403,12 +349,6 @@ class UCIMCTSEngine(UCIEngine):
         return model
 
     def init_models(self):
-        if self.rollout_name == RANDOM_POLICY:
-            self.rollout = RandomPolicy()
-        else:
-            self.rollout = self.init_model(
-                self.rollout_name, self.rollout_file)
-            self.rollout = ChessEngine(self.rollout, train=False)
         if self.value_name == ZERO_VALUE:
             self.value = ZeroValue()
         else:
@@ -427,10 +367,8 @@ class UCIMCTSEngine(UCIEngine):
             root = Node()
         self.engine = MCTS(
             root,
-            self.rollout,
             self.value,
             self.policy,
-            self.lambda_c,
             self.confidence,
         )
         self.time_manager = TimeManager()
