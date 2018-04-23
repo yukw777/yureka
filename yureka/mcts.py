@@ -8,15 +8,19 @@ import torch
 from torch.autograd import Variable
 import random
 import os
-from yureka import chess_dataset
-from yureka.board_data import get_board_data
-from yureka import models
-from yureka.chess_engine import (
+import sys
+root_path = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+sys.path.append(root_path)
+from yureka import chess_dataset    # noqa: E402
+from yureka.board_data import get_board_data    # noqa: E402
+from yureka import models    # noqa: E402
+from yureka.chess_engine import (    # noqa: E402
     print_flush,
     ChessEngine,
     UCIEngine,
 )
-from yureka.move_translator import (
+from yureka.move_translator import (    # noqa: E402
     TOTAL_MOVES,
     translate_to_engine_move,
     get_engine_move_index,
@@ -26,7 +30,7 @@ from yureka.move_translator import (
 RANDOM_POLICY = 'random'
 DEFAULT_VALUE = 'Value.v0'
 DEFAULT_VALUE_FILE = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)),
+    root_path,
     'saved_models',
     'Value',
     'Value_2018-01-31_14:20:50_4.model',
@@ -34,7 +38,7 @@ DEFAULT_VALUE_FILE = os.path.join(
 ZERO_VALUE = 'zero'
 DEFAULT_POLICY = 'Policy.v0'
 DEFAULT_POLICY_FILE = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)),
+    root_path,
     'saved_models',
     'SL_endgame',
     'Policy_2018-01-27_07:09:34_14.model',
