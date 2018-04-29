@@ -126,9 +126,13 @@ class MCTS():
 
     def backup(self, node, value):
         walker = node
+        turn = node.board.turn
         while walker:
             walker.visit += 1
-            walker.value += value
+            if walker.board.turn == turn:
+                walker.value += value
+            else:
+                walker.value -= value
             walker = walker.parent
 
     def search(self, duration):

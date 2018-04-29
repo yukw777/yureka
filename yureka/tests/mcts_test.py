@@ -145,14 +145,21 @@ def test_simulate_game_over():
 
 
 def test_backup():
+    # white turn
     node = mcts.Node()
-    node.parent = mcts.Node()
+    # black turn
+    node.parent = mcts.Node(board=chess.Board(
+        fen='rnbqkbnr/pppppppp/8/8/8/5P2/PPPPP1PP/RNBQKBNR b KQkq - 0 1'))
+    # white turn
     node.parent.parent = mcts.Node()
     m = mcts.MCTS('', '', '', '')
     m.backup(node, 0.9)
     walker = node
     while walker:
-        assert walker.value == 0.9
+        if walker.board.turn == node.board.turn:
+            assert walker.value == 0.9
+        else:
+            assert walker.value == -0.9
         assert walker.visit == 1
         walker = walker.parent
 
