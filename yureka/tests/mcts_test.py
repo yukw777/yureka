@@ -6,6 +6,7 @@ import torch
 import time
 from torch.autograd import Variable
 from yureka import mcts
+from yureka import yureka
 from yureka.move_translator import (
     translate_to_engine_move,
     get_engine_move_index,
@@ -207,9 +208,9 @@ def test_advance_root():
 
 
 def test_engine_new_position():
-    e = mcts.UCIMCTSEngine(
-        value_name=mcts.ZERO_VALUE,
-        policy_name=mcts.RANDOM_POLICY,
+    e = yureka.UCIMCTSEngine(
+        value_name=yureka.ZERO_VALUE,
+        policy_name=yureka.RANDOM_POLICY,
     )
     e.init_models()
     e.init_engine()
@@ -275,7 +276,7 @@ def test_parse_time_control():
         },
     ]
     for tc in test_cases:
-        parsed = mcts.parse_time_control(tc['args'])
+        parsed = yureka.parse_time_control(tc['args'])
         assert parsed == tc['data']
 
 
@@ -360,7 +361,7 @@ def test_time_manager():
     ]
 
     for tc in test_cases:
-        tm = mcts.TimeManager()
+        tm = yureka.TimeManager()
         for d, e in zip(tc['data'], tc['expected']):
             duration = tm.calculate_duration(d['color'], d)
             assert duration == e
