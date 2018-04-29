@@ -121,7 +121,6 @@ def test_expand():
 
 
 def test_simulate():
-    # use fool's mate to test
     mock_value = mock.MagicMock()
     mock_value.get_value.return_value = -0.9
     n = mcts.Node()
@@ -132,6 +131,17 @@ def test_simulate():
     with pytest.raises(mcts.MCTSError):
         n.children[1] = mcts.Node()
         m.simulate(n)
+
+
+def test_simulate_game_over():
+    # if the game is over, return the reward
+    # use the fool's mate
+    n = mcts.Node()
+    n.board = chess.Board(
+        fen='rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3')
+    m = mcts.MCTS(n, '', '', '')
+    value = m.simulate(n)
+    assert value == -1
 
 
 def test_backup():

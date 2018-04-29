@@ -13,7 +13,7 @@ root_path = os.path.join(
     os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 sys.path.append(root_path)
 from yureka import chess_dataset    # noqa: E402
-from yureka.board_data import get_board_data    # noqa: E402
+from yureka.board_data import get_board_data, get_reward    # noqa: E402
 from yureka import models    # noqa: E402
 from yureka.chess_engine import (    # noqa: E402
     print_flush,
@@ -120,6 +120,8 @@ class MCTS():
         if node.children:
             raise MCTSError(node, 'cannot simulate from a non-leaf')
         board = chess.Board(fen=node.board.fen())
+        if board.is_game_over(claim_draw=True):
+            return get_reward(board.result(claim_draw=True), board.turn)
         return self.value.get_value(board)
 
     def backup(self, node, value):
