@@ -7,25 +7,26 @@ from torch.autograd import Variable
 import random
 import os
 import sys
-root_path = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-sys.path.append(root_path)
-from .mcts import Node, MCTS     # noqa: E402
-from .engine.time_manager import TimeManager     # noqa: E402
-from .mcts.constants import DEFAULT_CONFIDENCE   # noqa: E402
-from . import chess_dataset    # noqa: E402
-from .board_data import get_board_data    # noqa: E402
-from . import models    # noqa: E402
-from .chess_engine import (    # noqa: E402
+from .mcts.networks import ValueNetwork
+from .mcts import Node, MCTS
+from .engine.time_manager import TimeManager
+from .mcts.constants import DEFAULT_CONFIDENCE
+from . import models
+from .chess_engine import (
     print_flush,
     ChessEngine,
     UCIEngine,
 )
-from .move_translator import (    # noqa: E402
+from .move_translator import (
     TOTAL_MOVES,
     translate_to_engine_move,
     get_engine_move_index,
 )
+
+
+root_path = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+sys.path.append(root_path)
 
 
 RANDOM_POLICY = 'random'
@@ -66,26 +67,6 @@ class RandomPolicy():
             indexes.append(index)
         probs.index_fill_(1, Variable(torch.LongTensor(indexes)), prob)
         return probs
-
-
-@attr.s
-class ValueNetwork():
-    network = attr.ib()
-    cuda = attr.ib(default=True)
-    cuda_device = attr.ib(default=None)
-
-    def __attrs_post_init__(self):
-        self.network.eval()
-        self.cuda = self.cuda and torch.cuda.is_available()
-        if self.cuda:
-            self.network.cuda(self.cuda_device)
-
-    def get_value(self, board):
-        board_data = get_board_data(board)
-        tensor = chess_dataset.get_tensor_from_row(board_data)
-        tensor = tensor.unsqueeze(0)
-        value = self.network(Variable(tensor.cuda(), volatile=True))
-        return value.squeeze().data[0]
 
 
 @attr.s
