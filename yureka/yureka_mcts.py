@@ -1,5 +1,3 @@
-#!/home/keunwoo/Documents/Projects/chess-engine/venv/bin/python
-
 from .engine import UCIMCTSEngine
 from .utils import print_flush
 
