@@ -10,10 +10,10 @@ from yureka.chess_engine import ChessEngine
 from yureka.mcts.networks import ValueNetwork, ZeroValue, RandomPolicy
 from yureka.mcts import Node, MCTS
 from yureka.mcts.constants import DEFAULT_CONFIDENCE
+from yureka.utils import print_flush
 
 from . import constants
 from .time_manager import TimeManager
-from .utils import print_flush
 
 
 @attr.s

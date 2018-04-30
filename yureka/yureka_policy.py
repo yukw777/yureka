@@ -1,8 +1,8 @@
 import os
 
-from .engine.constants import DEFAULT_MODEL, DEFAULT_MODEL_FILE
-from .engine import UCIPolicyEngine
-from .chess_engine import print_flush
+from engine.constants import DEFAULT_MODEL, DEFAULT_MODEL_FILE
+from engine import UCIPolicyEngine
+from utils import print_flush
 
 
 if __name__ == '__main__':

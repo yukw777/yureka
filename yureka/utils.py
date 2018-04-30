@@ -10,3 +10,7 @@ def timeit(method):
               (method.__name__, (te - ts) * 1000))
         return result
     return timed
+
+
+def print_flush(*args, **kwargs):
+    print(*args, flush=True, **kwargs)
