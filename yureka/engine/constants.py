@@ -25,3 +25,24 @@ DEFAULT_MODEL_FILE = os.path.join(
     'SL_endgame',
     'Policy_2018-01-27_07:09:34_14.model',
 )
+
+# UCI MCTS Engine
+root_path = os.path.join(
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+RANDOM_POLICY = 'random'
+DEFAULT_VALUE = 'Value.v0'
+DEFAULT_VALUE_FILE = os.path.join(
+    root_path,
+    'saved_models',
+    'Value',
+    'Value_2018-01-31_14:20:50_4.model',
+)
+ZERO_VALUE = 'zero'
+DEFAULT_POLICY = 'Policy.v0'
+DEFAULT_POLICY_FILE = os.path.join(
+    root_path,
+    'saved_models',
+    'SL_endgame',
+    'Policy_2018-01-27_07:09:34_14.model',
+)

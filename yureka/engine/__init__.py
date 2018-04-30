@@ -7,8 +7,13 @@ import os
 
 from yureka import models
 from yureka.chess_engine import ChessEngine
+from yureka.mcts.networks import ValueNetwork, ZeroValue, RandomPolicy
+from yureka.mcts import Node, MCTS
+from yureka.mcts.constants import DEFAULT_CONFIDENCE
 
-from .constants import DEFAULT_MODEL, DEFAULT_MODEL_FILE
+from . import constants
+from .time_manager import TimeManager
+from .utils import print_flush
 
 
 @attr.s
@@ -136,8 +141,8 @@ class UCIEngine():
 
 @attr.s
 class UCIPolicyEngine(UCIEngine):
-    model_name = attr.ib(default=DEFAULT_MODEL)
-    model_file = attr.ib(default=DEFAULT_MODEL_FILE)
+    model_name = attr.ib(default=constants.DEFAULT_MODEL)
+    model_file = attr.ib(default=constants.DEFAULT_MODEL_FILE)
     cuda_device = attr.ib(default=None)
 
     def __attrs_post_init__(self):
@@ -145,14 +150,14 @@ class UCIPolicyEngine(UCIEngine):
         self.options = {
             'Model Name': {
                 'type': 'string',
-                'default': DEFAULT_MODEL,
+                'default': constants.DEFAULT_MODEL,
                 'attr_name': 'model_name',
                 'py_type': str,
                 'model': True,
             },
             'Model File': {
                 'type': 'string',
-                'default': DEFAULT_MODEL_FILE,
+                'default': constants.DEFAULT_MODEL_FILE,
                 'attr_name': 'model_file',
                 'py_type': str,
                 'model': True,
@@ -187,5 +192,99 @@ class UCIPolicyEngine(UCIEngine):
         print_flush(f'bestmove {move.uci()}')
 
 
-def print_flush(*args, **kwargs):
-    print(*args, flush=True, **kwargs)
+@attr.s
+class UCIMCTSEngine(UCIEngine):
+    value_name = attr.ib(default=constants.DEFAULT_VALUE)
+    value_file = attr.ib(default=constants.DEFAULT_VALUE_FILE)
+    policy_name = attr.ib(default=constants.DEFAULT_POLICY)
+    policy_file = attr.ib(default=constants.DEFAULT_POLICY_FILE)
+    confidence = attr.ib(default=DEFAULT_CONFIDENCE)
+
+    def __attrs_post_init__(self):
+        super().__attrs_post_init__()
+        self.options = {
+            'Value Name': {
+                'type': 'string',
+                'default': constants.DEFAULT_VALUE,
+                'attr_name': 'value_name',
+                'py_type': str,
+                'model': True,
+            },
+            'Value File': {
+                'type': 'string',
+                'default': constants.DEFAULT_VALUE_FILE,
+                'attr_name': 'value_file',
+                'py_type': str,
+                'model': True,
+            },
+            'Policy Name': {
+                'type': 'string',
+                'default': constants.DEFAULT_POLICY,
+                'attr_name': 'policy_name',
+                'py_type': str,
+                'model': True,
+            },
+            'Policy File': {
+                'type': 'string',
+                'default': constants.DEFAULT_POLICY_FILE,
+                'attr_name': 'policy_file',
+                'py_type': str,
+                'model': True,
+            },
+            'Confidence': {
+                'type': 'string',
+                'default': DEFAULT_CONFIDENCE,
+                'attr_name': 'confidence',
+                'py_type': float,
+                'model': False,
+            },
+        }
+
+    def init_model(self, name, path):
+        model = models.create(name)
+        model.load_state_dict(torch.load(os.path.expanduser(path)))
+        return model
+
+    def init_models(self):
+        if self.value_name == constants.ZERO_VALUE:
+            self.value = ZeroValue()
+        else:
+            self.value = self.init_model(self.value_name, self.value_file)
+            self.value = ValueNetwork(self.value)
+        if self.policy_name == constants.RANDOM_POLICY:
+            self.policy = RandomPolicy()
+        else:
+            self.policy = self.init_model(self.policy_name, self.policy_file)
+            self.policy = ChessEngine(self.policy, train=False)
+
+    def init_engine(self, board=None):
+        if board:
+            root = Node(board=board)
+        else:
+            root = Node()
+        self.engine = MCTS(
+            root,
+            self.value,
+            self.policy,
+            self.confidence,
+        )
+        self.time_manager = TimeManager()
+
+    def new_position(self, fen, moves):
+        board = chess.Board(fen=fen)
+        for uci in moves:
+            if board == self.engine.root.board:
+                self.engine.advance_root(chess.Move.from_uci(uci))
+            board.push_uci(uci)
+        if board != self.engine.root.board:
+            self.init_engine(board=board)
+
+    def go(self, args):
+        duration = self.time_manager.handle(self.engine.root.board.turn, args)
+        if not duration:
+            self.unknown_handler(args)
+            return
+        print_flush(f'info string search for {duration} seconds')
+        self.engine.search(duration)
+        move = self.engine.get_move()
+        print_flush(f'bestmove {move.uci()}')

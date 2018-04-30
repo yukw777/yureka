@@ -6,7 +6,8 @@ import torch
 import time
 from torch.autograd import Variable
 from yureka import mcts
-from yureka import yureka
+from yureka.engine import UCIMCTSEngine
+from yureka.engine.constants import ZERO_VALUE, RANDOM_POLICY
 from yureka.move_translator import (
     translate_to_engine_move,
     get_engine_move_index,
@@ -208,9 +209,9 @@ def test_advance_root():
 
 
 def test_engine_new_position():
-    e = yureka.UCIMCTSEngine(
-        value_name=yureka.ZERO_VALUE,
-        policy_name=yureka.RANDOM_POLICY,
+    e = UCIMCTSEngine(
+        value_name=ZERO_VALUE,
+        policy_name=RANDOM_POLICY,
     )
     e.init_models()
     e.init_engine()
