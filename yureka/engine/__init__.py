@@ -5,12 +5,12 @@ import sys
 import torch
 import os
 
-from yureka import models
-from yureka.chess_engine import ChessEngine
-from yureka.mcts.networks import ValueNetwork, ZeroValue, RandomPolicy
-from yureka.mcts import Node, MCTS
-from yureka.mcts.constants import DEFAULT_CONFIDENCE
-from yureka.utils import print_flush
+from .. import models
+from ..chess_engine import ChessEngine
+from ..mcts.networks import ValueNetwork, ZeroValue, RandomPolicy
+from ..mcts import Node, MCTS
+from ..mcts.constants import DEFAULT_CONFIDENCE
+from ..utils import print_flush
 
 from . import constants
 from .time_manager import TimeManager

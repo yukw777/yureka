@@ -4,9 +4,9 @@ import math
 import time
 import random
 
-from yureka.board_data import get_reward
-from yureka.utils import print_flush
-from yureka.move_translator import (
+from ..board_data import get_reward
+from ..utils import print_flush
+from ..move_translator import (
     translate_to_engine_move,
     get_engine_move_index,
 )

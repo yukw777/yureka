@@ -4,13 +4,13 @@ import random
 
 from torch.autograd import Variable
 
-from yureka.board_data import get_board_data
-from yureka.move_translator import (
+from ..board_data import get_board_data
+from ..move_translator import (
     TOTAL_MOVES,
     translate_to_engine_move,
     get_engine_move_index,
 )
-from yureka import chess_dataset
+from .. import chess_dataset
 
 
 @attr.s

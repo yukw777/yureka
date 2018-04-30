@@ -1,6 +1,7 @@
 import chess
 import collections
-from yureka import move_translator
+
+from . import move_translator
 
 
 pieces = [

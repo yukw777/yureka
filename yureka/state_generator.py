@@ -5,12 +5,13 @@ import chess.pgn
 import pandas as pd
 import sys
 import torch
-from yureka import (
+
+from . import (
     models,
     chess_engine,
     move_translator,
 )
-from yureka.board_data import get_reward, get_board_data
+from .board_data import get_reward, get_board_data
 
 
 @attr.s

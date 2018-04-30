@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch.nn.init as init
-from yureka.move_translator import NUM_MOVE_PLANES
+
+from .move_translator import NUM_MOVE_PLANES
 
 
 class Policy(nn.Module):
