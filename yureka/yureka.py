@@ -7,14 +7,11 @@ import os
 import sys
 from .mcts.networks import ValueNetwork, ZeroValue, RandomPolicy
 from .mcts import Node, MCTS
+from .engine import print_flush, UCIEngine
 from .engine.time_manager import TimeManager
 from .mcts.constants import DEFAULT_CONFIDENCE
 from . import models
-from .chess_engine import (
-    print_flush,
-    ChessEngine,
-    UCIEngine,
-)
+from .chess_engine import ChessEngine
 
 
 root_path = os.path.join(

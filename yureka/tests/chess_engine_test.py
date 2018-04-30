@@ -1,13 +1,13 @@
 import torch
 import math
 import chess
+
 from yureka.chess_engine import (
     ChessEngine,
     queen_promotion_if_possible,
-    UCIPolicyEngine,
-    DEFAULT_MODEL,
-    DEFAULT_MODEL_FILE,
 )
+from yureka.engine import UCIPolicyEngine
+from yureka.engine.constants import DEFAULT_MODEL, DEFAULT_MODEL_FILE
 from unittest.mock import MagicMock, patch
 from torch.autograd import Variable
 
