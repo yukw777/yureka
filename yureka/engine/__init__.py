@@ -6,8 +6,12 @@ import torch
 import os
 
 from .. import models
-from ..chess_engine import ChessEngine
-from ..mcts.networks import ValueNetwork, ZeroValue, RandomPolicy
+from ..mcts.networks import (
+    PolicyNetwork,
+    ValueNetwork,
+    ZeroValue,
+    RandomPolicy,
+)
 from ..mcts import Node, MCTS
 from ..mcts.constants import DEFAULT_CONFIDENCE
 from ..utils import print_flush
@@ -178,7 +182,7 @@ class UCIPolicyEngine(UCIEngine):
             torch.load(os.path.expanduser(self.model_file)))
 
     def init_engine(self):
-        self.engine = ChessEngine(
+        self.engine = PolicyNetwork(
             self.model, train=False, cuda_device=self.cuda_device)
         self.board = chess.Board()
 
@@ -255,7 +259,7 @@ class UCIMCTSEngine(UCIEngine):
             self.policy = RandomPolicy()
         else:
             self.policy = self.init_model(self.policy_name, self.policy_file)
-            self.policy = ChessEngine(self.policy, train=False)
+            self.policy = PolicyNetwork(self.policy, train=False)
 
     def init_engine(self, board=None):
         if board:

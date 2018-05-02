@@ -6,9 +6,9 @@ import pandas as pd
 import sys
 import torch
 
+from .mcts.networks import PolicyNetwork
 from . import (
     models,
-    chess_engine,
     move_translator,
 )
 from .board_data import get_reward, get_board_data
@@ -210,10 +210,10 @@ def expert(args):
 def sim_sampled(args):
     sl = models.create(args.sl_engine_name)
     sl.load_state_dict(torch.load(args.sl_engine_file))
-    sl = chess_engine.ChessEngine(sl)
+    sl = PolicyNetwork(sl)
     rl = models.create(args.rl_engine_name)
     rl.load_state_dict(torch.load(args.rl_engine_file))
-    rl = chess_engine.ChessEngine(rl)
+    rl = PolicyNetwork(rl)
     u = SimSampledStateGenerator(args.out_csv_file, sl, rl, args.num_games)
     u.generate(write=True)
 

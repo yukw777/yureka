@@ -9,8 +9,9 @@ import random
 import glob
 import models
 import torch.optim as optim
-from chess_engine import ChessEngine
-from state_generator import get_reward
+
+from .mcts.networks import PolicyNetwork
+from .state_generator import get_reward
 
 
 @attr.s
@@ -62,7 +63,7 @@ class ReinforceTrainer():
     def setup_games(self, number):
         self.logger.debug(f'Setting up game {number}')
         color = random.choice([chess.WHITE, chess.BLACK])
-        trainee = ChessEngine(self.trainee_model)
+        trainee = PolicyNetwork(self.trainee_model)
         opponent_model_file = self.get_opponent_model_file()
         return (
             self.cuda_device,
@@ -208,7 +209,7 @@ def self_play(
 ):
     opponent = models.create(opponent_model_name)
     opponent.load_state_dict(torch.load(opponent_model_file))
-    opponent = ChessEngine(opponent, train=False, cuda_device=cuda_device)
+    opponent = PolicyNetwork(opponent, train=False, cuda_device=cuda_device)
 
     log_probs = []
     board = chess.Board()

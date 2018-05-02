@@ -2,10 +2,8 @@ import torch
 import math
 import chess
 
-from yureka.chess_engine import (
-    ChessEngine,
-    queen_promotion_if_possible,
-)
+from yureka.mcts.networks import PolicyNetwork
+from yureka.mcts.networks.policy_network import queen_promotion_if_possible
 from yureka.engine import UCIPolicyEngine
 from yureka.engine.constants import DEFAULT_MODEL, DEFAULT_MODEL_FILE
 from unittest.mock import MagicMock, patch
@@ -46,10 +44,13 @@ def test_get_move():
         white_board = chess.Board()
         black_board = chess.Board()
         black_board.push(chess.Move.from_uci("g1f3"))
-        e = ChessEngine(model=mock_model, cuda=False, train=tc['train'])
+        e = PolicyNetwork(model=mock_model, cuda=False, train=tc['train'])
         if tc['train']:
-            with patch('yureka.chess_engine.torch.nn.functional.softmax',
-                       return_value=Variable(t)):
+            with patch(
+                'yureka.mcts.networks.policy_network.torch.nn.'
+                'functional.softmax',
+                return_value=Variable(t)
+            ):
                 white_move, log_prob = e.get_move(white_board)
                 assert tc['expected_white_move'] == white_move
                 assert type(log_prob) == Variable
@@ -67,8 +68,8 @@ def test_get_move_probs_zero():
     mock_model = MagicMock(return_value=Variable(t))
     board = chess.Board()
     board.push(chess.Move.from_uci("g1f3"))
-    e_train = ChessEngine(model=mock_model, cuda=False, train=True)
-    e_test = ChessEngine(model=mock_model, cuda=False, train=False)
+    e_train = PolicyNetwork(model=mock_model, cuda=False, train=True)
+    e_test = PolicyNetwork(model=mock_model, cuda=False, train=False)
 
     move, log_prob = e_train.get_move(board)
     assert round(log_prob.data[0], 6) == round(math.log(1/20), 6)

@@ -1,5 +1,3 @@
-#!/home/keunwoo/Documents/Projects/chess-engine/venv/bin/python
-
 import attr
 import sys
 import chess
@@ -10,18 +8,18 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
-from . import chess_dataset
-from .move_translator import (
+from ...chess_dataset import get_tensor_from_row
+from ...move_translator import (
     translate_to_engine_move,
     translate_from_engine_move,
     get_engine_move_from_index,
     get_engine_move_index,
 )
-from .board_data import get_board_data
+from ...board_data import get_board_data
 
 
 @attr.s
-class ChessEngine():
+class PolicyNetwork():
     model = attr.ib()
     cuda = attr.ib(default=True)
     cuda_device = attr.ib(default=None)
@@ -38,7 +36,7 @@ class ChessEngine():
 
     def get_probs(self, board):
         board_data = get_board_data(board)
-        tensor = chess_dataset.get_tensor_from_row(board_data)
+        tensor = get_tensor_from_row(board_data)
         tensor = tensor.view(1, *tensor.shape)
         volatile = not self.model.training
         if self.cuda:
