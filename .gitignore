@@ -101,7 +101,7 @@ ENV/
 .mypy_cache/
 
 # data files
-data/
+/data/
 
 # Mac
 .DS_Store

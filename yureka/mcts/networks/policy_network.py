@@ -9,7 +9,7 @@ from torch.autograd import Variable
 from torch.distributions import Categorical
 
 from ...chess_dataset import get_tensor_from_row
-from ...move_translator import (
+from ...learn.data.move_translator import (
     translate_to_engine_move,
     translate_from_engine_move,
     get_engine_move_from_index,

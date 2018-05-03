@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from yureka import mcts
 from yureka.engine import UCIMCTSEngine
 from yureka.engine.constants import ZERO_VALUE, RANDOM_POLICY
-from yureka.move_translator import (
+from yureka.learn.data.move_translator import (
     translate_to_engine_move,
     get_engine_move_index,
 )

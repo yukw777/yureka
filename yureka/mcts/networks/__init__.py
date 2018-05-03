@@ -3,7 +3,7 @@ import torch
 
 from torch.autograd import Variable
 
-from ...move_translator import (
+from ...learn.data.move_translator import (
     TOTAL_MOVES,
     translate_to_engine_move,
     get_engine_move_index,

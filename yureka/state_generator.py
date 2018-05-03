@@ -7,11 +7,9 @@ import sys
 import torch
 
 from .mcts.networks import PolicyNetwork
-from . import (
-    models,
-    move_translator,
-)
+from .learn.data import move_translator
 from .board_data import get_reward, get_board_data
+from . import models
 
 
 @attr.s
