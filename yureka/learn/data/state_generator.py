@@ -6,10 +6,11 @@ import pandas as pd
 import sys
 import torch
 
-from .mcts.networks import PolicyNetwork
-from .learn.data import move_translator
+from ...mcts.networks import PolicyNetwork
+from ..models import cnn
+
+from . import move_translator
 from .board_data import get_reward, get_board_data
-from .learn.models import cnn
 
 
 @attr.s

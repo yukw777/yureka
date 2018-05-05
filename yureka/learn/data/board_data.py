@@ -1,7 +1,7 @@
 import chess
 import collections
 
-from .learn.data import move_translator
+from . import move_translator
 
 
 pieces = [

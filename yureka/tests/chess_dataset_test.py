@@ -1,7 +1,7 @@
 import torch
 import numpy as np
-from yureka.chess_dataset import ChessDataset
-from yureka.board_data import BOARD_SIZE
+from yureka.learn.data.chess_dataset import ChessDataset
+from yureka.learn.data.board_data import BOARD_SIZE
 
 
 def test_chess_dataset():

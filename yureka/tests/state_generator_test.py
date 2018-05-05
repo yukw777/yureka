@@ -2,7 +2,7 @@ import pandas as pd
 import chess
 import chess.pgn
 import unittest.mock as mock
-from yureka.state_generator import (
+from yureka.learn.data.state_generator import (
     ExpertStateGenerator,
     SimSampledStateGenerator,
 )
@@ -26,13 +26,19 @@ def test_simulated_get_game():
     mock_board.turn = chess.WHITE
     mock_board.result.return_value = '1-0'
     with mock.patch(
-            'yureka.state_generator.chess.Board', return_value=mock_board), \
+            'yureka.learn.data.state_generator.chess.Board',
+            return_value=mock_board
+        ), \
         mock.patch(
-            'yureka.state_generator.random.randint', return_value=sampled), \
-            mock.patch(
-                'yureka.state_generator.random.choice', return_value=1) as c, \
-            mock.patch(
-                'yureka.state_generator.chess.pgn.Game.from_board'):
+            'yureka.learn.data.state_generator.random.randint',
+            return_value=sampled
+        ), \
+        mock.patch(
+            'yureka.learn.data.state_generator.random.choice',
+            return_value=1
+        ) as c, \
+        mock.patch(
+            'yureka.learn.data.state_generator.chess.pgn.Game.from_board'):
         state_gen = SimSampledStateGenerator(
             "bogus", sl_engine, rl_engine, num_games)
         games = list(state_gen.get_game())

@@ -6,7 +6,7 @@ import torch
 
 from torch.utils.data import Dataset
 
-from .learn.data import move_translator
+from . import move_translator
 from .board_data import BOARD_SIZE
 
 

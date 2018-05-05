@@ -3,8 +3,8 @@ import torch
 
 from torch.autograd import Variable
 
-from ...board_data import get_board_data
-from ...chess_dataset import get_tensor_from_row
+from ...learn.data.board_data import get_board_data
+from ...learn.data.chess_dataset import get_tensor_from_row
 
 
 @attr.s

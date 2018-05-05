@@ -8,14 +8,14 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.distributions import Categorical
 
-from ...chess_dataset import get_tensor_from_row
+from ...learn.data.chess_dataset import get_tensor_from_row
 from ...learn.data.move_translator import (
     translate_to_engine_move,
     translate_from_engine_move,
     get_engine_move_from_index,
     get_engine_move_index,
 )
-from ...board_data import get_board_data
+from ...learn.data.board_data import get_board_data
 
 
 @attr.s
