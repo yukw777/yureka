@@ -14,7 +14,7 @@ from ..mcts.networks import (
 )
 from ..mcts import Node, MCTS
 from ..mcts.constants import DEFAULT_CONFIDENCE
-from ..utils import print_flush
+from ..common.utils import print_flush
 
 from . import constants
 from .time_manager import TimeManager

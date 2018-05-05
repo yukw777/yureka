@@ -5,7 +5,7 @@ import time
 import random
 
 from ..board_data import get_reward
-from ..utils import print_flush
+from ..common.utils import print_flush
 from ..learn.data.move_translator import (
     translate_to_engine_move,
     get_engine_move_index,
