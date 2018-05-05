@@ -9,7 +9,7 @@ import torch
 from .mcts.networks import PolicyNetwork
 from .learn.data import move_translator
 from .board_data import get_reward, get_board_data
-from . import models
+from .learn.models import cnn
 
 
 @attr.s
@@ -206,10 +206,10 @@ def expert(args):
 
 
 def sim_sampled(args):
-    sl = models.create(args.sl_engine_name)
+    sl = cnn.create(args.sl_engine_name)
     sl.load_state_dict(torch.load(args.sl_engine_file))
     sl = PolicyNetwork(sl)
-    rl = models.create(args.rl_engine_name)
+    rl = cnn.create(args.rl_engine_name)
     rl.load_state_dict(torch.load(args.rl_engine_file))
     rl = PolicyNetwork(rl)
     u = SimSampledStateGenerator(args.out_csv_file, sl, rl, args.num_games)

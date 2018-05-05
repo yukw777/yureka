@@ -5,7 +5,7 @@ import sys
 import torch
 import os
 
-from .. import models
+from ..learn.models import cnn
 from ..mcts.networks import (
     PolicyNetwork,
     ValueNetwork,
@@ -177,7 +177,7 @@ class UCIPolicyEngine(UCIEngine):
         self.model = None
 
     def init_models(self):
-        self.model = models.create(self.model_name)
+        self.model = cnn.create(self.model_name)
         self.model.load_state_dict(
             torch.load(os.path.expanduser(self.model_file)))
 
@@ -245,7 +245,7 @@ class UCIMCTSEngine(UCIEngine):
         }
 
     def init_model(self, name, path):
-        model = models.create(name)
+        model = cnn.create(name)
         model.load_state_dict(torch.load(os.path.expanduser(path)))
         return model
 
