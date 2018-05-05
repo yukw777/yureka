@@ -7,11 +7,11 @@ import datetime
 import logging
 import random
 import glob
-import models
 import torch.optim as optim
 
-from .mcts.networks import PolicyNetwork
-from .state_generator import get_reward
+from .. import models
+from ...mcts.networks import PolicyNetwork
+from ..data.state_generator import get_reward
 
 
 @attr.s

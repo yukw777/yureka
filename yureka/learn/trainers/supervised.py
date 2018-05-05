@@ -8,10 +8,11 @@ import torch.utils.data as data
 import torch.optim as optim
 import torch.nn as nn
 import numpy as np
-import models
 import sklearn.metrics as metrics
 from torch.autograd import Variable
-from chess_dataset import ChessDataset
+
+from .. import models
+from ..data.chess_dataset import ChessDataset
 
 
 @attr.s
