@@ -1,0 +1,8 @@
+cmd: cat KingBase2018-pgn/* > KingBase2018-combined.pgn
+deps:
+- md5: e5828f17659f538c6039c37dfef0b768.dir
+  path: KingBase2018-pgn
+outs:
+- cache: true
+  md5: 06f63baae9a13c76ce614e28af678709
+  path: KingBase2018-combined.pgn

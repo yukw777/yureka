@@ -1,0 +1,8 @@
+cmd: python ../scripts/randomize_pgn.py KingBase2018-combined.pgn KingBase2018-combined-shuffled.pgn
+deps:
+- md5: 06f63baae9a13c76ce614e28af678709
+  path: KingBase2018-combined.pgn
+outs:
+- cache: true
+  md5: 5002e4d54f25e9cdb015ddca3444c2ea
+  path: KingBase2018-combined-shuffled.pgn
