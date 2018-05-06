@@ -1,0 +1,6 @@
+cmd: null
+deps: []
+outs:
+- cache: true
+  md5: c1f7cf6facfc3dd0aff1540fe8d447e3
+  path: Online.pgn

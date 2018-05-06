@@ -1,0 +1,6 @@
+cmd: null
+deps: []
+outs:
+- cache: true
+  md5: c35b93cc6c5060c3a63ba8643e74dab1
+  path: OTB.pgn

@@ -1,0 +1,6 @@
+cmd: null
+deps: []
+outs:
+- cache: true
+  md5: 3c1d05a723e9f870d771e522157d09a5
+  path: OTB-HQ.pgn
