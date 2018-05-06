@@ -1,0 +1,6 @@
+cmd: null
+deps: []
+outs:
+- cache: true
+  md5: 15471e4399a3ecbc692db176208b8119
+  path: test.csv

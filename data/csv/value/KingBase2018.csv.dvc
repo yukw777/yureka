@@ -1,0 +1,6 @@
+cmd: null
+deps: []
+outs:
+- cache: true
+  md5: cb611e5987e3bedf4136cc41ed151185
+  path: KingBase2018.csv

@@ -1,0 +1,6 @@
+cmd: null
+deps: []
+outs:
+- cache: true
+  md5: 35ec099bb2f2750a06140cf16284cf10
+  path: train.csv
