@@ -1,0 +1,18 @@
+
+[Core]
+# Supported clouds: AWS, GCP
+Cloud = AWS
+
+# Log levels: Debug, Info, Warning and Error
+LogLevel = Info
+
+[AWS]
+CredentialPath = ~/.aws/credentials
+Profile = default
+
+StoragePath = dvc/tutorial
+
+[GCP]
+StoragePath = 
+ProjectName = 
+
