@@ -1,0 +1,6 @@
+cmd: python ../scripts/endgame_download.py 26132 endgame.pgn
+deps: []
+outs:
+- cache: true
+  md5: 5acbb14f85be8dbdaae11d3ce90da247
+  path: endgame.pgn
