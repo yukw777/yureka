@@ -1,0 +1,6 @@
+cmd: null
+deps: []
+outs:
+- cache: true
+  md5: 57ec2be31b8a2cc62d4e826fcc283dbe
+  path: endgame.csv

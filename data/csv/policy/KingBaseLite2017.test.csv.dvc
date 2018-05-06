@@ -1,0 +1,6 @@
+cmd: null
+deps: []
+outs:
+- cache: true
+  md5: 7384a832e6a068d1adc6b1684f555da7
+  path: KingBaseLite2017.test.csv

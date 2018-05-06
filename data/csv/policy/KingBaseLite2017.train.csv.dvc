@@ -1,0 +1,6 @@
+cmd: null
+deps: []
+outs:
+- cache: true
+  md5: 50bbf0ae54166ce4a3f2aabc3848cd77
+  path: KingBaseLite2017.train.csv
