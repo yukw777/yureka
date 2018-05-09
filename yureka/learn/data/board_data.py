@@ -114,6 +114,27 @@ def get_repetition_data(board):
     return data_dict
 
 
+def get_historical_piece_rep_data(board, color, history=8):
+    data = {}
+    copied = board.copy()
+    for i in range(history):
+        try:
+            if i != 0:
+                copied.pop()
+            piece_data = get_square_piece_data(copied, color)
+            repetition_data = get_repetition_data(copied)
+        except IndexError:
+            # no more history, so everything should be empty
+            piece_data = get_square_piece_data(chess.Board.empty(), color)
+            repetition_data = get_repetition_data(chess.Board.empty())
+        data['white_square_piece_%d' % i] = piece_data['white_square_piece']
+        data['black_square_piece_%d' % i] = piece_data['black_square_piece']
+        data['rep_2_%d' % i] = repetition_data['rep_2']
+        data['rep_3_%d' % i] = repetition_data['rep_3']
+
+    return data
+
+
 def get_square_piece_data(board, color):
     piece_map = board.piece_map()
     white_data = []
