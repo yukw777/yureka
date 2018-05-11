@@ -43,11 +43,13 @@ def get_reward(result, color, award_tie=False):
         raise Exception(f'Unknown result: {result}, {color}')
 
 
-def get_board_data(board):
-    row = {}
-    row.update(get_square_piece_data(board))
+def get_board_data(board, color):
+    row = {
+        # 1 if white else 0
+        'color': 1 if color else 0,
+    }
+    row.update(get_square_piece_data(board, color))
     row.update(get_repetition_data(board))
-    row.update(get_turn_data(board))
     row.update(get_move_count_data(board))
     row.update(get_castling_data(board))
     row.update(get_no_progress_data(board))
@@ -77,10 +79,6 @@ def get_castling_data(board):
 
 def get_move_count_data(board):
     return {'move_count': board.fullmove_number}
-
-
-def get_turn_data(board):
-    return {'turn': 1 if board.turn else 0}  # 1 if white else 0
 
 
 def get_repetition_data(board):
@@ -116,13 +114,13 @@ def get_repetition_data(board):
     return data_dict
 
 
-def get_square_piece_data(board):
+def get_square_piece_data(board, color):
     piece_map = board.piece_map()
     white_data = []
     black_data = []
 
     for sq, piece in piece_map.items():
-        if board.turn == chess.WHITE:
+        if color == chess.WHITE:
             sq_name_for_player = chess.SQUARE_NAMES[sq]
         else:
             inv_square = move_translator.square_invert(sq)
