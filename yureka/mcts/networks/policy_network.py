@@ -35,7 +35,7 @@ class PolicyNetwork():
             self.model.eval()
 
     def get_probs(self, board):
-        board_data = get_board_data(board)
+        board_data = get_board_data(board, board.turn)
         tensor = get_tensor_from_row(board_data)
         tensor = tensor.view(1, *tensor.shape)
         volatile = not self.model.training

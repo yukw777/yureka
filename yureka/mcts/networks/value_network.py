@@ -19,9 +19,11 @@ class ValueNetwork():
         if self.cuda:
             self.network.cuda(self.cuda_device)
 
-    def get_value(self, board):
-        board_data = get_board_data(board)
+    def get_value(self, board, color):
+        board_data = get_board_data(board, color)
         tensor = get_tensor_from_row(board_data)
         tensor = tensor.unsqueeze(0)
-        value = self.network(Variable(tensor.cuda(), volatile=True))
+        if self.cuda:
+            tensor = tensor.cuda()
+        value = self.network(Variable(tensor, volatile=True))
         return value.squeeze().data[0]
