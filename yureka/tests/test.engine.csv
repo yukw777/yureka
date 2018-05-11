@@ -1,4 +1,4 @@
-black_square_piece,white_square_piece,rep_2,rep_3,turn,move_count,b_kingside_castling,b_queenside_castling,w_kingside_castling,w_queenside_castling,no_progress,move
+black_square_piece,white_square_piece,rep_2,rep_3,color,move_count,b_kingside_castling,b_queenside_castling,w_kingside_castling,w_queenside_castling,no_progress,move
 "a7-p,b7-p,c7-p,d7-p,e7-p,f7-p,g7-p,h7-p,a8-r,b8-n,c8-b,d8-q,e8-k,f8-b,g8-n,h8-r","a1-R,b1-N,c1-B,d1-Q,e1-K,f1-B,g1-N,h1-R,a2-P,b2-P,c2-P,d2-P,e2-P,f2-P,g2-P,h2-P",0,0,1,1,1,1,1,1,0,e2_q_2_n
 "h2-p,g2-p,f2-p,e2-p,d2-p,c2-p,b2-p,a2-p,h1-r,g1-n,f1-b,e1-q,d1-k,c1-b,b1-n,a1-r","h8-R,g8-N,f8-B,e8-Q,d8-K,c8-B,b8-N,a8-R,h7-P,g7-P,f7-P,e7-P,c7-P,b7-P,a7-P,d5-P",0,0,0,1,1,1,1,1,0,f2_q_2_n
 "c5-p,a7-p,b7-p,d7-p,e7-p,f7-p,g7-p,h7-p,a8-r,b8-n,c8-b,d8-q,e8-k,f8-b,g8-n,h8-r","a1-R,b1-N,c1-B,d1-Q,e1-K,f1-B,g1-N,h1-R,a2-P,b2-P,c2-P,d2-P,f2-P,g2-P,h2-P,e4-P",0,0,1,2,1,1,1,1,0,g1_n_ul

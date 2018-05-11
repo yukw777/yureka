@@ -38,8 +38,8 @@ class ChessDataset(Dataset):
 
 def get_tensor_from_row(row):
     return torch.from_numpy(np.vstack((
-        get_board_data(row, bool(row['turn'])),
-        np.full(SIZE, row['turn']),
+        get_board_data(row, bool(row['color'])),
+        np.full(SIZE, row['color']),
         np.full(SIZE, row['move_count']),
         np.full(SIZE, row['b_kingside_castling']),
         np.full(SIZE, row['b_queenside_castling']),
@@ -63,10 +63,10 @@ def get_square_piece_data(data):
     return board_data.reshape((len(chess.PIECE_TYPES), ) + BOARD_SIZE)
 
 
-def get_board_data(row, turn):
+def get_board_data(row, color):
     white_data = get_square_piece_data(row['white_square_piece'])
     black_data = get_square_piece_data(row['black_square_piece'])
-    if turn == chess.WHITE:
+    if color == chess.WHITE:
         piece_data = np.vstack((white_data, black_data))
     else:
         piece_data = np.vstack((black_data, white_data))
