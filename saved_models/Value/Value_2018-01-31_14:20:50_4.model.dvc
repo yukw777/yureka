@@ -1,0 +1,6 @@
+cmd: null
+deps: []
+outs:
+- cache: true
+  md5: 6c43d6cb725e48e40ba6527f4565840d
+  path: Value_2018-01-31_14:20:50_4.model
