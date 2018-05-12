@@ -106,6 +106,4 @@ ENV/
 # vim
 *.swp
 
-saved_models/
 opponent_pool/
-node_modules/

@@ -1,0 +1,6 @@
+cmd: null
+deps: []
+outs:
+- cache: true
+  md5: 4d822975f4ff4e7843433a4afcfe99dd
+  path: supervised_trainer.log
