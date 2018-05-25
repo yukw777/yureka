@@ -79,7 +79,40 @@ class StateGenerator():
 
 
 @attr.s
-class SimSampledStateGenerator(StateGenerator):
+class SampledStateGenerator(StateGenerator):
+    both_colors = attr.ib()
+
+    def get_game_data(self, data):
+        board, _, _, _ = data
+        game_df = get_board_data(board, board.turn)
+        if self.both_colors:
+            opposite = get_board_data(board, not board.turn)
+            return [game_df, opposite]
+        else:
+            return [game_df]
+
+    def get_label_data(self, data):
+        board, move, reward, opposite_reward = data
+        if self.both_colors:
+            return [{
+                'value': reward,
+                'move': move_translator.translate_to_engine_move(
+                    move, board.turn)
+            }, {
+                'value': opposite_reward,
+                'move': move_translator.translate_to_engine_move(
+                    move, not board.turn)
+            }]
+        else:
+            return [{
+                'value': reward,
+                'move': move_translator.translate_to_engine_move(
+                    move, board.turn)
+            }]
+
+
+@attr.s
+class SimSampledStateGenerator(SampledStateGenerator):
     sl_engine = attr.ib()
     rl_engine = attr.ib()
     num_games = attr.ib()
@@ -93,13 +126,16 @@ class SimSampledStateGenerator(StateGenerator):
                 board = chess.Board()
                 t = 0
                 while not board.is_game_over(claim_draw=True):
-                    if t < sampled - 1:
+                    if t < sampled:
                         move, _ = self.sl_engine.get_move(board)
-                    elif t == sampled - 1:
+                    elif t == sampled:
                         move = random.choice(list(board.legal_moves))
+                        # NOTE: Be careful! The last move on sampled_board
+                        # is not the one made by color!
+                        sampled_move = move
+                        color = board.turn
+                        sampled_board = board.copy()
                     else:
-                        if t == sampled:
-                            color = board.turn
                         move, _ = self.rl_engine.get_move(board)
                     board.push(move)
                     t += 1
@@ -111,34 +147,14 @@ class SimSampledStateGenerator(StateGenerator):
                     break
             result = board.result(claim_draw=True)
             reward = get_reward(result, color)
-            yield chess.pgn.Game.from_board(board), sampled, reward
-
-    def get_game_data(self, data):
-        return sample_state_from_game(data)
-
-    def get_label_data(self, data):
-        return get_value_from_game(data)
-
-
-def sample_state_from_game(data):
-    game, sampled, _ = data
-    board = game.board()
-    moves = game.main_line()
-    for i in range(sampled):
-        board.push(next(moves))
-    game_df = get_board_data(board)
-    return [game_df]
-
-
-def get_value_from_game(data):
-    _, _, reward = data
-    return [{'value': reward}]
+            opposite_reward = get_reward(result, not color)
+            yield sampled_board, sampled_move, reward, opposite_reward
 
 
 @attr.s
 class ExpertStateGenerator(StateGenerator):
     game_file_name = attr.ib()
-    num_states = attr.ib(default=None)
+    num_states = attr.ib()
 
     def __attrs_post_init__(self):
         self.game_file = open(self.game_file_name, 'r')
@@ -153,7 +169,7 @@ class ExpertStateGenerator(StateGenerator):
     def get_game_data(self, game):
         board = game.board()
         for move in game.main_line():
-            yield get_board_data(board)
+            yield get_board_data(board, board.turn)
             board.push(move)
 
     def get_label_data(self, game):
@@ -164,19 +180,20 @@ class ExpertStateGenerator(StateGenerator):
             board.push(move)
 
     def stop(self, game_count, state_count):
-        if self.num_states and state_count > self.num_states:
+        if state_count > self.num_states:
             print('Generated enough states. Exiting...')
             sys.exit()
 
 
 @attr.s
-class ExpertSampledStateGenerator(ExpertStateGenerator):
+class ExpertSampledStateGenerator(SampledStateGenerator, ExpertStateGenerator):
 
     def get_game(self):
-        for game in super(ExpertSampledStateGenerator, self).get_game():
+        for game in ExpertStateGenerator.get_game(self):
             moves = list(game.main_line())
             try:
-                sampled = random.randint(1, len(moves))
+                # leave at least one move
+                sampled = random.randint(1, len(moves) - 1)
             except ValueError as e:
                 print(e)
                 continue
@@ -184,21 +201,21 @@ class ExpertSampledStateGenerator(ExpertStateGenerator):
             color = None
             for i in range(sampled):
                 board.push(moves[i])
+            # NOTE: Be careful! The last move on sampled_board
+            # is not the one made by color!
             color = board.turn
             # have to get the result from the headers b/c people resign
             result = game.headers['Result']
             try:
                 reward = get_reward(result, color)
+                opposite_reward = get_reward(result, not color)
             except Exception as e:
                 print(e)
                 continue
-            yield game, sampled, reward
+            yield board, moves[sampled], reward, opposite_reward
 
-    def get_game_data(self, data):
-        return sample_state_from_game(data)
-
-    def get_label_data(self, game):
-        return get_value_from_game(game)
+    def stop(self, game_count, state_count):
+        ExpertStateGenerator.stop(self, game_count, state_count)
 
 
 def expert(args):
@@ -213,13 +230,14 @@ def sim_sampled(args):
     rl = cnn.create(args.rl_engine_name)
     rl.load_state_dict(torch.load(args.rl_engine_file))
     rl = PolicyNetwork(rl)
-    u = SimSampledStateGenerator(args.out_csv_file, sl, rl, args.num_games)
+    u = SimSampledStateGenerator(
+        args.out_csv_file, args.both_color, sl, rl, args.num_games)
     u.generate(write=True)
 
 
 def expert_sampled(args):
     s = ExpertSampledStateGenerator(
-        args.out_csv_file, args.pgn_file, args.num_states)
+        args.pgn_file, args.num_states, args.out_csv_file, args.both_colors)
     s.generate(write=True, skip=args.skip)
 
 
@@ -242,6 +260,7 @@ if __name__ == '__main__':
     parser_sim_sampled.add_argument('rl_engine_file')
     parser_sim_sampled.add_argument('num_games', type=int)
     parser_sim_sampled.add_argument('out_csv_file')
+    parser_sim_sampled.add_argument('-b', '--both-colors', action='store_true')
     parser_sim_sampled.set_defaults(func=sim_sampled)
 
     parser_expert_sampled = subparsers.add_parser('expert_sampled')
@@ -249,6 +268,8 @@ if __name__ == '__main__':
     parser_expert_sampled.add_argument('out_csv_file')
     parser_expert_sampled.add_argument('num_states', type=int)
     parser_expert_sampled.add_argument('-s', '--skip', type=int)
+    parser_expert_sampled.add_argument(
+        '-b', '--both-colors', action='store_true')
     parser_expert_sampled.set_defaults(func=expert_sampled)
     args = parser.parse_args()
     args.func(args)
