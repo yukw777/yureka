@@ -9,7 +9,7 @@ from yureka.learn.data.state_generator import (
 
 
 def test_expert_get_correct_num_games():
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn")
+    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
     assert len(list(state_gen.get_game())) == 2
 
 
@@ -21,10 +21,13 @@ def test_simulated_get_game():
     rl_engine = mock.MagicMock()
     rl_engine.get_move = mock.Mock(return_value=(1, 2))
     num_games = 10
+    mock_move = chess.Move.from_uci('e2e4')
+    mock_sampled_board = chess.Board()
     mock_board = mock.MagicMock()
     mock_board.is_game_over.side_effect = ([False] * 9 + [True]) * num_games
     mock_board.turn = chess.WHITE
     mock_board.result.return_value = '1-0'
+    mock_board.copy.return_value = mock_sampled_board
     with mock.patch(
             'yureka.learn.data.state_generator.chess.Board',
             return_value=mock_board
@@ -35,41 +38,54 @@ def test_simulated_get_game():
         ), \
         mock.patch(
             'yureka.learn.data.state_generator.random.choice',
-            return_value=1
+            return_value=mock_move
         ) as c, \
         mock.patch(
             'yureka.learn.data.state_generator.chess.pgn.Game.from_board'):
         state_gen = SimSampledStateGenerator(
-            "bogus", sl_engine, rl_engine, num_games)
+            "bogus", True, sl_engine, rl_engine, num_games)
         games = list(state_gen.get_game())
         assert len(games) == num_games
         for game in games:
-            g, s, r = game
-            assert s == sampled
+            b, m, r, o = game
             assert r == 1   # sampled is white, and white won
-        assert sl_engine.get_move.call_count == num_games * (sampled - 1)
-        assert rl_engine.get_move.call_count == num_games * (10 - sampled - 1)
+            assert o == -1
+            assert m == mock_move
+            assert b == mock_sampled_board
+        assert sl_engine.get_move.call_count == num_games * (sampled)
+        assert rl_engine.get_move.call_count == num_games * (10 - sampled - 2)
         assert c.call_count == num_games
 
 
 def test_simulated_get_game_data():
-    with open('yureka/tests/test.pgn') as f:
-        g = chess.pgn.read_game(f)
-    state_gen = SimSampledStateGenerator("bogus", "bogus", "bogus", "bogus")
-    step = 10
-    data = state_gen.get_game_data((g, step, chess.WHITE))
+    # both colors
+    state_gen = SimSampledStateGenerator(
+        "bogus", True, "bogus", "bogus", "bogus")
+    data = state_gen.get_game_data(
+        (chess.Board(), chess.Move.from_uci('e2e4'), 1, -1)
+    )
+    assert len(data) == 2
+
+    # single color
+    state_gen = SimSampledStateGenerator(
+        "bogus", False, "bogus", "bogus", "bogus")
+    data = state_gen.get_game_data(
+        (chess.Board(), chess.Move.from_uci('e2e4'), 1, -1)
+    )
     assert len(data) == 1
 
 
 def test_simulated_get_label_data():
-    state_gen = SimSampledStateGenerator("bogus", "bogus", "bogus", "bogus")
-    data = state_gen.get_label_data((0, 0, 1))
+    state_gen = SimSampledStateGenerator(
+        "bogus", False, "bogus", "bogus", "bogus")
+    data = state_gen.get_label_data((
+        chess.Board(), chess.Move.from_uci('e2e4'), -1, 1))
     assert len(data) == 1
-    assert data[0]['value'] == 1
+    assert data[0]['value'] == -1
 
 
 def test_generate_correct_sq_piece_data():
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn")
+    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
     g = next(state_gen.get_game())
     df = pd.DataFrame(state_gen.get_game_data(g))
     assert set(df.loc[0, 'white_square_piece'].split(',')) == set((
@@ -103,7 +119,7 @@ def test_repetition_data():
         move(b)
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn")
+    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
 
     df = pd.DataFrame(state_gen.get_game_data(game))
 
@@ -122,26 +138,8 @@ def test_repetition_data():
             assert data['rep_3'] == 1
 
 
-def test_turn_data():
-    b = chess.Board(fen='4k3/8/8/8/8/8/8/4K3 w - - 0 1')
-    b.push(chess.Move.from_uci('e1e2'))
-    b.push(chess.Move.from_uci('e8e7'))
-    b.push(chess.Move.from_uci('e2e1'))
-    b.push(chess.Move.from_uci('e7e8'))
-
-    game = chess.pgn.Game.from_board(b)
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn")
-
-    df = pd.DataFrame(state_gen.get_game_data(game))
-    for i, data in df.iterrows():
-        if i % 2 == 0:
-            assert data['turn'] == 1
-        else:
-            assert data['turn'] == 0
-
-
 def test_move_count_data():
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn")
+    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
     game = next(state_gen.get_game())
 
     df = pd.DataFrame(state_gen.get_game_data(game))
@@ -150,7 +148,7 @@ def test_move_count_data():
 
 
 def test_castling_data():
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn")
+    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
 
     def get_castling_game(king_side=True):
         b = chess.Board(fen='r3k2r/8/8/8/8/8/8/R3K2R w - - 0 1')
@@ -241,7 +239,7 @@ def test_no_progress_count_data():
         move(b)
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn")
+    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
 
     df = pd.DataFrame(state_gen.get_game_data(game))
 
@@ -255,7 +253,7 @@ def test_expert_label_data():
     b.push(chess.Move.from_uci('e8e7'))
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn")
+    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
 
     df = pd.DataFrame(state_gen.get_label_data(game))
     assert df.equals(pd.DataFrame([
@@ -265,7 +263,7 @@ def test_expert_label_data():
 
 
 def test_generate():
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn")
+    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
     df = state_gen.generate()
 
     # square piece data = 2
