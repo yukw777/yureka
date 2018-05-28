@@ -1,8 +1,6 @@
 import random
 import torch
 
-from torch.autograd import Variable
-
 from ...learn.data.move_translator import (
     TOTAL_MOVES,
     translate_to_engine_move,
@@ -28,11 +26,11 @@ class RandomPolicy():
     def get_probs(self, board):
         moves = list(board.legal_moves)
         prob = 1/len(moves)
-        probs = Variable(torch.zeros(1, TOTAL_MOVES))
-        indexes = []
+        probs = torch.zeros(1, TOTAL_MOVES)
+        indeces = []
         for move in moves:
             engine_move = translate_to_engine_move(move, board.turn)
             index = get_engine_move_index(engine_move)
-            indexes.append(index)
-        probs.index_fill_(1, Variable(torch.LongTensor(indexes)), prob)
+            indeces.append(index)
+        probs.index_fill_(1, torch.LongTensor(indeces), prob)
         return probs
