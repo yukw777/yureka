@@ -38,7 +38,7 @@ class Policy(nn.Module):
     def initialize_weights(self):
         for m in self.modules():
             if type(m) in (nn.Conv2d, nn.Linear):
-                init.kaiming_normal(m.weight)
+                init.kaiming_normal_(m.weight)
                 m.bias.data.zero_()
             elif type(m) == nn.BatchNorm2d:
                 m.weight.data.fill_(1)
