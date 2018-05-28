@@ -111,6 +111,13 @@ models = {
             'batch_norm': True,
         },
     },
+    'Policy.v2': {
+        'class': Policy,
+        'args': (119, 256, 11),
+        'kwargs': {
+            'batch_norm': True,
+        },
+    },
     'Value.v0': {
         'class': Value,
         'args': (23, 128, 11, 128),
@@ -119,6 +126,13 @@ models = {
     'Value.v1': {
         'class': Value,
         'args': (23, 128, 20, 128),
+        'kwargs': {
+            'batch_norm': True,
+        },
+    },
+    'Value.v2': {
+        'class': Value,
+        'args': (119, 256, 11, 256),
         'kwargs': {
             'batch_norm': True,
         },
