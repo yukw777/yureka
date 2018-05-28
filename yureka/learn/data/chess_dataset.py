@@ -44,10 +44,8 @@ def get_tensor_from_row(row):
         get_board_data(row),
         np.full(SIZE, row['color']),
         np.full(SIZE, row['move_count']),
-        np.full(SIZE, row['b_kingside_castling']),
-        np.full(SIZE, row['b_queenside_castling']),
-        np.full(SIZE, row['w_kingside_castling']),
-        np.full(SIZE, row['w_queenside_castling']),
+        np.full(SIZE, row['b_castling']),
+        np.full(SIZE, row['w_castling']),
         np.full(SIZE, row['no_progress']),
         np.full(SIZE, 0),
     ))).float()
