@@ -5,7 +5,6 @@ import chess
 from yureka.mcts.networks import PolicyNetwork
 from yureka.mcts.networks.policy_network import queen_promotion_if_possible
 from unittest.mock import MagicMock, patch
-from torch.autograd import Variable
 
 
 def test_get_move():
@@ -38,7 +37,7 @@ def test_get_move():
     for tc in test_cases:
         t = torch.zeros(1, 4672)
         t[0, tc['expected_move_index']] = t.max() + 1
-        mock_model = MagicMock(return_value=Variable(t))
+        mock_model = MagicMock(return_value=t)
         white_board = chess.Board()
         black_board = chess.Board()
         black_board.push(chess.Move.from_uci("g1f3"))
@@ -47,15 +46,13 @@ def test_get_move():
             with patch(
                 'yureka.mcts.networks.policy_network.torch.nn.'
                 'functional.softmax',
-                return_value=Variable(t)
+                return_value=t
             ):
                 white_move, log_prob = e.get_move(white_board)
                 assert tc['expected_white_move'] == white_move
-                assert type(log_prob) == Variable
 
                 black_move, log_prob = e.get_move(black_board)
                 assert tc['expected_black_move'] == black_move
-                assert type(log_prob) == Variable
         else:
             assert tc['expected_white_move'] == e.get_move(white_board)
             assert tc['expected_black_move'] == e.get_move(black_board)
@@ -63,14 +60,14 @@ def test_get_move():
 
 def test_get_move_probs_zero():
     t = torch.zeros(1, 4672)
-    mock_model = MagicMock(return_value=Variable(t))
+    mock_model = MagicMock(return_value=t)
     board = chess.Board()
     board.push(chess.Move.from_uci("g1f3"))
     e_train = PolicyNetwork(model=mock_model, cuda=False, train=True)
     e_test = PolicyNetwork(model=mock_model, cuda=False, train=False)
 
     move, log_prob = e_train.get_move(board)
-    assert round(log_prob.data[0], 6) == round(math.log(1/20), 6)
+    assert round(log_prob.item(), 6) == round(math.log(1/20), 6)
     assert move in board.legal_moves
     move = e_test.get_move(board)
     assert move in board.legal_moves

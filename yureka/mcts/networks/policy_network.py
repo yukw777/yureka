@@ -5,7 +5,6 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from torch.autograd import Variable
 from torch.distributions import Categorical
 
 from ...learn.data.chess_dataset import get_tensor_from_row
@@ -36,20 +35,18 @@ class PolicyNetwork():
 
     def get_probs(self, board):
         board_data = get_board_data(board, board.turn)
-        tensor = get_tensor_from_row(board_data)
-        tensor = tensor.view(1, *tensor.shape)
-        volatile = not self.model.training
-        if self.cuda:
-            inputs = Variable(tensor.cuda(self.cuda_device), volatile=volatile)
-        else:
-            inputs = Variable(tensor, volatile=volatile)
-        outputs = self.model(inputs)
+        with torch.set_grad_enabled(self.train):
+            inputs = get_tensor_from_row(board_data)
+            inputs = inputs.view(1, *inputs.shape)
+            if self.cuda:
+                inputs = inputs.cuda(self.cuda_device)
+            outputs = self.model(inputs)
 
-        probs = F.softmax(outputs.view(outputs.shape[0], -1), dim=1)
-        if self.train:
-            # clamp to 1e-12 for numerical stability
-            probs = probs.clamp(min=1e-12)
-        return self.filter_illegal_moves(board, probs)
+            probs = F.softmax(outputs.view(outputs.shape[0], -1), dim=1)
+            if self.train:
+                # clamp to 1e-12 for numerical stability
+                probs = probs.clamp(min=1e-12)
+            return self.filter_illegal_moves(board, probs)
 
     def get_move(self, board, sample=False):
         probs = self.get_probs(board)
@@ -57,7 +54,7 @@ class PolicyNetwork():
             m = Categorical(probs)
             while True:
                 move_index = m.sample()
-                if probs.squeeze()[move_index].data[0] == 0:
+                if probs.squeeze()[move_index].item() == 0:
                     print('Categorical sampled a move with zero prob...',
                           file=sys.stderr)
                     print(f'move_index: {move_index}', file=sys.stderr)
@@ -69,12 +66,12 @@ class PolicyNetwork():
                     break
         else:
             _, move_index = probs.max(1)
-        engine_move = get_engine_move_from_index(move_index.data[0])
+        engine_move = get_engine_move_from_index(move_index.item())
         move = translate_from_engine_move(engine_move, board.turn)
         move = queen_promotion_if_possible(board, move)
         if self.train:
             log_prob = m.log_prob(move_index)
-            log_prob_num = log_prob.data[0]
+            log_prob_num = log_prob.item()
             if np.isnan(log_prob_num) or np.isinf(log_prob_num):
                 print('log prob is not a right value!', file=sys.stderr)
                 print(f'log_prob: {log_prob}', file=sys.stderr)
@@ -88,32 +85,26 @@ class PolicyNetwork():
             return move
 
     def filter_illegal_moves(self, board, probs):
+        move_filter = torch.zeros(probs.shape)
         if self.cuda:
-            move_filter = Variable(torch.zeros(probs.shape).cuda(
-                self.cuda_device))
-        else:
-            move_filter = Variable(torch.zeros(probs.shape))
+            move_filter = move_filter.cuda(self.cuda_device)
         move_indeces = []
         for move in board.legal_moves:
             engine_move = translate_to_engine_move(move, board.turn)
             index = get_engine_move_index(engine_move)
             move_indeces.append(index)
+        indeces = torch.LongTensor(move_indeces)
         if self.cuda:
-            indeces = Variable(torch.LongTensor(move_indeces)).cuda(
-                self.cuda_device)
-        else:
-            indeces = Variable(torch.LongTensor(move_indeces))
+            indeces = indeces.cuda(self.cuda_device)
         move_filter.index_fill_(1, indeces, 1)
 
         filtered = probs * move_filter
         if not filtered.nonzero().size():
             # all the moves have zero probs. so make it uniform
             # by setting the probs of legal moves to 1
+            move_filter = torch.zeros(probs.shape)
             if self.cuda:
-                move_filter = Variable(torch.zeros(probs.shape).cuda(
-                    self.cuda_device))
-            else:
-                move_filter = Variable(torch.zeros(probs.shape))
+                move_filter = move_filter.cuda(self.cuda_device)
             move_filter.index_fill_(1, indeces, 1)
             filtered = filtered + move_filter
         return filtered
