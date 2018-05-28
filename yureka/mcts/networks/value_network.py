@@ -1,8 +1,6 @@
 import attr
 import torch
 
-from torch.autograd import Variable
-
 from ...learn.data.board_data import get_board_data
 from ...learn.data.chess_dataset import get_tensor_from_row
 
@@ -17,13 +15,16 @@ class ValueNetwork():
         self.network.eval()
         self.cuda = self.cuda and torch.cuda.is_available()
         if self.cuda:
-            self.network.cuda(self.cuda_device)
+            self.device = torch.device('cuda', self.cuda_device)
+        else:
+            self.device = torch.device('cpu')
+        self.network.to(self.device)
 
     def get_value(self, board, color):
         board_data = get_board_data(board, color)
-        tensor = get_tensor_from_row(board_data)
-        tensor = tensor.unsqueeze(0)
-        if self.cuda:
-            tensor = tensor.cuda()
-        value = self.network(Variable(tensor, volatile=True))
-        return value.squeeze().data[0]
+        with torch.no_grad():
+            tensor = get_tensor_from_row(board_data)
+            tensor = tensor.unsqueeze(0)
+            tensor = tensor.to(self.device)
+            value = self.network(tensor)
+            return value.squeeze().item()
