@@ -4,7 +4,6 @@ import unittest.mock as mock
 import pytest
 import torch
 import time
-from torch.autograd import Variable
 from yureka import mcts
 from yureka.engine import UCIMCTSEngine
 from yureka.engine.constants import ZERO_VALUE, RANDOM_POLICY
@@ -97,7 +96,7 @@ def test_select():
 def test_expand():
     mock_policy = mock.MagicMock()
     probs = torch.randn(1, 4672)
-    mock_policy.get_probs.return_value = Variable(probs)
+    mock_policy.get_probs.return_value = probs
     m = mcts.MCTS('', '', mock_policy, '')
     # no children at this point
     n = mcts.Node()
