@@ -9,7 +9,6 @@ import torch.optim as optim
 import torch.nn as nn
 import numpy as np
 import sklearn.metrics as metrics
-from torch.autograd import Variable
 
 from .. import models
 from ..data.chess_dataset import ChessDataset
@@ -39,6 +38,7 @@ class SupervisedTrainer():
 
     def __attrs_post_init__(self):
         self.cuda = self.cuda and torch.cuda.is_available()
+        self.device = torch.device('cuda' if self.cuda else 'cpu')
         # summary
         self.print_summary()
 
@@ -46,9 +46,8 @@ class SupervisedTrainer():
             device_count = torch.cuda.device_count()
             self.logger.info(f'Using {device_count} GPUs')
             self.model = nn.DataParallel(self.model)
-
-        if self.cuda:
-            self.model.cuda()
+        else:
+            self.model.to(self.device)
         self.train_data = self.get_data_loader(self.train_data)
         self.test_data = self.get_data_loader(self.test_data)
 
@@ -66,31 +65,22 @@ class SupervisedTrainer():
         self.logger.info(f'Learning rate: {self.learning_rate}')
 
     def get_data_loader(self, data_file):
-        if self.value:
-            dataset = ChessDataset(data_file, value=True)
-        else:
-            dataset = ChessDataset(data_file)
         return data.DataLoader(
-            dataset,
+            ChessDataset(data_file),
             batch_size=self.batch_size,
             shuffle=True
         )
 
     def get_variables_from_inputs(self, row):
         # get the inputs
-        inputs, labels = row
+        inputs, move, value = row
 
-        volatile = not self.model.training
-
-        # wrap them in Variable
-        if self.cuda:
-            inputs = Variable(inputs.cuda(), volatile=volatile)
-            labels = Variable(labels.cuda(), volatile=volatile)
+        if self.value:
+            labels = value
         else:
-            inputs = Variable(inputs, volatile=volatile)
-            labels = Variable(labels, volatile=volatile)
+            labels = move
 
-        return inputs, labels
+        return inputs.to(self.device), labels.to(self.device)
 
     def predict(self, inputs):
         outputs = self.model(inputs)
@@ -138,9 +128,6 @@ class SupervisedTrainer():
         torch.save(self.model.state_dict(), filepath)
         self.logger.info('Done saving')
 
-    def calculate_loss(self, outputs, labels):
-        pass
-
     def test(self, epoch):
         self.logger.info('Testing...')
         self.model.eval()
@@ -155,12 +142,12 @@ class SupervisedTrainer():
             # loss
             outputs = self.predict(inputs)
             loss = self.criterion(outputs, labels)
-            losses.append(loss.data)
+            losses.append(loss.item())
 
             if not self.value:
                 _, prediction = outputs.max(1)
-                predictions = np.append(predictions, prediction.data)
-                answers = np.append(answers, labels.data)
+                predictions = np.append(predictions, prediction.item())
+                answers = np.append(answers, labels.item())
 
         avg_loss = np.average(losses)
         if not self.value:
@@ -202,14 +189,14 @@ class SupervisedTrainer():
             outputs = self.predict(inputs)
 
             loss = self.criterion(outputs, labels)
-            if np.isnan(loss.data[0]):
+            if np.isnan(loss.item()):
                 # oops, loss is nan, probably means gradient exploded
                 # let's try again with a lower learning rate
                 raise LossIsNan(inputs, outputs, labels, loss)
             loss.backward()
             optimizer.step()
 
-            running_loss += loss.data[0]
+            running_loss += loss.item()
             if i % self.log_interval == self.log_interval - 1:
                 avg_loss = running_loss / self.log_interval
                 self.logger.info('[%d, %5d] loss: %.3f' %
