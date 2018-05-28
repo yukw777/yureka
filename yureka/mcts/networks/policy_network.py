@@ -27,7 +27,10 @@ class PolicyNetwork():
     def __attrs_post_init__(self):
         self.cuda = self.cuda and torch.cuda.is_available()
         if self.cuda:
-            self.model.cuda(self.cuda_device)
+            self.device = torch.device('cuda', self.cuda_device)
+        else:
+            self.device = torch.device('cpu')
+        self.model.to(self.device)
         if self.train:
             self.model.train()
         else:
@@ -37,9 +40,7 @@ class PolicyNetwork():
         board_data = get_board_data(board, board.turn)
         with torch.set_grad_enabled(self.train):
             inputs = get_tensor_from_row(board_data)
-            inputs = inputs.view(1, *inputs.shape)
-            if self.cuda:
-                inputs = inputs.cuda(self.cuda_device)
+            inputs = inputs.view(1, *inputs.shape).to(self.device)
             outputs = self.model(inputs)
 
             probs = F.softmax(outputs.view(outputs.shape[0], -1), dim=1)
@@ -85,26 +86,20 @@ class PolicyNetwork():
             return move
 
     def filter_illegal_moves(self, board, probs):
-        move_filter = torch.zeros(probs.shape)
-        if self.cuda:
-            move_filter = move_filter.cuda(self.cuda_device)
+        move_filter = torch.zeros(probs.shape).to(self.device)
         move_indeces = []
         for move in board.legal_moves:
             engine_move = translate_to_engine_move(move, board.turn)
             index = get_engine_move_index(engine_move)
             move_indeces.append(index)
-        indeces = torch.LongTensor(move_indeces)
-        if self.cuda:
-            indeces = indeces.cuda(self.cuda_device)
+        indeces = torch.LongTensor(move_indeces).to(self.device)
         move_filter.index_fill_(1, indeces, 1)
 
         filtered = probs * move_filter
         if not filtered.nonzero().size():
             # all the moves have zero probs. so make it uniform
             # by setting the probs of legal moves to 1
-            move_filter = torch.zeros(probs.shape)
-            if self.cuda:
-                move_filter = move_filter.cuda(self.cuda_device)
+            move_filter = torch.zeros(probs.shape).to(self.device)
             move_filter.index_fill_(1, indeces, 1)
             filtered = filtered + move_filter
         return filtered
