@@ -48,8 +48,7 @@ def get_board_data(board, color):
         # 1 if white else 0
         'color': 1 if color else 0,
     }
-    row.update(get_square_piece_data(board, color))
-    row.update(get_repetition_data(board))
+    row.update(get_historical_piece_rep_data(board, color))
     row.update(get_move_count_data(board))
     row.update(get_castling_data(board))
     row.update(get_no_progress_data(board))

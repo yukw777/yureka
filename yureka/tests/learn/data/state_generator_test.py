@@ -4,6 +4,7 @@ import chess.pgn
 import unittest.mock as mock
 from yureka.learn.data.state_generator import (
     ExpertStateGenerator,
+    ExpertSampledStateGenerator,
     SimSampledStateGenerator,
 )
 
@@ -88,22 +89,49 @@ def test_generate_correct_sq_piece_data():
     state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
     g = next(state_gen.get_game())
     df = pd.DataFrame(state_gen.get_game_data(g))
-    assert set(df.loc[0, 'white_square_piece'].split(',')) == set((
+    assert set(df.loc[0, 'white_square_piece_0'].split(',')) == set((
         'a1-R,b1-N,c1-B,d1-Q,e1-K,f1-B,g1-N,h1-R,a2-P,b2-P,c2-P,'
         'd2-P,e2-P,f2-P,g2-P,h2-P'
     ).split(','))
-    assert set(df.loc[0, 'black_square_piece'].split(',')) == set((
+    assert set(df.loc[0, 'black_square_piece_0'].split(',')) == set((
         'a7-p,b7-p,c7-p,d7-p,e7-p,f7-p,g7-p,h7-p,a8-r,b8-n,c8-b,'
         'd8-q,e8-k,f8-b,g8-n,h8-r'
     ).split(','))
-    assert set(df.loc[1, 'white_square_piece'].split(',')) == set((
+    for i in range(1, 8):
+        assert df.loc[0, 'white_square_piece_%d' % i] == ''
+        assert df.loc[0, 'black_square_piece_%d' % i] == ''
+    assert set(df.loc[1, 'white_square_piece_0'].split(',')) == set((
         'h8-R,g8-N,f8-B,e8-Q,d8-K,c8-B,b8-N,a8-R,h7-P,g7-P,f7-P,'
         'e7-P,c7-P,b7-P,a7-P,d5-P'
     ).split(','))
-    assert set(df.loc[1, 'black_square_piece'].split(',')) == set((
+    assert set(df.loc[1, 'black_square_piece_0'].split(',')) == set((
         'h2-p,g2-p,f2-p,e2-p,d2-p,c2-p,b2-p,a2-p,h1-r,g1-n,f1-b,'
         'e1-q,d1-k,c1-b,b1-n,a1-r'
     ).split(','))
+    assert set(df.loc[1, 'white_square_piece_1'].split(',')) == set((
+        'h8-R,g8-N,f8-B,e8-Q,d8-K,c8-B,b8-N,a8-R,h7-P,g7-P,f7-P,'
+        'e7-P,c7-P,b7-P,a7-P,d7-P'
+    ).split(','))
+    assert set(df.loc[1, 'black_square_piece_1'].split(',')) == set((
+        'h2-p,g2-p,f2-p,e2-p,d2-p,c2-p,b2-p,a2-p,h1-r,g1-n,f1-b,'
+        'e1-q,d1-k,c1-b,b1-n,a1-r'
+    ).split(','))
+    for i in range(2, 8):
+        assert df.loc[0, 'white_square_piece_%d' % i] == ''
+        assert df.loc[0, 'black_square_piece_%d' % i] == ''
+
+
+def test_generate_correct_sq_piece_data_for_both_colors():
+    state_gen = ExpertSampledStateGenerator(
+        "yureka/tests/test.pgn", 1, "bogus", True)
+    g = next(state_gen.get_game())
+    df = pd.DataFrame(state_gen.get_game_data(g))
+    df = pd.concat([
+        df,
+        pd.DataFrame(state_gen.get_label_data(g))
+    ], axis=1)
+    assert bool(df.iloc[0]['color']) != bool(df.iloc[1]['color'])
+    assert df.iloc[0]['value'] == -df.iloc[1]['value']
 
 
 def test_repetition_data():
@@ -125,17 +153,28 @@ def test_repetition_data():
 
     for i, data in df.iterrows():
         if i < 4:
-            # no transpositions yet
-            assert data['rep_2'] == 0
-            assert data['rep_3'] == 0
+            for j in range(8):
+                # no transpositions yet
+                assert data['rep_2_%d' % j] == 0
+                assert data['rep_3_%d' % j] == 0
         elif i < 8:
             # twofold transpositions
-            assert data['rep_2'] == 1
-            assert data['rep_3'] == 0
+            for j in range(i-3):
+                assert data['rep_2_%d' % j] == 1
+            for j in range(i-3, 8):
+                assert data['rep_2_%d' % j] == 0
+            for j in range(8):
+                assert data['rep_3_%d' % j] == 0
         else:
             # threefold transpositions
-            assert data['rep_2'] == 1
-            assert data['rep_3'] == 1
+            for j in range(i-3):
+                assert data['rep_2_%d' % j] == 1
+            for j in range(i-3, 8):
+                assert data['rep_2_%d' % j] == 0
+            for j in range(i-7):
+                assert data['rep_3_%d' % j] == 1
+            for j in range(i-7, 8):
+                assert data['rep_3_%d' % j] == 0
 
 
 def test_move_count_data():
@@ -266,11 +305,11 @@ def test_generate():
     state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
     df = state_gen.generate()
 
-    # square piece data = 2
-    # repetition = 2
+    # square piece data = 2 * 8
+    # repetition = 2 * 8
     # turn (color) = 1
     # move count = 1
     # for each color, king/queen castling = 2 + 2
     # no progress count = 1
     # move = 1
-    assert df.shape == (165, 2+2+1+1+2+2+1+1)
+    assert df.shape == (165, 2*8+2*8+1+1+2+2+1+1)

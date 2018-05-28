@@ -3,6 +3,7 @@ import chess
 import pandas as pd
 import numpy as np
 import torch
+import itertools
 
 from torch.utils.data import Dataset
 
@@ -16,29 +17,31 @@ SIZE = (1, ) + BOARD_SIZE
 @attr.s
 class ChessDataset(Dataset):
     data_file = attr.ib()
-    value = attr.ib(default=False)
 
     def __attrs_post_init__(self):
-        self.df = pd.read_csv(self.data_file)
+        self.df = pd.read_csv(self.data_file, keep_default_na=False)
 
     def __len__(self):
         return self.df.shape[0]
 
     def __getitem__(self, index):
         row = self.df.iloc[index]
-        if self.value:
-            label = torch.Tensor([float(row['value'])])
-        else:
-            label = move_translator.get_engine_move_index(row['move'])
+        value = None
+        if 'value' in row:
+            value = torch.Tensor([float(row['value'])])
+        move = None
+        if 'move' in row:
+            move = move_translator.get_engine_move_index(row['move'])
         return (
             get_tensor_from_row(row),
-            label,
+            move,
+            value,
         )
 
 
 def get_tensor_from_row(row):
     return torch.from_numpy(np.vstack((
-        get_board_data(row, bool(row['color'])),
+        get_board_data(row),
         np.full(SIZE, row['color']),
         np.full(SIZE, row['move_count']),
         np.full(SIZE, row['b_kingside_castling']),
@@ -54,26 +57,41 @@ def get_square_piece_data(data):
     board_data = np.full(
         (len(chess.PIECE_TYPES), BOARD_SIZE[0] * BOARD_SIZE[1]), 0)
 
-    for sq_symbol in data.split(','):
-        sq, symbol = sq_symbol.split('-')
-        piece = chess.Piece.from_symbol(symbol)
-        square = move_translator.square_name_to_square(sq)
-        board_data[piece.piece_type - chess.PAWN][square] = 1
+    if data:
+        for sq_symbol in data.split(','):
+            sq, symbol = sq_symbol.split('-')
+            piece = chess.Piece.from_symbol(symbol)
+            square = move_translator.square_name_to_square(sq)
+            board_data[piece.piece_type - chess.PAWN][square] = 1
 
     return board_data.reshape((len(chess.PIECE_TYPES), ) + BOARD_SIZE)
 
 
-def get_board_data(row, color):
-    white_data = get_square_piece_data(row['white_square_piece'])
-    black_data = get_square_piece_data(row['black_square_piece'])
-    if color == chess.WHITE:
-        piece_data = np.vstack((white_data, black_data))
-    else:
-        piece_data = np.vstack((black_data, white_data))
+def get_board_data(row):
+    white_data = []
+    black_data = []
+    rep_2_data = []
+    rep_3_data = []
+    for i in itertools.count():
+        try:
+            white_data.append(
+                get_square_piece_data(row['white_square_piece_%d' % i]))
+            black_data.append(
+                get_square_piece_data(row['black_square_piece_%d' % i]))
+            rep_2_data.append(np.full(SIZE, row['rep_2_%d' % i]))
+            rep_3_data.append(np.full(SIZE, row['rep_3_%d' % i]))
+        except KeyError:
+            break
+
+    white_data = np.vstack(white_data)
+    black_data = np.vstack(black_data)
+    rep_2_data = np.vstack(rep_2_data)
+    rep_3_data = np.vstack(rep_3_data)
 
     return np.vstack((
-        piece_data,
+        black_data,
+        white_data,
         np.full(SIZE, 1),
-        np.full(SIZE, row['rep_2']),
-        np.full(SIZE, row['rep_3']),
+        rep_2_data,
+        rep_3_data,
     ))

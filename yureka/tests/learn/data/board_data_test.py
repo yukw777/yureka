@@ -6,11 +6,8 @@ from unittest.mock import patch
 
 def test_get_board_data():
     with patch(
-        'yureka.learn.data.board_data.get_square_piece_data',
-        return_value={'sq_piece_data': 0}
-    ), patch(
-        'yureka.learn.data.board_data.get_repetition_data',
-        return_value={'rep_data': 0}
+        'yureka.learn.data.board_data.get_historical_piece_rep_data',
+        return_value={'historical_sq_rep_data': 0}
     ), patch(
         'yureka.learn.data.board_data.get_move_count_data',
         return_value={'mc_data': 0}
@@ -22,8 +19,7 @@ def test_get_board_data():
         return_value={'no_progress': 0}
     ):
         expected_row = {
-            'sq_piece_data': 0,
-            'rep_data': 0,
+            'historical_sq_rep_data': 0,
             'mc_data': 0,
             'castling': 0,
             'no_progress': 0,
