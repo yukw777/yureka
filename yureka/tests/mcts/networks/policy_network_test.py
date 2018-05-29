@@ -67,7 +67,7 @@ def test_get_move_probs_zero():
     e_test = PolicyNetwork(model=mock_model, cuda=False, train=False)
 
     move, log_prob = e_train.get_move(board)
-    assert round(log_prob.item(), 6) == round(math.log(1/20), 6)
+    assert round(log_prob.item(), 5) == round(math.log(1/20), 5)
     assert move in board.legal_moves
     move = e_test.get_move(board)
     assert move in board.legal_moves
