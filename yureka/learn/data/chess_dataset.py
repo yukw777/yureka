@@ -26,10 +26,10 @@ class ChessDataset(Dataset):
 
     def __getitem__(self, index):
         row = self.df.iloc[index]
-        value = None
+        value = []
         if 'value' in row:
             value = torch.Tensor([float(row['value'])])
-        move = None
+        move = []
         if 'move' in row:
             move = move_translator.get_engine_move_index(row['move'])
         return (
