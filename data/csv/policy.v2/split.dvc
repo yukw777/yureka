@@ -1,0 +1,12 @@
+cmd: ../../../scripts/split-csv.sh KingBase2018.csv 800000 split/KingBase2018-split-
+  .csv
+deps:
+- md5: b7c001b79f65280138a4d29664def2c9
+  path: ../../../scripts/split-csv.sh
+- md5: c348caed2b69b38f2619640776a4a1a5
+  path: KingBase2018.csv
+md5: 4480c2cdd4e400991175752876735306
+outs:
+- cache: true
+  md5: 54699e592fe89ef7ec83355269a4b9bb.dir
+  path: split

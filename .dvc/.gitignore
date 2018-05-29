@@ -1,3 +1,8 @@
 cache
 state
 lock
+link.state
+link.state.lock
+state.lock
+config.local
+updater
