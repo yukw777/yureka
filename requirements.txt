@@ -20,6 +20,7 @@ jupyter==1.0.0
 jupyter-client==5.2.0
 jupyter-console==5.2.0
 jupyter-core==4.4.0
+lmdb==0.94
 MarkupSafe==1.0
 mccabe==0.6.1
 mistune==0.8.3

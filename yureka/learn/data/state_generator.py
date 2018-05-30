@@ -5,17 +5,22 @@ import chess.pgn
 import pandas as pd
 import sys
 import torch
+import lmdb
 
 from ...mcts.networks import PolicyNetwork
 from ..models import cnn
 
 from . import move_translator
 from .board_data import get_reward, get_board_data
+# from .chess_dataset import get_array_from_row
 
 
 @attr.s
 class StateGenerator():
-    out_csv_file = attr.ib()
+    lmdb_name = attr.ib()
+
+    def __attrs_post_init__(self):
+        self.lmdb_env = lmdb.open(self.lmdb_name, map_size=2e11)
 
     def get_game(self):
         raise NotImplemented
@@ -29,11 +34,16 @@ class StateGenerator():
     def stop(self, game_count, state_count):
         pass
 
+    def write(self, df):
+        with self.lmdb_env.begin(write=True) as txn:
+            for i, row in df.iterrows():
+                for key in row.keys():
+                    txn.put(f'{i}'.encode(), row.to_msgpack())
+
     def generate(self, skip=None, write=False):
         count = 0
         state_count = 0
         df = pd.DataFrame()
-        header = True
         print(f'skipping: {skip}')
         for game in self.get_game():
             count += 1
@@ -53,13 +63,7 @@ class StateGenerator():
             df = pd.concat([df, game_df])
             if count % 100 == 0:
                 if write:
-                    df.to_csv(
-                        self.out_csv_file,
-                        index=False,
-                        header=header,
-                        mode='a'
-                    )
-                    header = False
+                    self.write(df)
                     state_count += df.shape[0]
                     df = pd.DataFrame()
                 else:
@@ -68,12 +72,7 @@ class StateGenerator():
                 print(f'{state_count} states generated...')
             self.stop(count, state_count)
         if write:
-            df.to_csv(
-                self.out_csv_file,
-                index=False,
-                header=header,
-                mode='a'
-            )
+            self.write(df)
 
         return df
 
@@ -157,6 +156,7 @@ class ExpertStateGenerator(StateGenerator):
     num_states = attr.ib()
 
     def __attrs_post_init__(self):
+        super(ExpertStateGenerator, self).__attrs_post_init__()
         self.game_file = open(self.game_file_name, 'r')
 
     def get_game(self):
@@ -219,7 +219,7 @@ class ExpertSampledStateGenerator(SampledStateGenerator, ExpertStateGenerator):
 
 
 def expert(args):
-    s = ExpertStateGenerator(args.out_csv_file, args.pgn_file, args.num_states)
+    s = ExpertStateGenerator(args.lmdb_name, args.pgn_file, args.num_states)
     s.generate(write=True, skip=args.skip)
 
 
@@ -231,13 +231,13 @@ def sim_sampled(args):
     rl.load_state_dict(torch.load(args.rl_engine_file))
     rl = PolicyNetwork(rl)
     u = SimSampledStateGenerator(
-        args.out_csv_file, args.both_color, sl, rl, args.num_games)
+        args.lmdb_name, args.both_color, sl, rl, args.num_games)
     u.generate(write=True)
 
 
 def expert_sampled(args):
     s = ExpertSampledStateGenerator(
-        args.pgn_file, args.num_states, args.out_csv_file, args.both_colors)
+        args.pgn_file, args.num_states, args.lmdb_name, args.both_colors)
     s.generate(write=True, skip=args.skip)
 
 
@@ -248,7 +248,7 @@ if __name__ == '__main__':
 
     parser_expert = subparsers.add_parser('expert')
     parser_expert.add_argument('pgn_file')
-    parser_expert.add_argument('out_csv_file')
+    parser_expert.add_argument('lmdb_name')
     parser_expert.add_argument('num_states', type=int)
     parser_expert.add_argument('-s', '--skip', type=int)
     parser_expert.set_defaults(func=expert)
@@ -259,13 +259,13 @@ if __name__ == '__main__':
     parser_sim_sampled.add_argument('rl_engine_name')
     parser_sim_sampled.add_argument('rl_engine_file')
     parser_sim_sampled.add_argument('num_games', type=int)
-    parser_sim_sampled.add_argument('out_csv_file')
+    parser_sim_sampled.add_argument('lmdb_name')
     parser_sim_sampled.add_argument('-b', '--both-colors', action='store_true')
     parser_sim_sampled.set_defaults(func=sim_sampled)
 
     parser_expert_sampled = subparsers.add_parser('expert_sampled')
     parser_expert_sampled.add_argument('pgn_file')
-    parser_expert_sampled.add_argument('out_csv_file')
+    parser_expert_sampled.add_argument('lmdb_name')
     parser_expert_sampled.add_argument('num_states', type=int)
     parser_expert_sampled.add_argument('-s', '--skip', type=int)
     parser_expert_sampled.add_argument(

@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import torch
 import itertools
+import lmdb
 
 from torch.utils.data import Dataset
 
@@ -12,6 +13,48 @@ from .board_data import BOARD_SIZE
 
 
 SIZE = (1, ) + BOARD_SIZE
+
+
+@attr.s
+class LMDBChessDataset(Dataset):
+    lmdb_name = attr.ib()
+    limit = attr.ib(default=None)
+
+    def __attrs_post_init__(self):
+        self.env = lmdb.open(self.lmdb_name, map_size=2e11)
+        self.txn = self.env.begin()
+        self.cursor = self.txn.cursor()
+
+    def __len__(self):
+        if self.limit:
+            return self.limit
+        return self.env.stat()['entries']
+
+    def __getitem__(self, index):
+        row = pd.read_msgpack(
+            self.cursor.get(f'{index}'.encode()),
+            encoding='ascii'
+        )
+        return data_from_row(row)
+
+    def __del__(self):
+        self.cursor.close()
+        self.txn.commit()
+        self.env.close()
+
+
+def data_from_row(row):
+    value = []
+    if 'value' in row:
+        value = torch.Tensor([float(row['value'])])
+    move = []
+    if 'move' in row:
+        move = move_translator.get_engine_move_index(row['move'])
+    return (
+        get_tensor_from_row(row),
+        move,
+        value,
+    )
 
 
 @attr.s
@@ -26,17 +69,7 @@ class ChessDataset(Dataset):
 
     def __getitem__(self, index):
         row = self.df.iloc[index]
-        value = []
-        if 'value' in row:
-            value = torch.Tensor([float(row['value'])])
-        move = []
-        if 'move' in row:
-            move = move_translator.get_engine_move_index(row['move'])
-        return (
-            get_tensor_from_row(row),
-            move,
-            value,
-        )
+        return data_from_row(row)
 
 
 def get_tensor_from_row(row):
