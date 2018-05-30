@@ -1,6 +1,0 @@
-cmd: null
-deps: []
-outs:
-- cache: true
-  md5: 30a0572640f88398c4b302e887225183
-  path: KingBase2018-pgn.zip
