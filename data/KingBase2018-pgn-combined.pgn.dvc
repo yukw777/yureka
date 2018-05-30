@@ -1,0 +1,15 @@
+cmd: cat KingBase2018-pgn/KingBase2018-A00-A39.pgn KingBase2018-pgn/KingBase2018-A40-A79.pgn
+  KingBase2018-pgn/KingBase2018-A80-A99.pgn KingBase2018-pgn/KingBase2018-B00-B19.pgn
+  KingBase2018-pgn/KingBase2018-B20-B49.pgn KingBase2018-pgn/KingBase2018-B50-B99.pgn
+  KingBase2018-pgn/KingBase2018-C00-C19.pgn KingBase2018-pgn/KingBase2018-C20-C59.pgn
+  KingBase2018-pgn/KingBase2018-C60-C99.pgn KingBase2018-pgn/KingBase2018-D00-D29.pgn
+  KingBase2018-pgn/KingBase2018-D30-D69.pgn KingBase2018-pgn/KingBase2018-D70-D99.pgn
+  KingBase2018-pgn/KingBase2018-E00-E19.pgn KingBase2018-pgn/KingBase2018-E20-E59.pgn
+  KingBase2018-pgn/KingBase2018-E60-E99.pgn
+deps:
+- md5: e5828f17659f538c6039c37dfef0b768.dir
+  path: KingBase2018-pgn
+outs:
+- cache: true
+  md5: f45f8758ed1e3dc01e34722d5b63f389
+  path: KingBase2018-pgn-combined.pgn

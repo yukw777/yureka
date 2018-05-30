@@ -1,0 +1,11 @@
+cmd: python ../scripts/randomize_pgn.py KingBase2018-pgn-combined.pgn KingBase2018-combined-random.pgn
+  -e latin-1
+deps:
+- md5: f45f8758ed1e3dc01e34722d5b63f389
+  path: KingBase2018-pgn-combined.pgn
+- md5: 849f63b601e0cd24326042b8da12e9a5
+  path: ../scripts/randomize_pgn.py
+outs:
+- cache: true
+  md5: c6a4e09eb8f696f6eb19f28adb5d5f14
+  path: KingBase2018-combined-random.pgn

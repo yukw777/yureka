@@ -1,0 +1,8 @@
+cmd: unzip KingBase2018-pgn.zip -d KingBase2018-pgn
+deps:
+- md5: 30a0572640f88398c4b302e887225183
+  path: KingBase2018-pgn.zip
+outs:
+- cache: true
+  md5: e5828f17659f538c6039c37dfef0b768.dir
+  path: KingBase2018-pgn
