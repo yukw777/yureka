@@ -6,6 +6,7 @@ import pandas as pd
 import sys
 import torch
 import lmdb
+import os
 
 from ...mcts.networks import PolicyNetwork
 from ..models import cnn
@@ -20,7 +21,16 @@ class StateGenerator():
     lmdb_name = attr.ib()
 
     def __attrs_post_init__(self):
-        self.lmdb_env = lmdb.open(self.lmdb_name, map_size=2e11)
+        if not os.path.exists(self.lmdb_name):
+            os.makedirs(self.lmdb_name)
+        self.env = lmdb.open(self.lmdb_name, map_size=2e11)
+        self.txn = self.env.begin(write=True)
+        self.cursor = self.txn.cursor()
+
+    def __del__(self):
+        self.cursor.close()
+        self.txn.commit()
+        self.env.close()
 
     def get_game(self):
         raise NotImplemented
@@ -34,11 +44,19 @@ class StateGenerator():
     def stop(self, game_count, state_count):
         pass
 
-    def write(self, df):
-        with self.lmdb_env.begin(write=True) as txn:
-            for i, row in df.iterrows():
-                for key in row.keys():
-                    txn.put(f'{i}'.encode(), row.to_msgpack())
+    def write(self, df, state_count):
+        print(f'writing from id {state_count}')
+        items = []
+        for _, row in df.iterrows():
+            items.append((f'{state_count}'.encode(), row.to_msgpack()))
+            state_count += 1
+        consumed, added = self.cursor.putmulti(items)
+        self.txn.commit()
+        self.cursor.close()
+        print(f'{consumed} rows consumed, {added} rows added')
+        self.txn = self.env.begin(write=True)
+        self.cursor = self.txn.cursor()
+        return state_count
 
     def generate(self, skip=None, write=False):
         count = 0
@@ -63,8 +81,7 @@ class StateGenerator():
             df = pd.concat([df, game_df])
             if count % 100 == 0:
                 if write:
-                    self.write(df)
-                    state_count += df.shape[0]
+                    state_count = self.write(df, state_count)
                     df = pd.DataFrame()
                 else:
                     state_count = df.shape[0]
@@ -72,7 +89,7 @@ class StateGenerator():
                 print(f'{state_count} states generated...')
             self.stop(count, state_count)
         if write:
-            self.write(df)
+            self.write(df, state_count)
 
         return df
 
