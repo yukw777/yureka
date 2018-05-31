@@ -13,7 +13,6 @@ from ..models import cnn
 
 from . import move_translator
 from .board_data import get_reward, get_board_data
-# from .chess_dataset import get_array_from_row
 
 
 @attr.s
