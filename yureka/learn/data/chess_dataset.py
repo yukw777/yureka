@@ -18,7 +18,7 @@ SIZE = (1, ) + BOARD_SIZE
 @attr.s
 class LMDBChessDataset(Dataset):
     lmdb_name = attr.ib()
-    offset = attr.ib(default=None)
+    offset = attr.ib(default=0)
     limit = attr.ib(default=None)
 
     def __attrs_post_init__(self):
@@ -28,11 +28,11 @@ class LMDBChessDataset(Dataset):
 
     def __len__(self):
         if self.limit:
-            return self.limit
-        return self.env.stat()['entries']
+            return self.limit - self.offset
+        return self.env.stat()['entries'] - self.offset
 
     def __getitem__(self, index):
-        index = index + self.offset if self.offset else index
+        index = index + self.offset
         row = pd.read_msgpack(
             self.cursor.get(f'{index}'.encode()),
             encoding='ascii'

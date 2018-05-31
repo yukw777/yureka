@@ -11,7 +11,7 @@ import numpy as np
 import sklearn.metrics as metrics
 
 from .. import models
-from ..data.chess_dataset import ChessDataset
+from ..data.chess_dataset import LMDBChessDataset
 
 
 @attr.s
@@ -25,8 +25,8 @@ class LossIsNan(Exception):
 @attr.s
 class SupervisedTrainer():
     model = attr.ib()
-    train_data = attr.ib()
-    test_data = attr.ib()
+    data = attr.ib()
+    test_ratio = attr.ib()
     logger = attr.ib(default=logging.getLogger(__name__))
     log_interval = attr.ib(default=2000)
     batch_size = attr.ib(default=16)
@@ -48,27 +48,40 @@ class SupervisedTrainer():
             self.model = nn.DataParallel(self.model)
         else:
             self.model.to(self.device)
-        self.train_data = self.get_data_loader(self.train_data)
-        self.test_data = self.get_data_loader(self.test_data)
+        self.train_data, self.test_data = self.split_train_test(self.data)
+        self.logger.info(f'Train data len: {len(self.train_data)}')
+        self.logger.info(f'Test data len: {len(self.test_data)}')
 
         self.lr_reduced = False
         self.original_learning_rate = self.learning_rate
         self.criterion = nn.MSELoss() if self.value else nn.CrossEntropyLoss()
 
     def print_summary(self):
-        self.logger.info(f'Train data: {self.train_data}')
-        self.logger.info(f'Test data: {self.test_data}')
+        self.logger.info(f'Data: {self.data}')
+        self.logger.info(f'Test ratio: {self.test_ratio}')
         self.logger.info(f'Log interval: {self.log_interval}')
         self.logger.info(f'Batch size: {self.batch_size}')
         self.logger.info(f'Num epochs: {self.num_epochs}')
         self.logger.info(f'Use cuda: {self.cuda}')
         self.logger.info(f'Learning rate: {self.learning_rate}')
 
-    def get_data_loader(self, data_file):
+    def split_train_test(self, data_files):
+        test = []
+        train = []
+        for f in data_files:
+            temp = LMDBChessDataset(f)
+            test_len = round(len(temp) * self.test_ratio)
+            del temp
+            test.append(LMDBChessDataset(f, limit=test_len))
+            train.append(LMDBChessDataset(f, offset=test_len))
+
         return data.DataLoader(
-            ChessDataset(data_file),
+            data.ConcatDataset(train),
             batch_size=self.batch_size,
-            shuffle=True
+            num_workers=4
+        ), data.DataLoader(
+            data.ConcatDataset(test),
+            batch_size=self.batch_size,
         )
 
     def get_variables_from_inputs(self, row):
@@ -209,8 +222,8 @@ class SupervisedTrainer():
 def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('model')
-    parser.add_argument('train_data')
-    parser.add_argument('test_data')
+    parser.add_argument('test_ratio', type=float)
+    parser.add_argument('-d', '--data', action='append', required=True)
     parser.add_argument('-i', '--log-interval', type=int)
     parser.add_argument('-b', '--batch-size', type=int)
     parser.add_argument('-e', '--num-epochs', type=int)
@@ -238,8 +251,8 @@ def run():
 
     trainer_setting = {
         'model': model,
-        'train_data': args.train_data,
-        'test_data': args.test_data,
+        'data': args.data,
+        'test_ratio': args.test_ratio,
         'logger': logger,
     }
     if args.log_interval:
