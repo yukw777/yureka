@@ -27,6 +27,7 @@ class SupervisedTrainer():
     model = attr.ib()
     data = attr.ib()
     test_ratio = attr.ib()
+    model_path = attr.ib()
     logger = attr.ib(default=logging.getLogger(__name__))
     log_interval = attr.ib(default=2000)
     batch_size = attr.ib(default=16)
@@ -132,11 +133,7 @@ class SupervisedTrainer():
         filename = self.model.name
         filename += f"_{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}"
         filename += f"_{epoch}.model"
-        filepath = os.path.join(
-            os.getcwd(),
-            'saved_models',
-            filename
-        )
+        filepath = os.path.join(self.model_path, filename)
         self.logger.info(f'Saving: {filepath}')
         torch.save(self.model.state_dict(), filepath)
         self.logger.info('Done saving')
@@ -223,6 +220,7 @@ def run():
     parser = argparse.ArgumentParser()
     parser.add_argument('model')
     parser.add_argument('test_ratio', type=float)
+    parser.add_argument('model_path')
     parser.add_argument('-d', '--data', action='append', required=True)
     parser.add_argument('-i', '--log-interval', type=int)
     parser.add_argument('-b', '--batch-size', type=int)
@@ -253,6 +251,7 @@ def run():
         'model': model,
         'data': args.data,
         'test_ratio': args.test_ratio,
+        'model_path': args.model_path,
         'logger': logger,
     }
     if args.log_interval:
