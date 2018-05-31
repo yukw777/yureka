@@ -1,4 +1,6 @@
 import chess
+import pytest
+
 from yureka.learn.data import move_translator
 
 
@@ -474,3 +476,12 @@ def test_get_engine_move_to_and_from_index():
         inverse = move_translator.get_engine_move_from_index(translated)
         assert translated == tc['expected']
         assert inverse == tc['move']
+
+
+def test_handle_null_move():
+    with pytest.raises(move_translator.NullMoveException):
+        move_translator.translate_to_engine_move(
+            chess.Move.null(), chess.WHITE)
+    with pytest.raises(move_translator.NullMoveException):
+        move_translator.translate_to_engine_move(
+            chess.Move.null(), chess.BLACK)

@@ -273,6 +273,8 @@ def get_underpromotion_move_offset(move_data):
 
 
 def translate_to_engine_move(move, color):
+    if move == chess.Move.null():
+        raise NullMoveException('Cannot translate null move')
     if move.promotion:
         if move.promotion != chess.QUEEN:
             # underpromotion
@@ -417,3 +419,7 @@ def is_knight_move(move):
 
 def square_invert(square):
     return square ^ 0x3f
+
+
+class NullMoveException(Exception):
+    pass

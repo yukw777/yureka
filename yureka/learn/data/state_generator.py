@@ -75,6 +75,9 @@ class StateGenerator():
                     game_df,
                     pd.DataFrame(self.get_label_data(game))
                 ], axis=1)
+            except move_translator.NullMoveException as e:
+                print(e)
+                continue
             except ValueError as e:
                 print(e)
                 continue
