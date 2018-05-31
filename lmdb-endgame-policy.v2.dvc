@@ -1,0 +1,11 @@
+cmd: python -m yureka.learn.data.state_generator expert data/endgame.pgn data/lmdb-endgame-policy.v2
+  21000000
+deps:
+- md5: 5acbb14f85be8dbdaae11d3ce90da247
+  path: data/endgame.pgn
+- md5: c4a212adcf17699f5eaa5bd595ae7d5d
+  path: yureka/learn/data/state_generator.py
+outs:
+- cache: true
+  md5: e9a2983d5651796c893674f019cac01a.dir
+  path: data/lmdb-endgame-policy.v2
