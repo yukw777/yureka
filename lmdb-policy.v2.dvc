@@ -1,11 +1,12 @@
 cmd: python -m yureka.learn.data.state_generator expert data/KingBase2018-combined-random.pgn
-  data/lmdb-policy.v2 21000000
+  data/lmdb-policy.v2 11000000
 deps:
 - md5: c6a4e09eb8f696f6eb19f28adb5d5f14
   path: data/KingBase2018-combined-random.pgn
-- md5: c4a212adcf17699f5eaa5bd595ae7d5d
+- md5: 9757efac3cedfc11a93f2967ae919058
   path: yureka/learn/data/state_generator.py
+md5: 2164fea9f5f4155b5257edf13ed56954
 outs:
 - cache: true
-  md5: 7b10b9ea647799a01e021aa5255e5730.dir
+  md5: a444c9a4fa88557874761e3ef9add1de.dir
   path: data/lmdb-policy.v2
