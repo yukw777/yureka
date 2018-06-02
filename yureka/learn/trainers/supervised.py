@@ -79,7 +79,7 @@ class SupervisedTrainer():
         return data.DataLoader(
             data.ConcatDataset(train),
             batch_size=self.batch_size,
-            num_workers=4
+            shuffle=True,
         ), data.DataLoader(
             data.ConcatDataset(test),
             batch_size=self.batch_size,

@@ -24,7 +24,6 @@ class LMDBChessDataset(Dataset):
     def __attrs_post_init__(self):
         self.env = lmdb.open(self.lmdb_name, map_size=2e11)
         self.txn = self.env.begin()
-        self.cursor = self.txn.cursor()
 
     def __len__(self):
         if self.limit:
@@ -34,13 +33,12 @@ class LMDBChessDataset(Dataset):
     def __getitem__(self, index):
         index = index + self.offset
         row = pd.read_msgpack(
-            self.cursor.get(f'{index}'.encode()),
+            self.txn.get(f'{index}'.encode()),
             encoding='ascii'
         )
         return data_from_row(row)
 
     def __del__(self):
-        self.cursor.close()
         self.txn.commit()
         self.env.close()
 
