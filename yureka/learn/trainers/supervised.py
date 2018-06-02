@@ -156,8 +156,8 @@ class SupervisedTrainer():
 
             if not self.value:
                 _, prediction = outputs.max(1)
-                predictions = np.append(predictions, prediction.item())
-                answers = np.append(answers, labels.item())
+                predictions = np.append(predictions, prediction)
+                answers = np.append(answers, labels)
 
         avg_loss = np.average(losses)
         if not self.value:
