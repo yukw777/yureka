@@ -46,7 +46,8 @@ class StateGenerator():
     def write(self, df, state_count):
         print(f'writing from id {state_count}')
         items = []
-        for _, row in df.iterrows():
+        # iterate over rows in random order
+        for _, row in df.sample(frac=1).iterrows():
             items.append((f'{state_count}'.encode(), row.to_msgpack()))
             state_count += 1
         consumed, added = self.cursor.putmulti(items)
