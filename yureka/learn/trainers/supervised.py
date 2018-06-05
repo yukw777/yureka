@@ -34,7 +34,7 @@ class SupervisedTrainer():
     num_epochs = attr.ib(default=100)
     cuda = attr.ib(default=True)
     parallel = attr.ib(default=False)
-    learning_rate = attr.ib(default=1e-4)
+    learning_rate = attr.ib(default=1e-1)
     value = attr.ib(default=False)
 
     def __attrs_post_init__(self):
@@ -53,8 +53,6 @@ class SupervisedTrainer():
         self.logger.info(f'Train data len: {len(self.train_data)}')
         self.logger.info(f'Test data len: {len(self.test_data)}')
 
-        self.lr_reduced = False
-        self.original_learning_rate = self.learning_rate
         self.criterion = nn.MSELoss() if self.value else nn.CrossEntropyLoss()
 
     def print_summary(self):
@@ -103,31 +101,22 @@ class SupervisedTrainer():
         return outputs
 
     def run(self):
+        optimizer = optim.SGD(
+            self.model.parameters(),
+            lr=self.learning_rate,
+            momentum=0.9,
+            nesterov=True
+        )
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer,
+            patience=1
+        )
         for epoch in range(self.num_epochs):
             self.logger.info(f'Epoch {epoch}')
-            if self.lr_reduced:
-                self.logger.info('Restoring reduced learning rate')
-                self.learning_rate = self.original_learning_rate
-                self.lr_reduced = False
-            while True:
-                try:
-                    self.train(epoch)
-                except LossIsNan:
-                    if self.learning_rate <= 1e-6:
-                        self.logger.error(
-                            'Loss is nan, and learning rate is below 1e-6')
-                        raise
-                    # loss is nan, try again with a reduced learning rate
-                    self.logger.info('Loss is nan. Reducing learning rate')
-                    self.logger.info(
-                        f'Current learning rate: {self.learning_rate}')
-                    self.learning_rate /= 10
-                    self.logger.info(
-                        f'Reduced learning rate: {self.learning_rate}')
-                    self.lr_reduced = True
-                break
+            self.train(epoch, optimizer)
             self.save(epoch)
-            self.test(epoch)
+            loss = self.test(epoch)
+            scheduler.step(loss)
 
     def save(self, epoch):
         filename = self.model.name
@@ -175,17 +164,11 @@ class SupervisedTrainer():
             self.logger.info(f'Recall at epoch {epoch}: {recall}')
             self.logger.info(f'F1 score at epoch {epoch}: {f1_score}')
         self.logger.info('Testing finished')
+        return avg_loss
 
-    def train(self, epoch):
+    def train(self, epoch, optimizer):
         self.logger.info('Training...')
         self.model.train()
-
-        optimizer = optim.SGD(
-            self.model.parameters(),
-            lr=self.learning_rate,
-            momentum=0.9,
-            nesterov=True
-        )
 
         running_loss = 0.0
         for i, row in enumerate(self.train_data):
