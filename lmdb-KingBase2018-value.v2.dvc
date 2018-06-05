@@ -1,0 +1,13 @@
+cmd: python -m yureka.learn.data.state_generator expert_sampled data/KingBase2018-combined-random.pgn
+  data/lmdb-KingBase2018-value.v2 10000000 -b
+deps:
+- md5: c6a4e09eb8f696f6eb19f28adb5d5f14
+  path: data/KingBase2018-combined-random.pgn
+- md5: 7904f2d375bb8eaf38f7db43bc1f6c3d
+  path: yureka/learn/data/state_generator.py
+md5: f706afe42caa1cd6fdd6bbe1b6805ec2
+outs:
+- cache: true
+  md5: 1f03566a12158aea83d06cea0aa5d5e4.dir
+  path: data/lmdb-KingBase2018-value.v2
+# 4114936 states
