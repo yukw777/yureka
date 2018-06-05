@@ -75,10 +75,8 @@ class StateGenerator():
                     game_df,
                     pd.DataFrame(self.get_label_data(game))
                 ], axis=1)
-            except move_translator.NullMoveException as e:
-                print(e)
-                continue
-            except ValueError as e:
+            except Exception as e:
+                # just catch and move on to the next one
                 print(e)
                 continue
             df = pd.concat([df, game_df])
