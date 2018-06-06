@@ -34,7 +34,7 @@ class SupervisedTrainer():
     num_epochs = attr.ib(default=100)
     cuda = attr.ib(default=True)
     parallel = attr.ib(default=False)
-    learning_rate = attr.ib(default=1e-1)
+    learning_rate = attr.ib(default=1e-2)
     value = attr.ib(default=False)
 
     def __attrs_post_init__(self):
