@@ -10,13 +10,40 @@ from torch.utils.data import Dataset
 
 from . import move_translator
 from .board_data import BOARD_SIZE
+from .bresenham import get_line
 
 
 SIZE = (1, ) + BOARD_SIZE
 
 
 @attr.s
+class InterleavenDataset(Dataset):
+    """Can't be shuffled!
+    """
+    datasets = attr.ib()
+
+    def __attrs_post_init__(self):
+        assert len(self.datasets) == 2
+        self.datasets = list(self.datasets)
+        lens = (len(self.datasets[0]), len(self.datasets[1]))
+        self.len = sum(lens)
+        self.generator = get_line(
+            (0, 0),
+            lens
+        )
+
+    def __len__(self):
+        return self.len
+
+    def __getitem__(self, index):
+        dataset, i = next(self.generator)
+        return self.datasets[dataset][i]
+
+
+@attr.s
 class LMDBChessDataset(Dataset):
+    """Can't be shuffled!
+    """
     lmdb_name = attr.ib()
     offset = attr.ib(default=0)
     limit = attr.ib(default=None)

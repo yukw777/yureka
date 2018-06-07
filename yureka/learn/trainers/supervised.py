@@ -11,7 +11,7 @@ import numpy as np
 import sklearn.metrics as metrics
 
 from .. import models
-from ..data.chess_dataset import LMDBChessDataset
+from ..data.chess_dataset import LMDBChessDataset, InterleavenDataset
 
 
 @attr.s
@@ -75,7 +75,7 @@ class SupervisedTrainer():
             train.append(LMDBChessDataset(f, offset=test_len))
 
         return data.DataLoader(
-            data.ConcatDataset(train),
+            InterleavenDataset(train),
             batch_size=self.batch_size,
             num_workers=4
         ), data.DataLoader(
