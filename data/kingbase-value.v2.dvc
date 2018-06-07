@@ -1,0 +1,11 @@
+cmd: python scripts/convert_lmdb.py data/lmdb-KingBase2018-value.v2/ 20 data/kingbase-value.v2/kingbase-value
+deps:
+- md5: 2a767f399be9bf54fa99d9ea08141db3
+  path: scripts/convert_lmdb.py
+- md5: 91ac13053490145162013f73bb70b730.dir
+  path: data/lmdb-KingBase2018-value.v2
+md5: 790186c112cdebb9d63ae71309ab2390
+outs:
+- cache: true
+  md5: 5b9fdd9df2a87caa019c545a063044aa.dir
+  path: data/kingbase-value.v2
