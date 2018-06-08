@@ -1,0 +1,5 @@
+md5: 7d91a2c6030b1e8ce2ac4739e1fcbc49
+outs:
+- cache: true
+  md5: d7097c073b61e9e0bca4fafd727b0800
+  path: kingbase2018.csv
