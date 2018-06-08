@@ -25,7 +25,7 @@ def test_policy_v2():
     m = models.create('Policy.v2')
     assert m.batch_norm
     # batch_size * in_channels * 8 * 8
-    input = torch.randn(16, 119, 8, 8)
+    input = torch.randn(16, 21, 8, 8)
     # batch_size * num_move_planes * 8 * 8
     output = m(input)
     assert output.shape == (16, 73, 8, 8)
@@ -54,7 +54,7 @@ def test_value_v2():
     m = models.create('Value.v2')
     assert m.batch_norm
     # batch_size * in_channels * 8 * 8
-    input = torch.randn(16, 119, 8, 8)
+    input = torch.randn(16, 21, 8, 8)
     # batch_size * 1
     output = m(input)
     assert output.shape == (16, 1)

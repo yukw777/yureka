@@ -16,7 +16,7 @@ models = {
     },
     'Policy.v2': {
         'class': Policy,
-        'args': (119, 256, 11),
+        'args': (21, 128, 11),
         'kwargs': {
             'batch_norm': True,
         },
@@ -35,7 +35,7 @@ models = {
     },
     'Value.v2': {
         'class': Value,
-        'args': (119, 256, 23, 256),
+        'args': (21, 128, 11, 128),
         'kwargs': {
             'batch_norm': True,
         },
