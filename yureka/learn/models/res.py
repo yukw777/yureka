@@ -5,6 +5,7 @@ from ..data.move_translator import NUM_MOVE_PLANES
 
 class ConvBlock(nn.Module):
     def __init__(self, filters, *args, **kwargs):
+        super(ConvBlock, self).__init__()
         layers = [nn.Conv2d(*args, **kwargs)
                   for _ in range(filters)]
         layers.append(nn.BatchNorm2d(args[1]))
@@ -17,6 +18,7 @@ class ConvBlock(nn.Module):
 
 class ResBlock(nn.Module):
     def __init__(self, filters, *args, **kwargs):
+        super(ResBlock, self).__init__()
         layers = [nn.Conv2d(*args, **kwargs)
                   for _ in range(filters)]
         layers.append(nn.BatchNorm2d(args[1]))
@@ -34,11 +36,12 @@ class ResBlock(nn.Module):
 
 class PolicyHead(nn.Module):
     def __init__(self, *args, **kwargs):
+        super(PolicyHead, self).__init__()
         layers = [nn.Conv2d(*args, 1, **kwargs)
                   for _ in range(2)]
         layers.append(nn.BatchNorm2d(args[1]))
         layers.append(nn.ReLU())
-        layers.append(nn.Linear(args[1]), NUM_MOVE_PLANES)
+        layers.append(nn.Linear(args[1], NUM_MOVE_PLANES))
         self.network = nn.Sequential(*layers)
 
     def forward(self, x):
@@ -47,12 +50,13 @@ class PolicyHead(nn.Module):
 
 class ValueHead(nn.Module):
     def __init__(self, hidden_size, *args, **kwargs):
+        super(ValueHead, self).__init__()
         layers = [nn.Conv2d(*args, 1, **kwargs)]
         layers.append(nn.BatchNorm2d(args[1]))
         layers.append(nn.ReLU())
-        layers.append(nn.Linear(args[1]), hidden_size)
+        layers.append(nn.Linear(args[1], hidden_size))
         layers.append(nn.ReLU())
-        layers.append(hidden_size, 1)
+        layers.append(nn.Linear(hidden_size, 1))
         layers.append(nn.Tanh())
         self.network = nn.Sequential(*layers)
 
@@ -62,6 +66,7 @@ class ValueHead(nn.Module):
 
 class ResNet(nn.Module):
     def __init__(self, name, tower, head):
+        super(ResNet, self).__init__()
         self.name = name
         self.tower = tower
         self.head = head
