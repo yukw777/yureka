@@ -1,6 +1,6 @@
 import torch.nn as nn
-import res
 
+from . import res
 from .cnn import Policy, Value
 
 
