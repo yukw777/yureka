@@ -103,7 +103,7 @@ def get_repetition_data(board):
     return data_dict
 
 
-def get_historical_piece_rep_data(board, color, history=8):
+def get_historical_piece_rep_data(board, color, history=1):
     data = {}
     copied = board.copy()
     for i in range(history):
