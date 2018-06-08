@@ -11,7 +11,11 @@ import numpy as np
 import sklearn.metrics as metrics
 
 from .. import models
-from ..data.chess_dataset import LMDBChessDataset, InterleavenDataset
+from ..data.chess_dataset import (
+    LMDBChessDataset,
+    InterleavenDataset,
+    ChessDataset,
+)
 
 
 @attr.s
@@ -28,6 +32,7 @@ class SupervisedTrainer():
     data = attr.ib()
     test_ratio = attr.ib()
     model_path = attr.ib()
+    format = attr.ib(default='csv')
     data_limit = attr.ib(default=None)
     logger = attr.ib(default=logging.getLogger(__name__))
     log_interval = attr.ib(default=2000)
@@ -70,14 +75,21 @@ class SupervisedTrainer():
         test = []
         train = []
         for f in data_files:
-            temp = LMDBChessDataset(f)
+            if self.format == 'csv':
+                temp = ChessDataset(f)
+            else:
+                temp = LMDBChessDataset(f)
             if limit:
                 test_len = round(limit * self.test_ratio)
             else:
                 test_len = round(len(temp) * self.test_ratio)
             del temp
-            test.append(LMDBChessDataset(f, limit=test_len))
-            train.append(LMDBChessDataset(f, limit=limit, offset=test_len))
+            if self.format == 'csv':
+                test.append(ChessDataset(f, limit=test_len))
+                train.append(ChessDataset(f, limit=limit, offset=test_len))
+            elif self.format == 'lmdb':
+                test.append(LMDBChessDataset(f, limit=test_len))
+                train.append(LMDBChessDataset(f, limit=limit, offset=test_len))
 
         if len(train) == 1:
             train_dataset = train[0]
@@ -89,7 +101,8 @@ class SupervisedTrainer():
         return data.DataLoader(
             train_dataset,
             batch_size=self.batch_size,
-            num_workers=4
+            num_workers=4,
+            shuffle=(self.format == 'csv')
         ), data.DataLoader(
             data.ConcatDataset(test),
             batch_size=self.batch_size,
@@ -218,6 +231,7 @@ def run():
     parser.add_argument('model_path')
     parser.add_argument('--data-limit', type=int)
     parser.add_argument('-d', '--data', action='append', required=True)
+    parser.add_argument('-f', '--format', default='csv')
     parser.add_argument('-i', '--log-interval', type=int)
     parser.add_argument('-b', '--batch-size', type=int)
     parser.add_argument('-e', '--num-epochs', type=int)
@@ -246,6 +260,7 @@ def run():
     trainer_setting = {
         'model': model,
         'data': args.data,
+        'format': args.format,
         'test_ratio': args.test_ratio,
         'model_path': args.model_path,
         'logger': logger,
