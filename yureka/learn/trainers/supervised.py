@@ -80,7 +80,7 @@ class SupervisedTrainer():
             train.append(LMDBChessDataset(f, limit=limit, offset=test_len))
 
         if len(train) == 1:
-            train_dataset = LMDBChessDataset(train[0])
+            train_dataset = train[0]
         elif len(train) == 2:
             train_dataset = InterleavenDataset(train)
         else:
