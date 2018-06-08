@@ -94,7 +94,7 @@ class ChessDataset(Dataset):
 
     def __attrs_post_init__(self):
         self.df = pd.read_csv(self.data_file, keep_default_na=False)
-        self.df = self.df[self.offset, self.limit]
+        self.df = self.df[self.offset:self.limit]
 
     def __len__(self):
         return self.df.shape[0]
