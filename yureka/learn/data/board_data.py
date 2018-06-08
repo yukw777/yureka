@@ -43,12 +43,12 @@ def get_reward(result, color, award_tie=False):
         raise Exception(f'Unknown result: {result}, {color}')
 
 
-def get_board_data(board, color):
+def get_board_data(board, color, history=1):
     row = {
         # 1 if white else 0
         'color': 1 if color else 0,
     }
-    row.update(get_historical_piece_rep_data(board, color))
+    row.update(get_historical_piece_rep_data(board, color, history))
     row.update(get_move_count_data(board))
     row.update(get_castling_data(board))
     row.update(get_no_progress_data(board))
@@ -103,7 +103,7 @@ def get_repetition_data(board):
     return data_dict
 
 
-def get_historical_piece_rep_data(board, color, history=1):
+def get_historical_piece_rep_data(board, color, history):
     data = {}
     copied = board.copy()
     for i in range(history):

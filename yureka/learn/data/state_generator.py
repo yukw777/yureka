@@ -17,19 +17,25 @@ from .board_data import get_reward, get_board_data
 
 @attr.s
 class StateGenerator():
-    lmdb_name = attr.ib()
+    out_file_name = attr.ib()
+    out_file_type = attr.ib()
+    history = attr.ib()
 
     def __attrs_post_init__(self):
-        if not os.path.exists(self.lmdb_name):
-            os.makedirs(self.lmdb_name)
-        self.env = lmdb.open(self.lmdb_name, map_size=2e11)
-        self.txn = self.env.begin(write=True)
-        self.cursor = self.txn.cursor()
+        if self.out_file_type == 'csv':
+            self.print_header = True
+        elif self.out_file_type == 'lmdb':
+            if not os.path.exists(self.out_file_name):
+                os.makedirs(self.out_file_name)
+            self.env = lmdb.open(self.out_file_name, map_size=2e11)
+            self.txn = self.env.begin(write=True)
+            self.cursor = self.txn.cursor()
 
     def __del__(self):
-        self.cursor.close()
-        self.txn.commit()
-        self.env.close()
+        if self.out_file_type == 'lmdb':
+            self.cursor.close()
+            self.txn.commit()
+            self.env.close()
 
     def get_game(self):
         raise NotImplemented
@@ -44,6 +50,22 @@ class StateGenerator():
         pass
 
     def write(self, df, state_count):
+        if self.out_file_type == 'csv':
+            return self.write_csv(df, state_count)
+        elif self.out_file_type == 'lmdb':
+            return self.write_lmdb(df, state_count)
+
+    def write_csv(self, df, state_count):
+        df.to_csv(
+            self.out_file_name,
+            index=False,
+            header=self.print_header,
+            mode='a'
+        )
+        self.print_header = False
+        return state_count + df.shape[0]
+
+    def write_lmdb(self, df, state_count):
         print(f'writing from id {state_count}')
         items = []
         # iterate over rows in random order
@@ -101,9 +123,10 @@ class SampledStateGenerator(StateGenerator):
 
     def get_game_data(self, data):
         board, _, _, _ = data
-        game_df = get_board_data(board, board.turn)
+        game_df = get_board_data(board, board.turn, self.history)
         if self.both_colors:
-            opposite = get_board_data(board, not board.turn)
+            opposite = get_board_data(
+                board, not board.turn, self.history)
             return [game_df, opposite]
         else:
             return [game_df]
@@ -187,7 +210,7 @@ class ExpertStateGenerator(StateGenerator):
     def get_game_data(self, game):
         board = game.board()
         for move in game.main_line():
-            yield get_board_data(board, board.turn)
+            yield get_board_data(board, board.turn, self.history)
             board.push(move)
 
     def get_label_data(self, game):
@@ -237,7 +260,13 @@ class ExpertSampledStateGenerator(SampledStateGenerator, ExpertStateGenerator):
 
 
 def expert(args):
-    s = ExpertStateGenerator(args.lmdb_name, args.pgn_file, args.num_states)
+    s = ExpertStateGenerator(
+        args.out_file_name,
+        args.format,
+        args.history,
+        args.pgn_file,
+        args.num_states
+    )
     s.generate(write=True, skip=args.skip)
 
 
@@ -249,13 +278,26 @@ def sim_sampled(args):
     rl.load_state_dict(torch.load(args.rl_engine_file))
     rl = PolicyNetwork(rl)
     u = SimSampledStateGenerator(
-        args.lmdb_name, args.both_color, sl, rl, args.num_games)
+        args.out_file_name,
+        args.format,
+        args.history,
+        args.both_color,
+        sl,
+        rl,
+        args.num_games
+    )
     u.generate(write=True)
 
 
 def expert_sampled(args):
     s = ExpertSampledStateGenerator(
-        args.pgn_file, args.num_states, args.lmdb_name, args.both_colors)
+        args.pgn_file,
+        args.num_states,
+        args.out_file_name,
+        args.format,
+        args.history,
+        args.both_colors
+    )
     s.generate(write=True, skip=args.skip)
 
 
@@ -266,9 +308,11 @@ if __name__ == '__main__':
 
     parser_expert = subparsers.add_parser('expert')
     parser_expert.add_argument('pgn_file')
-    parser_expert.add_argument('lmdb_name')
+    parser_expert.add_argument('out_file_name')
     parser_expert.add_argument('num_states', type=int)
     parser_expert.add_argument('-s', '--skip', type=int)
+    parser_expert.add_argument('--history', type=int)
+    parser_expert.add_argument('-f', '--format', default='csv')
     parser_expert.set_defaults(func=expert)
 
     parser_sim_sampled = subparsers.add_parser('sim_sampled')
@@ -277,15 +321,19 @@ if __name__ == '__main__':
     parser_sim_sampled.add_argument('rl_engine_name')
     parser_sim_sampled.add_argument('rl_engine_file')
     parser_sim_sampled.add_argument('num_games', type=int)
-    parser_sim_sampled.add_argument('lmdb_name')
+    parser_sim_sampled.add_argument('out_file_name')
     parser_sim_sampled.add_argument('-b', '--both-colors', action='store_true')
+    parser_sim_sampled.add_argument('-f', '--format', default='csv')
+    parser_sim_sampled.add_argument('--history', type=int)
     parser_sim_sampled.set_defaults(func=sim_sampled)
 
     parser_expert_sampled = subparsers.add_parser('expert_sampled')
     parser_expert_sampled.add_argument('pgn_file')
-    parser_expert_sampled.add_argument('lmdb_name')
+    parser_expert_sampled.add_argument('out_file_name')
     parser_expert_sampled.add_argument('num_states', type=int)
     parser_expert_sampled.add_argument('-s', '--skip', type=int)
+    parser_expert_sampled.add_argument('-f', '--format', default='csv')
+    parser_expert_sampled.add_argument('--history', type=int)
     parser_expert_sampled.add_argument(
         '-b', '--both-colors', action='store_true')
     parser_expert_sampled.set_defaults(func=expert_sampled)

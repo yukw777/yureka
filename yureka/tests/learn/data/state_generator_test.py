@@ -10,7 +10,8 @@ from yureka.learn.data.state_generator import (
 
 
 def test_expert_get_correct_num_games():
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
+    state_gen = ExpertStateGenerator(
+        "bogus", 'csv', 8, "yureka/tests/test.pgn", 1)
     assert len(list(state_gen.get_game())) == 2
 
 
@@ -44,7 +45,7 @@ def test_simulated_get_game():
         mock.patch(
             'yureka.learn.data.state_generator.chess.pgn.Game.from_board'):
         state_gen = SimSampledStateGenerator(
-            "bogus", True, sl_engine, rl_engine, num_games)
+            "bogus", 'csv', 8, True, sl_engine, rl_engine, num_games)
         games = list(state_gen.get_game())
         assert len(games) == num_games
         for game in games:
@@ -61,7 +62,7 @@ def test_simulated_get_game():
 def test_simulated_get_game_data():
     # both colors
     state_gen = SimSampledStateGenerator(
-        "bogus", True, "bogus", "bogus", "bogus")
+        "bogus", 'csv', 8, True, "bogus", "bogus", "bogus")
     data = state_gen.get_game_data(
         (chess.Board(), chess.Move.from_uci('e2e4'), 1, -1)
     )
@@ -69,7 +70,7 @@ def test_simulated_get_game_data():
 
     # single color
     state_gen = SimSampledStateGenerator(
-        "bogus", False, "bogus", "bogus", "bogus")
+        "bogus", 'csv', 8, False, "bogus", "bogus", "bogus")
     data = state_gen.get_game_data(
         (chess.Board(), chess.Move.from_uci('e2e4'), 1, -1)
     )
@@ -78,7 +79,7 @@ def test_simulated_get_game_data():
 
 def test_simulated_get_label_data():
     state_gen = SimSampledStateGenerator(
-        "bogus", False, "bogus", "bogus", "bogus")
+        "bogus", 'csv', 8, False, "bogus", "bogus", "bogus")
     data = state_gen.get_label_data((
         chess.Board(), chess.Move.from_uci('e2e4'), -1, 1))
     assert len(data) == 1
@@ -86,7 +87,8 @@ def test_simulated_get_label_data():
 
 
 def test_generate_correct_sq_piece_data():
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
+    state_gen = ExpertStateGenerator(
+        "bogus", 'csv', 8, "yureka/tests/test.pgn", 1)
     g = next(state_gen.get_game())
     df = pd.DataFrame(state_gen.get_game_data(g))
     assert set(df.loc[0, 'white_square_piece_0'].split(',')) == set((
@@ -123,7 +125,7 @@ def test_generate_correct_sq_piece_data():
 
 def test_generate_correct_sq_piece_data_for_both_colors():
     state_gen = ExpertSampledStateGenerator(
-        "yureka/tests/test.pgn", 1, "bogus", True)
+        "yureka/tests/test.pgn", 1, "bogus", 'csv', 8, True)
     g = next(state_gen.get_game())
     df = pd.DataFrame(state_gen.get_game_data(g))
     df = pd.concat([
@@ -147,7 +149,8 @@ def test_repetition_data():
         move(b)
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
+    state_gen = ExpertStateGenerator(
+        "bogus", 'csv', 8, "yureka/tests/test.pgn", 1)
 
     df = pd.DataFrame(state_gen.get_game_data(game))
 
@@ -178,7 +181,8 @@ def test_repetition_data():
 
 
 def test_move_count_data():
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
+    state_gen = ExpertStateGenerator(
+        "bogus", 'csv', 8, "yureka/tests/test.pgn", 1)
     game = next(state_gen.get_game())
 
     df = pd.DataFrame(state_gen.get_game_data(game))
@@ -187,7 +191,8 @@ def test_move_count_data():
 
 
 def test_castling_data():
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
+    state_gen = ExpertStateGenerator(
+        "bogus", 'csv', 8, "yureka/tests/test.pgn", 1)
 
     def get_castling_game(king_side=True):
         b = chess.Board(fen='r3k2r/8/8/8/8/8/8/R3K2R w - - 0 1')
@@ -264,7 +269,8 @@ def test_no_progress_count_data():
         move(b)
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
+    state_gen = ExpertStateGenerator(
+        "bogus", 'csv', 8, "yureka/tests/test.pgn", 1)
 
     df = pd.DataFrame(state_gen.get_game_data(game))
 
@@ -278,7 +284,8 @@ def test_expert_label_data():
     b.push(chess.Move.from_uci('e8e7'))
 
     game = chess.pgn.Game.from_board(b)
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
+    state_gen = ExpertStateGenerator(
+        "bogus", 'csv', 8, "yureka/tests/test.pgn", 1)
 
     df = pd.DataFrame(state_gen.get_label_data(game))
     assert df.equals(pd.DataFrame([
@@ -288,7 +295,8 @@ def test_expert_label_data():
 
 
 def test_generate():
-    state_gen = ExpertStateGenerator("bogus", "yureka/tests/test.pgn", 1)
+    state_gen = ExpertStateGenerator(
+        "bogus", 'csv', 8, "yureka/tests/test.pgn", 1)
     df = state_gen.generate()
 
     # square piece data = 2 * 8
