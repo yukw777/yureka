@@ -45,7 +45,7 @@ class PolicyHead(nn.Module):
         return self.network(x)
 
 
-class ValueHead(nn.Modules):
+class ValueHead(nn.Module):
     def __init__(self, hidden_size, *args, **kwargs):
         layers = [nn.Conv2d(*args, 1, **kwargs)]
         layers.append(nn.BatchNorm2d(args[1]))
@@ -60,7 +60,7 @@ class ValueHead(nn.Modules):
         return self.network(x)
 
 
-class ResNet(nn.Modules):
+class ResNet(nn.Module):
     def __init__(self, name, tower, head):
         self.name = name
         self.tower = tower
