@@ -89,14 +89,19 @@ def data_from_row(row):
 @attr.s
 class ChessDataset(Dataset):
     data_file = attr.ib()
+    offset = attr.ib(default=0)
+    limit = attr.ib(default=None)
 
     def __attrs_post_init__(self):
         self.df = pd.read_csv(self.data_file, keep_default_na=False)
 
     def __len__(self):
-        return self.df.shape[0]
+        if self.limit:
+            return self.limit - self.offset
+        return self.df.shape[0] - self.offset
 
     def __getitem__(self, index):
+        index = index + self.offset
         row = self.df.iloc[index]
         return data_from_row(row)
 
