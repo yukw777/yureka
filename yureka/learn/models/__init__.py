@@ -56,9 +56,9 @@ models = {
 }
 
 resnet_settings = {
-    'ResNet.v1': {
-        'in_channels': 8,
-        'out_channels': 8,
+    'ResNet.v0': {
+        'in_channels': 21,
+        'out_channels': 21,
         'conv_block_filters': 24,
         'conv_block_kernel': 3,
         'conv_block_padding': 1,
@@ -107,7 +107,10 @@ def create_res(model_name):
         setting['out_channels']
     )
 
-    return tower, policy, value
+    return (
+        nn.Sequential(tower, policy),
+        nn.Sequential(tower, value),
+    )
 
 
 def create(model_name):
