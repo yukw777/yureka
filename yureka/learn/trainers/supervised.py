@@ -28,6 +28,7 @@ class SupervisedTrainer():
     data = attr.ib()
     test_ratio = attr.ib()
     model_path = attr.ib()
+    data_limit = attr.ib(default=None)
     logger = attr.ib(default=logging.getLogger(__name__))
     log_interval = attr.ib(default=2000)
     batch_size = attr.ib(default=16)
@@ -49,7 +50,8 @@ class SupervisedTrainer():
             self.model = nn.DataParallel(self.model)
         else:
             self.model.to(self.device)
-        self.train_data, self.test_data = self.split_train_test(self.data)
+        self.train_data, self.test_data = self.split_train_test(
+            self.data, self.data_limit)
         self.logger.info(f'Train data len: {len(self.train_data)}')
         self.logger.info(f'Test data len: {len(self.test_data)}')
 
@@ -64,18 +66,28 @@ class SupervisedTrainer():
         self.logger.info(f'Use cuda: {self.cuda}')
         self.logger.info(f'Learning rate: {self.learning_rate}')
 
-    def split_train_test(self, data_files):
+    def split_train_test(self, data_files, limit=None):
         test = []
         train = []
         for f in data_files:
             temp = LMDBChessDataset(f)
-            test_len = round(len(temp) * self.test_ratio)
+            if limit:
+                test_len = round(limit * self.test_ratio)
+            else:
+                test_len = round(len(temp) * self.test_ratio)
             del temp
             test.append(LMDBChessDataset(f, limit=test_len))
-            train.append(LMDBChessDataset(f, offset=test_len))
+            train.append(LMDBChessDataset(f, limit=limit, offset=test_len))
+
+        if len(train) == 1:
+            train_dataset = LMDBChessDataset(train[0])
+        elif len(train) == 2:
+            train_dataset = InterleavenDataset(train)
+        else:
+            train_dataset = data.ConcatDataset(train)
 
         return data.DataLoader(
-            InterleavenDataset(train),
+            train_dataset,
             batch_size=self.batch_size,
             num_workers=4
         ), data.DataLoader(
@@ -204,6 +216,7 @@ def run():
     parser.add_argument('model')
     parser.add_argument('test_ratio', type=float)
     parser.add_argument('model_path')
+    parser.add_argument('--data-limit', type=int)
     parser.add_argument('-d', '--data', action='append', required=True)
     parser.add_argument('-i', '--log-interval', type=int)
     parser.add_argument('-b', '--batch-size', type=int)
@@ -249,6 +262,8 @@ def run():
         trainer_setting['learning_rate'] = args.learning_rate
     if args.value:
         trainer_setting['value'] = args.value
+    if args.data_limit:
+        trainer_setting['data_limit'] = args.data_limit
     trainer = SupervisedTrainer(**trainer_setting)
     trainer.run()
 
