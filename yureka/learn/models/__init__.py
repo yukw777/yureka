@@ -35,7 +35,7 @@ models = {
     },
     'Value.v2': {
         'class': Value,
-        'args': (119, 256, 11, 256),
+        'args': (119, 256, 23, 256),
         'kwargs': {
             'batch_norm': True,
         },
