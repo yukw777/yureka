@@ -34,7 +34,7 @@ class ResBlock(nn.Module):
 
 class PolicyHead(nn.Module):
     def __init__(self, *args, **kwargs):
-        layers = [nn.Conv2d(*args, **kwargs)
+        layers = [nn.Conv2d(*args, 1, **kwargs)
                   for _ in range(2)]
         layers.append(nn.BatchNorm2d(args[1]))
         layers.append(nn.ReLU())
@@ -47,7 +47,7 @@ class PolicyHead(nn.Module):
 
 class ValueHead(nn.Modules):
     def __init__(self, hidden_size, *args, **kwargs):
-        layers = [nn.Conv2d(*args, **kwargs)]
+        layers = [nn.Conv2d(*args, 1, **kwargs)]
         layers.append(nn.BatchNorm2d(args[1]))
         layers.append(nn.ReLU())
         layers.append(nn.Linear(args[1]), hidden_size)

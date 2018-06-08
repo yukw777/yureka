@@ -1,3 +1,6 @@
+import torch.nn as nn
+import res
+
 from .cnn import Policy, Value
 
 
@@ -52,7 +55,7 @@ models = {
     },
 }
 
-resnet_setting = {
+resnet_settings = {
     'ResNet.v1': {
         'in_channels': 8,
         'out_channels': 8,
@@ -65,8 +68,46 @@ resnet_setting = {
         'res_block_padding': 1,
         'res_block_stride': 1,
         'res_blocks': 9,
+        'value_hidden': 24,
     },
 }
+
+
+def create_res(model_name):
+    setting = resnet_settings[model_name]
+    tower = [
+        res.ConvBlock(
+            setting['conv_block_filters'],
+            setting['in_channels'],
+            setting['out_channels'],
+            setting['conv_block_kernel'],
+            padding=setting['conv_block_padding'],
+            stride=setting['conv_block_stride']
+        ),
+    ]
+    tower += [
+        res.ResBlock(
+            setting['res_block_filters'],
+            setting['in_channels'],
+            setting['out_channels'],
+            setting['res_block_kernel'],
+            padding=setting['res_block_padding'],
+            stride=setting['res_block_stride']
+        ) for _ in range(setting['res_blocks'])
+    ]
+    tower = nn.Sequential(*tower)
+
+    policy = res.PolicyHead(
+        setting['in_channels'],
+        setting['out_channels']
+    )
+    value = res.ValueHead(
+        setting['value_hidden'],
+        setting['in_channels'],
+        setting['out_channels']
+    )
+
+    return tower, policy, value
 
 
 def create(model_name):
