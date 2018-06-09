@@ -221,7 +221,7 @@ class SupervisedTrainer():
                     _, prediction = outputs.max(1)
                 predictions = np.append(predictions, prediction)
                 if self.network == 'res':
-                    move_labels, _ = answers
+                    move_labels, _ = labels
                     answers = np.append(answers, move_labels)
                 else:
                     answers = np.append(answers, labels)
