@@ -107,10 +107,7 @@ def create_res(model_name):
         setting['out_channels']
     )
 
-    return (
-        nn.Sequential(tower, policy),
-        nn.Sequential(tower, value),
-    )
+    return tower, policy, value
 
 
 def create(model_name):
