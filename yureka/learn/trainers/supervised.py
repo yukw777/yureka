@@ -10,6 +10,7 @@ import torch.nn as nn
 import numpy as np
 import sklearn.metrics as metrics
 
+from .loss import MSECrossEntropyLoss
 from .. import models
 from ..data.chess_dataset import (
     LMDBChessDataset,
@@ -33,6 +34,7 @@ class SupervisedTrainer():
     test_ratio = attr.ib()
     model_path = attr.ib()
     format = attr.ib(default='csv')
+    network = attr.ib(default='res')
     data_limit = attr.ib(default=None)
     logger = attr.ib(default=logging.getLogger(__name__))
     log_interval = attr.ib(default=2000)
@@ -41,7 +43,6 @@ class SupervisedTrainer():
     cuda = attr.ib(default=True)
     parallel = attr.ib(default=False)
     learning_rate = attr.ib(default=1e-2)
-    value = attr.ib(default=False)
 
     def __attrs_post_init__(self):
         self.cuda = self.cuda and torch.cuda.is_available()
@@ -60,7 +61,12 @@ class SupervisedTrainer():
         self.logger.info(f'Train data len: {len(self.train_data)}')
         self.logger.info(f'Test data len: {len(self.test_data)}')
 
-        self.criterion = nn.MSELoss() if self.value else nn.CrossEntropyLoss()
+        if self.network == 'value':
+            self.criterion = nn.MSELoss()
+        elif self.network == 'policy':
+            self.criterion = nn.CrossEntropyLoss()
+        elif self.network == 'res':
+            self.criterion = MSECrossEntropyLoss()
 
     def print_summary(self):
         self.logger.info(f'Data: {self.data}')
@@ -111,19 +117,28 @@ class SupervisedTrainer():
     def get_variables_from_inputs(self, row):
         # get the inputs
         inputs, move, value = row
+        inputs = inputs.to(self.device)
 
-        if self.value:
-            labels = value
-        else:
-            labels = move
+        if self.network == 'value':
+            labels = value.to(self.device)
+        elif self.network == 'policy':
+            labels = move.to(self.device)
+        elif self.network == 'res':
+            labels = (move.to(self.device), value.to(self.device))
 
-        return inputs.to(self.device), labels.to(self.device)
+        return inputs, labels
 
     def predict(self, inputs):
-        outputs = self.model(inputs)
-        if not self.value:
-            return outputs.view(outputs.shape[0], -1)
-        return outputs
+        if self.network == 'res':
+            tower, policy, value = self.model
+            tower_output = tower(inputs)
+            return (policy(tower_output), value(tower_output))
+        else:
+            outputs = self.model(inputs)
+            if self.network == 'policy':
+                return outputs.view(outputs.shape[0], -1)
+            if self.network == 'value':
+                return outputs
 
     def run(self):
         optimizer = optim.SGD(
@@ -157,7 +172,10 @@ class SupervisedTrainer():
         self.model.eval()
 
         losses = []
-        if not self.value:
+        mse_losses = []
+        cross_entropy_losses = []
+        policy_or_res = self.network in ('res', 'policy')
+        if policy_or_res:
             predictions = np.array([])
             answers = np.array([])
         for i, row in enumerate(self.test_data):
@@ -166,15 +184,32 @@ class SupervisedTrainer():
             # loss
             outputs = self.predict(inputs)
             loss = self.criterion(outputs, labels)
-            losses.append(loss.item())
+            if self.network == 'res':
+                total_loss, mse_loss, cross_entropy_loss = loss
+                losses.append(total_loss.item())
+                mse_losses.append(mse_loss.item())
+                cross_entropy_losses.append(cross_entropy_loss.item())
+            else:
+                losses.append(loss.item())
 
-            if not self.value:
-                _, prediction = outputs.max(1)
+            if policy_or_res:
+                if self.network == 'res':
+                    move_outputs, _ = outputs
+                    _, prediction = move_outputs.max(1)
+                else:
+                    _, prediction = outputs.max(1)
                 predictions = np.append(predictions, prediction)
-                answers = np.append(answers, labels)
+                if self.network == 'res':
+                    move_labels, _ = answers
+                    answers = np.append(answers, move_labels)
+                else:
+                    answers = np.append(answers, labels)
 
         avg_loss = np.average(losses)
-        if not self.value:
+        if self.network == 'res':
+            avg_mse_loss = np.average(mse_losses)
+            avg_cross_entropy_loss = np.average(cross_entropy_losses)
+        if policy_or_res:
             precision = metrics.precision_score(
                 answers,
                 predictions,
@@ -184,7 +219,12 @@ class SupervisedTrainer():
                 answers, predictions, average='micro')
             f1_score = metrics.f1_score(answers, predictions, average='micro')
         self.logger.info(f'Avg. loss at epoch {epoch}: {avg_loss}')
-        if not self.value:
+        if self.network == 'res':
+            self.logger.info(f'Avg. mse loss at epoch {epoch}: {avg_mse_loss}')
+            self.logger.info(
+                f'Avg. cross entropy loss at epoch {epoch}: '
+                f'{avg_cross_entropy_loss}')
+        if policy_or_res:
             self.logger.info(f'Precision at epoch {epoch}: {precision}')
             self.logger.info(f'Recall at epoch {epoch}: {recall}')
             self.logger.info(f'F1 score at epoch {epoch}: {f1_score}')
@@ -238,8 +278,11 @@ def run():
     parser.add_argument('-p', '--parallel', action='store_true')
     parser.add_argument('-l', '--log-file')
     parser.add_argument('-s', '--saved-model')
+    parser.add_argument('--saved-tower-model')
+    parser.add_argument('--saved-policy-model')
+    parser.add_argument('--saved-value-model')
     parser.add_argument('-r', '--learning-rate', type=float)
-    parser.add_argument('-v', '--value', action='store_true')
+    parser.add_argument('-n', '--network', default='res')
 
     args = parser.parse_args()
 
@@ -252,10 +295,25 @@ def run():
         logging_config['filename'] = args.log_file
     logging.basicConfig(**logging_config)
 
-    model = models.create(args.model)
-    if args.saved_model:
-        logger.info(f'Loading saved model: {args.saved_model}')
-        model.load_state_dict(torch.load(args.saved_model))
+    if args.network == 'res':
+        tower, policy, value = models.create_res(args.model)
+        if args.saved_tower_model:
+            logger.info(f'Loading saved tower model: {args.saved_tower_model}')
+            tower.load_state_dict(torch.load(args.saved_tower_model))
+        if args.saved_policy_model:
+            logger.info(
+                f'Loading saved policy head model: {args.saved_policy_model}')
+            policy.load_state_dict(torch.load(args.saved_policy_model))
+        if args.saved_value_model:
+            logger.info(
+                f'Loading saved value head model: {args.saved_value_model}')
+            value.load_state_dict(torch.load(args.saved_value_model))
+        model = (tower, policy, value)
+    else:
+        model = models.create(args.model)
+        if args.saved_model:
+            logger.info(f'Loading saved model: {args.saved_model}')
+            model.load_state_dict(torch.load(args.saved_model))
 
     trainer_setting = {
         'model': model,
@@ -264,6 +322,7 @@ def run():
         'test_ratio': args.test_ratio,
         'model_path': args.model_path,
         'logger': logger,
+        'network': args.network,
     }
     if args.log_interval:
         trainer_setting['log_interval'] = args.log_interval
@@ -275,8 +334,6 @@ def run():
         trainer_setting['parallel'] = args.parallel
     if args.learning_rate:
         trainer_setting['learning_rate'] = args.learning_rate
-    if args.value:
-        trainer_setting['value'] = args.value
     if args.data_limit:
         trainer_setting['data_limit'] = args.data_limit
     trainer = SupervisedTrainer(**trainer_setting)
