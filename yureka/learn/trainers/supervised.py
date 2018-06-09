@@ -55,7 +55,13 @@ class SupervisedTrainer():
             self.logger.info(f'Using {device_count} GPUs')
             self.model = nn.DataParallel(self.model)
         else:
-            self.model.to(self.device)
+            if self.network == 'res':
+                tower, policy, value = self.model
+                tower.to(self.device)
+                policy.to(self.device)
+                value.to(self.device)
+            else:
+                self.model.to(self.device)
         self.train_data, self.test_data = self.split_train_test(
             self.data, self.data_limit)
         self.logger.info(f'Train data len: {len(self.train_data)}')
