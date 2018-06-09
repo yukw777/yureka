@@ -3,6 +3,7 @@ import attr
 import argparse
 import datetime
 import os
+import itertools
 import torch
 import torch.utils.data as data
 import torch.optim as optim
@@ -56,10 +57,8 @@ class SupervisedTrainer():
             self.model = nn.DataParallel(self.model)
         else:
             if self.network == 'res':
-                tower, policy, value = self.model
-                tower.to(self.device)
-                policy.to(self.device)
-                value.to(self.device)
+                for m in self.model:
+                    m.to(self.device)
             else:
                 self.model.to(self.device)
         self.train_data, self.test_data = self.split_train_test(
@@ -147,8 +146,12 @@ class SupervisedTrainer():
                 return outputs
 
     def run(self):
+        if self.network == 'res':
+            params = itertools.chain(*[m.parameters() for m in self.model])
+        else:
+            params = self.model.parameters()
         optimizer = optim.SGD(
-            self.model.parameters(),
+            params,
             lr=self.learning_rate,
             momentum=0.9,
             nesterov=True
@@ -165,17 +168,29 @@ class SupervisedTrainer():
             scheduler.step(loss)
 
     def save(self, epoch):
-        filename = self.model.name
-        filename += f"_{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}"
-        filename += f"_{epoch}.model"
-        filepath = os.path.join(self.model_path, filename)
-        self.logger.info(f'Saving: {filepath}')
-        torch.save(self.model.state_dict(), filepath)
-        self.logger.info('Done saving')
+        if self.network == 'res':
+            name_model = [
+                ('Tower', self.model[0]),
+                ('PolicyHead', self.model[1]),
+                ('ValueHead', self.model[2]),
+            ]
+        else:
+            name_model = [(self.model.name, self.model)]
+        for filename, model in name_model:
+            filename += f"_{datetime.datetime.now():%Y-%m-%d_%H:%M:%S}"
+            filename += f"_{epoch}.model"
+            filepath = os.path.join(self.model_path, filename)
+            self.logger.info(f'Saving: {filepath}')
+            torch.save(model.state_dict(), filepath)
+            self.logger.info('Done saving')
 
     def test(self, epoch):
         self.logger.info('Testing...')
-        self.model.eval()
+        if self.network == 'res':
+            for m in self.model:
+                m.eval()
+        else:
+            self.model.eval()
 
         losses = []
         mse_losses = []
@@ -239,7 +254,11 @@ class SupervisedTrainer():
 
     def train(self, epoch, optimizer):
         self.logger.info('Training...')
-        self.model.train()
+        if self.network == 'res':
+            for m in self.model:
+                m.train()
+        else:
+            self.model.train()
 
         running_loss = 0.0
         for i, row in enumerate(self.train_data):
@@ -253,10 +272,8 @@ class SupervisedTrainer():
             outputs = self.predict(inputs)
 
             loss = self.criterion(outputs, labels)
-            if np.isnan(loss.item()):
-                # oops, loss is nan, probably means gradient exploded
-                # let's try again with a lower learning rate
-                raise LossIsNan(inputs, outputs, labels, loss)
+            if self.network == 'res':
+                loss = loss[0]
             loss.backward()
             optimizer.step()
 
