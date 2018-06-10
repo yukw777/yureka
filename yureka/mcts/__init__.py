@@ -85,7 +85,7 @@ class MCTS():
         board = chess.Board(fen=node.board.fen())
         if board.is_game_over(claim_draw=True):
             return get_reward(board.result(claim_draw=True), board.turn)
-        return self.value.get_value(board)
+        return self.value.get_value(board, self.root.board.turn)
 
     def backup(self, node, value):
         walker = node
