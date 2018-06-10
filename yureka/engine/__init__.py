@@ -6,6 +6,7 @@ import torch
 import os
 
 from ..learn import models
+from ..learn.models.res import ResNet
 from ..mcts.networks import (
     PolicyNetwork,
     ValueNetwork,
@@ -207,6 +208,41 @@ class UCIMCTSEngine(UCIEngine):
     def __attrs_post_init__(self):
         super().__attrs_post_init__()
         self.options = {
+            'Use ResNet': {
+                'type': 'check',
+                'default': 'true',
+                'attr_name': 'use_resnet',
+                'py_type': lambda x: x == 'true',
+                'model': True,
+            },
+            'ResNet Name': {
+                'type': 'string',
+                'default': constants.DEFAULT_RESNET,
+                'attr_name': 'resnet_name',
+                'py_type': str,
+                'model': True,
+            },
+            'ResNet Tower File': {
+                'type': 'string',
+                'default': constants.DEFAULT_RESNET_TOWER_FILE,
+                'attr_name': 'resnet_tower_file',
+                'py_type': str,
+                'model': True,
+            },
+            'ResNet Value File': {
+                'type': 'string',
+                'default': constants.DEFAULT_RESNET_VALUE_FILE,
+                'attr_name': 'resnet_value_file',
+                'py_type': str,
+                'model': True,
+            },
+            'ResNet Policy File': {
+                'type': 'string',
+                'default': constants.DEFAULT_RESNET_POLICY_FILE,
+                'attr_name': 'resnet_policy_file',
+                'py_type': str,
+                'model': True,
+            },
             'Value Name': {
                 'type': 'string',
                 'default': constants.DEFAULT_VALUE,
@@ -250,16 +286,29 @@ class UCIMCTSEngine(UCIEngine):
         return model
 
     def init_models(self):
-        if self.value_name == constants.ZERO_VALUE:
-            self.value = ZeroValue()
+        if self.use_resnet:
+            tower, policy, value = models.create(self.resnet_name)
+            tower.load_state_dict(
+                torch.load(os.path.expanduser(self.resnet_tower_file)))
+            policy.load_state_dict(
+                torch.load(os.path.expanduser(self.resnet_policy_file)))
+            value.load_state_dict(
+                torch.load(os.path.expanduser(self.resnet_value_file)))
+            self.policy = PolicyNetwork(
+                ResNet(tower, policy), train=False)
+            self.value = ValueNetwork(ResNet(tower, value))
         else:
-            self.value = self.init_model(self.value_name, self.value_file)
-            self.value = ValueNetwork(self.value)
-        if self.policy_name == constants.RANDOM_POLICY:
-            self.policy = RandomPolicy()
-        else:
-            self.policy = self.init_model(self.policy_name, self.policy_file)
-            self.policy = PolicyNetwork(self.policy, train=False)
+            if self.value_name == constants.ZERO_VALUE:
+                self.value = ZeroValue()
+            else:
+                self.value = self.init_model(self.value_name, self.value_file)
+                self.value = ValueNetwork(self.value)
+            if self.policy_name == constants.RANDOM_POLICY:
+                self.policy = RandomPolicy()
+            else:
+                self.policy = self.init_model(
+                    self.policy_name, self.policy_file)
+                self.policy = PolicyNetwork(self.policy, train=False)
 
     def init_engine(self, board=None):
         if board:

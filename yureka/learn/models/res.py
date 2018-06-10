@@ -91,9 +91,8 @@ class ValueHead(nn.Module):
 
 
 class ResNet(nn.Module):
-    def __init__(self, name, tower, head):
+    def __init__(self, tower, head):
         super(ResNet, self).__init__()
-        self.name = name
         self.tower = tower
         self.head = head
 
