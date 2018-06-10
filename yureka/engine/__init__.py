@@ -199,6 +199,11 @@ class UCIPolicyEngine(UCIEngine):
 
 @attr.s
 class UCIMCTSEngine(UCIEngine):
+    use_resnet = attr.ib(default=True)
+    resnet_name = attr.ib(default=constants.DEFAULT_RESNET)
+    resnet_tower_file = attr.ib(default=constants.DEFAULT_RESNET_TOWER_FILE)
+    resnet_value_file = attr.ib(default=constants.DEFAULT_RESNET_VALUE_FILE)
+    resnet_policy_file = attr.ib(default=constants.DEFAULT_RESNET_POLICY_FILE)
     value_name = attr.ib(default=constants.DEFAULT_VALUE)
     value_file = attr.ib(default=constants.DEFAULT_VALUE_FILE)
     policy_name = attr.ib(default=constants.DEFAULT_POLICY)
@@ -286,7 +291,7 @@ class UCIMCTSEngine(UCIEngine):
         return model
 
     def init_models(self):
-        if hasattr(self, 'use_resnet') and self.use_resnet:
+        if self.use_resnet:
             tower, policy, value = models.create(self.resnet_name)
             tower.load_state_dict(
                 torch.load(os.path.expanduser(self.resnet_tower_file)))
