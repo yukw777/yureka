@@ -286,7 +286,7 @@ class UCIMCTSEngine(UCIEngine):
         return model
 
     def init_models(self):
-        if self.use_resnet:
+        if hasattr(self, 'use_resnet') and self.use_resnet:
             tower, policy, value = models.create(self.resnet_name)
             tower.load_state_dict(
                 torch.load(os.path.expanduser(self.resnet_tower_file)))
