@@ -4,7 +4,7 @@ from yureka.learn.data.move_translator import NUM_MOVE_PLANES
 
 
 def test_res_v0():
-    tower, policy, value = models.create_res('ResNet.v0')
+    tower, policy, value = models.create('ResNet.v0')
     # (batch_size, in_channels, 8, 8)
     input = torch.randn(16, 21, 8, 8)
     # (batch_size, num_move_planes * 8 * 8)

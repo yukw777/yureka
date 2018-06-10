@@ -4,7 +4,7 @@ from . import res
 from .cnn import Policy, Value
 
 
-models = {
+cnn_settings = {
     'Policy.v0': {
         'class': Policy,
         'args': (23, 128, 11),
@@ -73,47 +73,46 @@ resnet_settings = {
 }
 
 
-def create_res(model_name):
-    setting = resnet_settings[model_name]
-    tower = [
-        res.ConvBlock(
-            setting['conv_block_filters'],
-            setting['in_channels'],
-            setting['out_channels'],
-            setting['conv_block_kernel'],
-            padding=setting['conv_block_padding'],
-            stride=setting['conv_block_stride']
-        ),
-    ]
-    tower += [
-        res.ResBlock(
-            setting['res_block_filters'],
-            setting['in_channels'],
-            setting['out_channels'],
-            setting['res_block_kernel'],
-            padding=setting['res_block_padding'],
-            stride=setting['res_block_stride']
-        ) for _ in range(setting['res_blocks'])
-    ]
-    tower = nn.Sequential(*tower)
-
-    policy = res.PolicyHead(
-        setting['in_channels'],
-        setting['out_channels']
-    )
-    value = res.ValueHead(
-        setting['value_hidden'],
-        setting['in_channels'],
-        setting['out_channels']
-    )
-
-    return tower, policy, value
-
-
 def create(model_name):
-    model_setting = models[model_name]
-    return model_setting['class'](
-        model_name,
-        *model_setting['args'],
-        **model_setting['kwargs'],
-    )
+    if model_name in cnn_settings:
+        model_setting = cnn_settings[model_name]
+        return model_setting['class'](
+            model_name,
+            *model_setting['args'],
+            **model_setting['kwargs'],
+        )
+    elif model_name in resnet_settings:
+        setting = resnet_settings[model_name]
+        tower = [
+            res.ConvBlock(
+                setting['conv_block_filters'],
+                setting['in_channels'],
+                setting['out_channels'],
+                setting['conv_block_kernel'],
+                padding=setting['conv_block_padding'],
+                stride=setting['conv_block_stride']
+            ),
+        ]
+        tower += [
+            res.ResBlock(
+                setting['res_block_filters'],
+                setting['in_channels'],
+                setting['out_channels'],
+                setting['res_block_kernel'],
+                padding=setting['res_block_padding'],
+                stride=setting['res_block_stride']
+            ) for _ in range(setting['res_blocks'])
+        ]
+        tower = nn.Sequential(*tower)
+
+        policy = res.PolicyHead(
+            setting['in_channels'],
+            setting['out_channels']
+        )
+        value = res.ValueHead(
+            setting['value_hidden'],
+            setting['in_channels'],
+            setting['out_channels']
+        )
+
+        return tower, policy, value

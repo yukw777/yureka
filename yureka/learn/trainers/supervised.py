@@ -319,7 +319,7 @@ def run():
     logging.basicConfig(**logging_config)
 
     if args.network == 'res':
-        tower, policy, value = models.create_res(args.model)
+        tower, policy, value = models.create(args.model)
         if args.saved_tower_model:
             logger.info(f'Loading saved tower model: {args.saved_tower_model}')
             tower.load_state_dict(torch.load(args.saved_tower_model))
