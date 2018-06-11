@@ -157,10 +157,7 @@ def test_backup():
     m.backup(node, 0.9)
     walker = node
     while walker:
-        if walker.board.turn == node.board.turn:
-            assert walker.value == 0.9
-        else:
-            assert walker.value == -0.9
+        assert walker.value == 0.9
         assert walker.visit == 1
         walker = walker.parent
 
