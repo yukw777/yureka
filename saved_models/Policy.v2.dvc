@@ -1,6 +1,0 @@
-md5: 7683bd802d85f7dfb8a1f04a4ce100f1
-outs:
-- cache: true
-  md5: f58a54aa7cb62ac424f4703da1189faa.dir
-  path: Policy.v2
-# command: python -m yureka.learn.trainers.supervised Policy.v2 0.04 saved_models/Policy.v2 -d data/lmdb-policy.v2 -l supervised-policy-v2.log
