@@ -289,8 +289,8 @@ def test_expert_label_data():
 
     df = pd.DataFrame(state_gen.get_label_data(game))
     assert df.equals(pd.DataFrame([
-        {'move': 'e1_q_1_n'},
-        {'move': 'd1_q_1_n'},
+        {'move': 'e1_q_1_n', 'value': 0},
+        {'move': 'd1_q_1_n', 'value': 0},
     ]))
 
 
@@ -306,4 +306,5 @@ def test_generate():
     # for each color, castling = 1 + 1
     # no progress count = 1
     # move = 1
-    assert df.shape == (165, 2*8+2*8+1+1+1+1+1+1)
+    # value = 1
+    assert df.shape == (165, 2*8+2*8+1+1+1+1+1+1+1)

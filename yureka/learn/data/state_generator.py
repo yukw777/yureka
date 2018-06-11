@@ -215,9 +215,15 @@ class ExpertStateGenerator(StateGenerator):
 
     def get_label_data(self, game):
         board = game.board()
+        result = game.headers['Result']
+        # calculate the reward from WHITE's perspective.
+        reward = get_reward(result, chess.WHITE)
         for move in game.main_line():
-            yield {'move': move_translator.translate_to_engine_move(
-                move, board.turn)}
+            yield {
+                'move': move_translator.translate_to_engine_move(
+                    move, board.turn),
+                'value': reward,
+            }
             board.push(move)
 
     def stop(self, game_count, state_count):
@@ -311,7 +317,7 @@ if __name__ == '__main__':
     parser_expert.add_argument('out_file_name')
     parser_expert.add_argument('num_states', type=int)
     parser_expert.add_argument('-s', '--skip', type=int)
-    parser_expert.add_argument('--history', type=int)
+    parser_expert.add_argument('--history', type=int, default=1)
     parser_expert.add_argument('-f', '--format', default='csv')
     parser_expert.set_defaults(func=expert)
 
@@ -324,7 +330,7 @@ if __name__ == '__main__':
     parser_sim_sampled.add_argument('out_file_name')
     parser_sim_sampled.add_argument('-b', '--both-colors', action='store_true')
     parser_sim_sampled.add_argument('-f', '--format', default='csv')
-    parser_sim_sampled.add_argument('--history', type=int)
+    parser_sim_sampled.add_argument('--history', type=int, default=1)
     parser_sim_sampled.set_defaults(func=sim_sampled)
 
     parser_expert_sampled = subparsers.add_parser('expert_sampled')
@@ -333,7 +339,7 @@ if __name__ == '__main__':
     parser_expert_sampled.add_argument('num_states', type=int)
     parser_expert_sampled.add_argument('-s', '--skip', type=int)
     parser_expert_sampled.add_argument('-f', '--format', default='csv')
-    parser_expert_sampled.add_argument('--history', type=int)
+    parser_expert_sampled.add_argument('--history', type=int, default=1)
     parser_expert_sampled.add_argument(
         '-b', '--both-colors', action='store_true')
     parser_expert_sampled.set_defaults(func=expert_sampled)
