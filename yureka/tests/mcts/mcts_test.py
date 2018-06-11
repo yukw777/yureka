@@ -208,6 +208,7 @@ def test_engine_new_position():
     e = UCIMCTSEngine(
         value_name=ZERO_VALUE,
         policy_name=RANDOM_POLICY,
+        use_resnet=False,
     )
     e.init_models()
     e.init_engine()
