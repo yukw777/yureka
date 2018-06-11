@@ -91,7 +91,10 @@ class MCTS():
         walker = node
         while walker:
             walker.visit += 1
-            walker.value += value
+            if self.root.board.turn == chess.WHITE:
+                walker.value += value
+            else:
+                walker.value -= value
             walker = walker.parent
 
     def search(self, duration):
