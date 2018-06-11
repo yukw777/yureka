@@ -149,29 +149,16 @@ def test_backup():
     # white turn
     node = mcts.Node()
     # black turn
-    black_root = mcts.Node(board=chess.Board(
+    node.parent = mcts.Node(board=chess.Board(
         fen='rnbqkbnr/pppppppp/8/8/8/5P2/PPPPP1PP/RNBQKBNR b KQkq - 0 1'))
-    node.parent = black_root
     # white turn
-    white_root = mcts.Node()
-    node.parent.parent = white_root
-
-    # root is white
-    m = mcts.MCTS(white_root, '', '', '')
+    node.parent.parent = mcts.Node()
+    m = mcts.MCTS('', '', '', '')
     m.backup(node, 0.9)
     walker = node
     while walker:
         assert walker.value == 0.9
         assert walker.visit == 1
-        walker = walker.parent
-
-    # root is black
-    m = mcts.MCTS(black_root, '', '', '')
-    m.backup(node, 0.9)
-    walker = node
-    while walker:
-        assert walker.value == 0  # 0.9 - 0.9
-        assert walker.visit == 2
         walker = walker.parent
 
 
