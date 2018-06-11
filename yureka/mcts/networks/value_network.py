@@ -1,4 +1,5 @@
 import attr
+import chess
 import torch
 
 from ...learn.data.board_data import get_board_data
@@ -26,5 +27,10 @@ class ValueNetwork():
             tensor = get_tensor_from_row(board_data)
             tensor = tensor.unsqueeze(0)
             tensor = tensor.to(self.device)
-            value = self.network(tensor)
-            return value.squeeze().item()
+            value = self.network(tensor).squeeze().item()
+
+            # value network returns the result in the perspective of
+            # WHITE. So, we need to negate it if color is black
+            if color == chess.BLACK:
+                return -value
+            return value
