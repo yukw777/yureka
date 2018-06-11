@@ -1,0 +1,10 @@
+cmd: python -m yureka.learn.data.state_generator expert data/KingBase2018-combined-random.pgn
+  data/csv/resnet/kingbase2018.csv 10000000
+deps:
+- md5: c6a4e09eb8f696f6eb19f28adb5d5f14
+  path: data/KingBase2018-combined-random.pgn
+md5: d1b759134fac18b3c677824df2d37f61
+outs:
+- cache: true
+  md5: fb504415d978224fb8a76e2019138f4d
+  path: data/csv/resnet/kingbase2018.csv
