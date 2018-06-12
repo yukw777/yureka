@@ -7,32 +7,32 @@ from yureka.engine.constants import DEFAULT_MODEL, DEFAULT_MODEL_FILE
 def test_uci_setoption():
     test_cases = [
         {
-            'args': 'setoption name Model File value file_name',
+            'args': 'name Model File value file_name',
             'attr': 'model_file',
             'value': 'file_name',
         },
         {
-            'args': 'setoption name Model Name value model_name',
+            'args': 'name Model Name value model_name',
             'attr': 'model_name',
             'value': 'model_name',
         },
         {
-            'args': 'setoption name CUDA Device value 2',
+            'args': 'name CUDA Device value 2',
             'attr': 'cuda_device',
             'value': 2,
         },
         {
-            'args': 'setoption name Unknown value 2',
+            'args': 'name Unknown value 2',
             'attr': 'cuda_device',
             'value': None,
         },
         {
-            'args': 'setoption name Unknown value 2',
+            'args': 'name Unknown value 2',
             'attr': 'model_file',
             'value': DEFAULT_MODEL_FILE,
         },
         {
-            'args': 'setoption name Unknown value 2',
+            'args': 'name Unknown value 2',
             'attr': 'model_name',
             'value': DEFAULT_MODEL,
         },
