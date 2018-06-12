@@ -3,6 +3,7 @@ import chess
 import math
 import time
 import random
+import torch.multiprocessing as mp
 
 from ..common.utils import print_flush
 from ..learn.data.board_data import get_reward
@@ -52,7 +53,10 @@ class MCTS():
     value = attr.ib()
     policy = attr.ib()
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
-    parallel = attr.ib(default=False)
+    num_process = attr.ib(default=mp.cpu_count())
+
+    def __attrs_post_init__(self):
+        self.root_queues = [mp.Queue() for _ in range(self.num_process)]
 
     def search(self, duration):
         search_time = continue_search(duration)
@@ -61,10 +65,7 @@ class MCTS():
             if not t:
                 print_flush(f'info string search iterations: {count}')
                 break
-            if self.parallel:
-                pass
-            else:
-                search(self.root, self.policy, self.value, self.confidence)
+            search(self.root, self.policy, self.value, self.confidence)
             count += 1
 
     def get_move(self):
@@ -84,6 +85,11 @@ class MCTS():
             self.root.add_child(move)
             self.root = self.root.children[move]
         self.root.parent = None
+
+
+def parallel_search(root_queue, stop_queue, policy, value, confidence):
+    root = root_queue.get()
+    search(root, policy, value, confidence)
 
 
 def search(root, policy, value, confidence):
