@@ -58,17 +58,18 @@ cnn_settings = {
 resnet_settings = {
     'ResNet.v0': {
         'in_channels': 21,
-        'out_channels': 21,
-        'conv_block_filters': 3,
+        'conv_block_out_channels': 128,
         'conv_block_kernel': 3,
         'conv_block_padding': 1,
         'conv_block_stride': 1,
-        'res_block_filters': 3,
+        'res_block_out_channels': 128,
         'res_block_kernel': 3,
         'res_block_padding': 1,
         'res_block_stride': 1,
-        'res_blocks': 6,
-        'value_hidden': 24,
+        'res_blocks': 5,
+        'policy_out_channels': 128,
+        'value_hidden': 128,
+        'value_out_channels': 1,
     },
 }
 
@@ -85,9 +86,8 @@ def create(model_name):
         setting = resnet_settings[model_name]
         tower = [
             res.ConvBlock(
-                setting['conv_block_filters'],
                 setting['in_channels'],
-                setting['out_channels'],
+                setting['conv_block_out_channels'],
                 setting['conv_block_kernel'],
                 padding=setting['conv_block_padding'],
                 stride=setting['conv_block_stride']
@@ -95,9 +95,8 @@ def create(model_name):
         ]
         tower += [
             res.ResBlock(
-                setting['res_block_filters'],
-                setting['in_channels'],
-                setting['out_channels'],
+                setting['conv_block_out_channels'],
+                setting['res_block_out_channels'],
                 setting['res_block_kernel'],
                 padding=setting['res_block_padding'],
                 stride=setting['res_block_stride']
@@ -106,13 +105,13 @@ def create(model_name):
         tower = nn.Sequential(*tower)
 
         policy = res.PolicyHead(
-            setting['in_channels'],
-            setting['out_channels']
+            setting['res_block_out_channels'],
+            setting['policy_out_channels']
         )
         value = res.ValueHead(
             setting['value_hidden'],
-            setting['in_channels'],
-            setting['out_channels']
+            setting['res_block_out_channels'],
+            setting['value_out_channels']
         )
 
         return tower, policy, value
