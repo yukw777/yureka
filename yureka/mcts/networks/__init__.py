@@ -15,7 +15,7 @@ __all__ = ['ValueNetwork', 'PolicyNetwork']
 
 
 class ZeroValue():
-    def get_value(self, board):
+    def get_value(self, board, color):
         return 0
 
 
