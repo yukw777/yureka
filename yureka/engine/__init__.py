@@ -55,7 +55,7 @@ class UCIEngine():
                         f" {option['default']}")
 
     def setoption(self, args):
-        m = re.match(r'setoption\s+name\s+(.+)\s+value\s+(.+)', args)
+        m = re.match(r'name\s+(.+)\s+value\s+(.+)', args)
         if m:
             name = m.group(1)
             value = m.group(2)
