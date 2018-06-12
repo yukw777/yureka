@@ -52,47 +52,7 @@ class MCTS():
     value = attr.ib()
     policy = attr.ib()
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
-
-    def select(self):
-        node = self.root
-        while node.children:
-            child_nodes = node.children.values()
-            visit_sum = sum([n.visit for n in child_nodes])
-            node = max(
-                child_nodes,
-                key=lambda n: n.ucb(self.confidence, visit_sum)
-            )
-        return node
-
-    def expand(self, node):
-        if node.children:
-            raise MCTSError(node, 'Cannot expand a non-leaf node')
-        if node.board.legal_moves:
-            priors = self.policy.get_probs(node.board).squeeze()
-            for move in node.board.legal_moves:
-                engine_move = translate_to_engine_move(move, node.board.turn)
-                index = get_engine_move_index(engine_move)
-                prior = priors.data[index]
-                node.add_child(move, prior=prior)
-            return random.choice(list(node.children.values()))
-        else:
-            # terminal state, just return itself
-            return node
-
-    def simulate(self, node):
-        if node.children:
-            raise MCTSError(node, 'cannot simulate from a non-leaf')
-        board = chess.Board(fen=node.board.fen())
-        if board.is_game_over(claim_draw=True):
-            return get_reward(board.result(claim_draw=True), board.turn)
-        return self.value.get_value(board, self.root.board.turn)
-
-    def backup(self, node, value):
-        walker = node
-        while walker:
-            walker.visit += 1
-            walker.value += value
-            walker = walker.parent
+    parallel = attr.ib(default=False)
 
     def search(self, duration):
         search_time = continue_search(duration)
@@ -101,10 +61,10 @@ class MCTS():
             if not t:
                 print_flush(f'info string search iterations: {count}')
                 break
-            leaf = self.select()
-            leaf = self.expand(leaf)
-            value = self.simulate(leaf)
-            self.backup(leaf, value)
+            if self.parallel:
+                pass
+            else:
+                search(self.root, self.policy, self.value, self.confidence)
             count += 1
 
     def get_move(self):
@@ -124,6 +84,57 @@ class MCTS():
             self.root.add_child(move)
             self.root = self.root.children[move]
         self.root.parent = None
+
+
+def search(root, policy, value, confidence):
+    leaf = select(root, confidence)
+    leaf = expand(leaf, policy)
+    value = simulate(leaf, value, root.board.turn)
+
+
+def select(root, confidence):
+    node = root
+    while node.children:
+        child_nodes = node.children.values()
+        visit_sum = sum([n.visit for n in child_nodes])
+        node = max(
+            child_nodes,
+            key=lambda n: n.ucb(confidence, visit_sum)
+        )
+    return node
+
+
+def expand(node, policy):
+    if node.children:
+        raise MCTSError(node, 'Cannot expand a non-leaf node')
+    if node.board.legal_moves:
+        priors = policy.get_probs(node.board).squeeze()
+        for move in node.board.legal_moves:
+            engine_move = translate_to_engine_move(move, node.board.turn)
+            index = get_engine_move_index(engine_move)
+            prior = priors.data[index]
+            node.add_child(move, prior=prior)
+        return random.choice(list(node.children.values()))
+    else:
+        # terminal state, just return itself
+        return node
+
+
+def simulate(node, value, root_turn):
+    if node.children:
+        raise MCTSError(node, 'cannot simulate from a non-leaf')
+    board = chess.Board(fen=node.board.fen())
+    if board.is_game_over(claim_draw=True):
+        return get_reward(board.result(claim_draw=True), root_turn)
+    return value.get_value(board, root_turn)
+
+
+def backup(node, value):
+    walker = node
+    while walker:
+        walker.visit += 1
+        walker.value += value
+        walker = walker.parent
 
 
 def continue_search(duration):

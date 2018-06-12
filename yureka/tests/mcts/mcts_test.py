@@ -81,15 +81,15 @@ def test_select():
         n.ucb = mock.MagicMock(return_value=i)
         children.append(n)
     root = mcts.Node()
-    m = mcts.MCTS(root, '', '', '')
+    confidence = 5
 
     # if root is already a leaf, return that
-    selected = m.select()
+    selected = mcts.select(root, confidence)
     assert root == selected
 
     # traverse the tree, picking the node with the biggest ucb
     root.children = {i: children[i] for i in range(3)}
-    selected = m.select()
+    selected = mcts.select(root, confidence)
     assert selected == children[-1]
 
 
@@ -97,11 +97,10 @@ def test_expand():
     mock_policy = mock.MagicMock()
     probs = torch.randn(1, 4672)
     mock_policy.get_probs.return_value = probs
-    m = mcts.MCTS('', '', mock_policy, '')
     # no children at this point
     n = mcts.Node()
 
-    random_child = m.expand(n)
+    random_child = mcts.expand(n, mock_policy)
     # should have children now. 20 to be exact since we just expanded the root
     assert len(n.children) == 20
     for move, c in n.children.items():
@@ -112,26 +111,25 @@ def test_expand():
 
     # can't expand if it already has been expanded
     with pytest.raises(mcts.MCTSError):
-        m.expand(n)
+        mcts.expand(n, mock_policy)
 
     # if expanding a terminal state, just return the node
     n = mcts.Node(board=chess.Board(
         fen='3b1q1q/1N2PRQ1/rR3KBr/B4PP1/2Pk1r1b/1P2P1N1/2P2P2/8 '
             'b - - 0 1'))
-    assert n == m.expand(n)
+    assert n == mcts.expand(n, mock_policy)
 
 
 def test_simulate():
     mock_value = mock.MagicMock()
     mock_value.get_value.return_value = -0.9
     n = mcts.Node()
-    m = mcts.MCTS(n, mock_value, '', '')
-    value = m.simulate(n)
+    value = mcts.simulate(n, mock_value, chess.WHITE)
     assert value == -0.9
 
     with pytest.raises(mcts.MCTSError):
         n.children[1] = mcts.Node()
-        m.simulate(n)
+        mcts.simulate(n, mock_value, chess.WHITE)
 
 
 def test_simulate_game_over():
@@ -140,9 +138,10 @@ def test_simulate_game_over():
     n = mcts.Node()
     n.board = chess.Board(
         fen='rnb1kbnr/pppp1ppp/8/4p3/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3')
-    m = mcts.MCTS(n, '', '', '')
-    value = m.simulate(n)
+    value = mcts.simulate(n, None, chess.WHITE)
     assert value == -1
+    value = mcts.simulate(n, None, chess.BLACK)
+    assert value == 1
 
 
 def test_backup():
@@ -153,8 +152,7 @@ def test_backup():
         fen='rnbqkbnr/pppppppp/8/8/8/5P2/PPPPP1PP/RNBQKBNR b KQkq - 0 1'))
     # white turn
     node.parent.parent = mcts.Node()
-    m = mcts.MCTS('', '', '', '')
-    m.backup(node, 0.9)
+    mcts.backup(node, 0.9)
     walker = node
     while walker:
         assert walker.value == 0.9
@@ -212,8 +210,8 @@ def test_engine_new_position():
     )
     e.init_models()
     e.init_engine()
-    e.engine.expand(e.engine.root)
-    e.engine.expand(e.engine.root.children[chess.Move.from_uci('e2e4')])
+    mcts.expand(e.engine.root, e.policy)
+    mcts.expand(e.engine.root.children[chess.Move.from_uci('e2e4')], e.policy)
 
     e.new_position(chess.STARTING_FEN, ['e2e4'])
     expected = chess.Board()
