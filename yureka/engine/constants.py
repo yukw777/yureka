@@ -35,8 +35,8 @@ DEFAULT_VALUE = 'Value.v2'
 DEFAULT_VALUE_FILE = os.path.join(
     root_path,
     'saved_models',
-    'Value.v2-2',
-    'Value.v2_2018-06-08_23:03:56_25.model',
+    'Value.v2',
+    'Value.v2_2018-06-12_15:11:36_6.model',
 )
 ZERO_VALUE = 'zero'
 DEFAULT_POLICY = 'Policy.v2'
