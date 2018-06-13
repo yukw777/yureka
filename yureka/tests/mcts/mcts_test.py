@@ -3,7 +3,6 @@ import math
 import unittest.mock as mock
 import pytest
 import torch
-import time
 from yureka import mcts
 from yureka.engine import UCIMCTSEngine
 from yureka.engine.constants import ZERO_VALUE, RANDOM_POLICY
@@ -158,17 +157,6 @@ def test_backup():
         assert walker.value == 0.9
         assert walker.visit == 1
         walker = walker.parent
-
-
-def test_continue_search():
-    count = 0
-    search_time = mcts.continue_search(1.5)
-    for t in search_time:
-        if not t:
-            break
-        count += 1
-        time.sleep(1)
-    assert count == 2
 
 
 def test_get_move():

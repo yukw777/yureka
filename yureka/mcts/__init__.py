@@ -89,7 +89,6 @@ class MCTS():
             q.put('STOPSEARCH')
 
     def get_move(self):
-        return chess.Move.from_uci('a2a4')
         # pick the move with the max visit from the root
         if not self.root.children:
             raise MCTSError(self.root, 'You should search before get_move')
