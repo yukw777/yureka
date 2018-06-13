@@ -167,10 +167,10 @@ def test_get_move():
         'm4': mcts.Node(visit=2),
     }
     root = mcts.Node(children=children)
-    m = mcts.MCTS(root, '', '', '')
+    m = mcts.MCTS(root, '', '', '', asynchronous=False)
     assert m.get_move() == 'm3'
 
-    m = mcts.MCTS(mcts.Node(), '', '', '')
+    m = mcts.MCTS(mcts.Node(), '', '', '', asynchronous=False)
     with pytest.raises(mcts.MCTSError):
         m.get_move()
 
@@ -178,12 +178,12 @@ def test_get_move():
 def test_advance_root():
     children = {i: mcts.Node() for i in range(5)}
     root_with_children = mcts.Node(children=children)
-    m = mcts.MCTS(root_with_children, '', '', '')
+    m = mcts.MCTS(root_with_children, '', '', '', asynchronous=False)
     m.advance_root(1)
     assert m.root.parent is None
     assert m.root == children[1]
 
-    m = mcts.MCTS(mcts.Node(), '', '', '')
+    m = mcts.MCTS(mcts.Node(), '', '', '', asynchronous=False)
     move = chess.Move.from_uci('f2f3')
     m.advance_root(move)
     assert m.root.parent is None
@@ -195,6 +195,7 @@ def test_engine_new_position():
         value_name=ZERO_VALUE,
         policy_name=RANDOM_POLICY,
         use_resnet=False,
+        asynchronous=False,
     )
     e.init_models()
     e.init_engine()

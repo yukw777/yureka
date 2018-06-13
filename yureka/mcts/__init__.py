@@ -52,41 +52,49 @@ class MCTS():
     value = attr.ib()
     policy = attr.ib()
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
+    asynchronous = attr.ib(default=True)
     num_process = attr.ib(default=mp.cpu_count())
 
     def __attrs_post_init__(self):
-        if hasattr(self.policy, 'model'):
-            self.policy.model.share_memory()
-        if hasattr(self.value, 'model'):
-            self.value.model.share_memory()
-        self.root_queues = [mp.Queue() for _ in range(self.num_process)]
-        self.stop_queues = [mp.Queue() for _ in range(self.num_process)]
-        self.processes = [
-            mp.Process(target=parallel_search, args=(
-                i,
-                self.root_queues[i],
-                self.stop_queues[i],
-                self.policy,
-                self.value,
-                self.confidence,
-            )) for i in range(self.num_process)
-        ]
+        if self.asynchronous:
+            if hasattr(self.policy, 'model'):
+                self.policy.model.share_memory()
+            if hasattr(self.value, 'model'):
+                self.value.model.share_memory()
+            self.root_queues = [mp.Queue() for _ in range(self.num_process)]
+            self.stop_queues = [mp.Queue() for _ in range(self.num_process)]
+            self.processes = [
+                mp.Process(target=parallel_search, args=(
+                    i,
+                    self.root_queues[i],
+                    self.stop_queues[i],
+                    self.policy,
+                    self.value,
+                    self.confidence,
+                )) for i in range(self.num_process)
+            ]
 
     def start_search_processes(self):
-        for p in self.processes:
-            p.start()
+        if self.asynchronous:
+            for p in self.processes:
+                p.start()
 
     def stop_search_processes(self):
-        for q in self.root_queues:
-            q.put('STOP')
+        if self.asynchronous:
+            for q in self.root_queues:
+                q.put('STOP')
 
     def search(self):
-        for q in self.root_queues:
-            q.put(self.root)
+        if self.asynchronous:
+            for q in self.root_queues:
+                q.put(self.root)
+        else:
+            search(self.root, self.policy, self.value, self.confidence)
 
     def stop_search(self):
-        for q in self.stop_queues:
-            q.put('STOPSEARCH')
+        if self.asynchronous:
+            for q in self.stop_queues:
+                q.put('STOPSEARCH')
 
     def get_move(self):
         # pick the move with the max visit from the root

@@ -210,6 +210,7 @@ class UCIMCTSEngine(UCIEngine):
     policy_name = attr.ib(default=constants.RANDOM_POLICY)
     policy_file = attr.ib(default=constants.DEFAULT_POLICY_FILE)
     confidence = attr.ib(default=DEFAULT_CONFIDENCE)
+    asynchronous = attr.ib(default=True)
 
     def __attrs_post_init__(self):
         super().__attrs_post_init__()
@@ -284,6 +285,13 @@ class UCIMCTSEngine(UCIEngine):
                 'py_type': float,
                 'model': False,
             },
+            'Asynchronous': {
+                'type': 'check',
+                'default': 'true',
+                'attr_name': 'asynchronous',
+                'py_type': lambda x: x == 'true',
+                'model': False,
+            },
         }
         signal.signal(signal.SIGALRM, self.stop)
 
@@ -327,6 +335,7 @@ class UCIMCTSEngine(UCIEngine):
             self.value,
             self.policy,
             self.confidence,
+            asynchronous=self.asynchronous,
         )
         self.engine.start_search_processes()
         self.time_manager = TimeManager()
