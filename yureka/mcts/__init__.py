@@ -1,7 +1,6 @@
 import attr
 import chess
 import math
-import time
 import random
 import torch.multiprocessing as mp
 
@@ -56,19 +55,41 @@ class MCTS():
     num_process = attr.ib(default=mp.cpu_count())
 
     def __attrs_post_init__(self):
+        if hasattr(self.policy, 'model'):
+            self.policy.model.share_memory()
+        if hasattr(self.value, 'model'):
+            self.value.model.share_memory()
         self.root_queues = [mp.Queue() for _ in range(self.num_process)]
+        self.stop_queues = [mp.Queue() for _ in range(self.num_process)]
+        self.processes = [
+            mp.Process(target=parallel_search, args=(
+                i,
+                self.root_queues[i],
+                self.stop_queues[i],
+                self.policy,
+                self.value,
+                self.confidence,
+            )) for i in range(self.num_process)
+        ]
 
-    def search(self, duration):
-        search_time = continue_search(duration)
-        count = 0
-        for t in search_time:
-            if not t:
-                print_flush(f'info string search iterations: {count}')
-                break
-            search(self.root, self.policy, self.value, self.confidence)
-            count += 1
+    def start_search_processes(self):
+        for p in self.processes:
+            p.start()
+
+    def stop_search_processes(self):
+        for q in self.root_queues:
+            q.put('STOP')
+
+    def search(self):
+        for q in self.root_queues:
+            q.put(self.root)
+
+    def stop_search(self):
+        for q in self.stop_queues:
+            q.put('STOPSEARCH')
 
     def get_move(self):
+        return chess.Move.from_uci('a2a4')
         # pick the move with the max visit from the root
         if not self.root.children:
             raise MCTSError(self.root, 'You should search before get_move')
@@ -87,9 +108,14 @@ class MCTS():
         self.root.parent = None
 
 
-def parallel_search(root_queue, stop_queue, policy, value, confidence):
-    root = root_queue.get()
-    search(root, policy, value, confidence)
+def parallel_search(pid, root_queue, stop_queue, policy, value, confidence):
+    for root in iter(root_queue.get, 'STOP'):
+        count = 0
+        while stop_queue.empty():
+            search(root, policy, value, confidence)
+            count += 1
+        print_flush(f'info string proccess {pid} search iterations: {count}')
+        stop_queue.get()
 
 
 def search(root, policy, value, confidence):
@@ -141,14 +167,3 @@ def backup(node, value):
         walker.visit += 1
         walker.value += value
         walker = walker.parent
-
-
-def continue_search(duration):
-    # search for {duration} seconds
-    remaining = duration
-    while remaining >= 0:
-        start = time.time()
-        yield True
-        end = time.time()
-        remaining -= end - start
-    yield False

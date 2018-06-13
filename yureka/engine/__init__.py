@@ -4,6 +4,7 @@ import chess
 import sys
 import torch
 import os
+import signal
 
 from ..learn import models
 from ..learn.models.res import ResNet
@@ -284,6 +285,7 @@ class UCIMCTSEngine(UCIEngine):
                 'model': False,
             },
         }
+        signal.signal(signal.SIGALRM, self.stop)
 
     def init_model(self, name, path):
         model = models.create(name)
@@ -326,6 +328,7 @@ class UCIMCTSEngine(UCIEngine):
             self.policy,
             self.confidence,
         )
+        self.engine.start_search_processes()
         self.time_manager = TimeManager()
 
     def new_position(self, fen, moves):
@@ -343,6 +346,10 @@ class UCIMCTSEngine(UCIEngine):
             self.unknown_handler(args)
             return
         print_flush(f'info string search for {duration} seconds')
-        self.engine.search(duration)
+        self.engine.search()
+        signal.setitimer(signal.ITIMER_REAL, duration)
+
+    def stop(self, signum, frame):
         move = self.engine.get_move()
         print_flush(f'bestmove {move.uci()}')
+        self.engine.stop_search()
