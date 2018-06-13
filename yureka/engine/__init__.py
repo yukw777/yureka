@@ -332,9 +332,15 @@ class UCIMCTSEngine(UCIEngine):
 
     def init_engine(self, board=None):
         if board:
-            root = self.manager.Node(board=board)
+            if self.asynchronous:
+                root = self.manager.Node(board=board)
+            else:
+                root = Node(board=board)
         else:
-            root = self.manager.Node()
+            if self.asynchronous:
+                root = self.manager.Node()
+            else:
+                root = Node()
         self.engine = MCTS(
             root,
             self.value,
