@@ -24,6 +24,12 @@ class Node():
     visit = attr.ib(default=0)
     board = attr.ib(default=chess.Board())
 
+    def get_children(self):
+        return self.children
+
+    def get_board(self):
+        return self.board
+
     def q(self):
         if self.visit == 0:
             return math.inf
@@ -98,20 +104,20 @@ class MCTS():
 
     def get_move(self):
         # pick the move with the max visit from the root
-        if not self.root.children:
+        if not self.root.get_children():
             raise MCTSError(self.root, 'You should search before get_move')
         return max(
-            self.root.children,
-            key=lambda m: self.root.children[m].visit
+            self.root.get_children(),
+            key=lambda m: self.root.get_children()[m].visit
         )
 
     def advance_root(self, move):
-        child = self.root.children.get(move)
+        child = self.root.get_children().get(move)
         if child:
             self.root = child
         else:
             self.root.add_child(move)
-            self.root = self.root.children[move]
+            self.root = self.root.get_children()[move]
         self.root.parent = None
 
 
@@ -128,13 +134,13 @@ def parallel_search(pid, root_queue, stop_queue, policy, value, confidence):
 def search(root, policy, value, confidence):
     leaf = select(root, confidence)
     leaf = expand(leaf, policy)
-    value = simulate(leaf, value, root.board.turn)
+    value = simulate(leaf, value, root.get_board().turn)
 
 
 def select(root, confidence):
     node = root
-    while node.children:
-        child_nodes = node.children.values()
+    while len(node.get_children()) > 0:
+        child_nodes = node.get_children().values()
         visit_sum = sum([n.visit for n in child_nodes])
         node = max(
             child_nodes,
@@ -144,25 +150,25 @@ def select(root, confidence):
 
 
 def expand(node, policy):
-    if node.children:
+    if node.get_children():
         raise MCTSError(node, 'Cannot expand a non-leaf node')
-    if node.board.legal_moves:
-        priors = policy.get_probs(node.board).squeeze()
-        for move in node.board.legal_moves:
-            engine_move = translate_to_engine_move(move, node.board.turn)
+    if node.get_board().legal_moves:
+        priors = policy.get_probs(node.get_board()).squeeze()
+        for move in node.get_board().legal_moves:
+            engine_move = translate_to_engine_move(move, node.get_board().turn)
             index = get_engine_move_index(engine_move)
             prior = priors.data[index]
             node.add_child(move, prior=prior)
-        return random.choice(list(node.children.values()))
+        return random.choice(list(node.get_children().values()))
     else:
         # terminal state, just return itself
         return node
 
 
 def simulate(node, value, root_turn):
-    if node.children:
+    if node.get_children():
         raise MCTSError(node, 'cannot simulate from a non-leaf')
-    board = chess.Board(fen=node.board.fen())
+    board = chess.Board(fen=node.get_board().fen())
     if board.is_game_over(claim_draw=True):
         return get_reward(board.result(claim_draw=True), root_turn)
     return value.get_value(board, root_turn)

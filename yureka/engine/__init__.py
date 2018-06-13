@@ -6,6 +6,8 @@ import torch
 import os
 import signal
 
+from multiprocessing.managers import BaseManager
+
 from ..learn import models
 from ..learn.models.res import ResNet
 from ..mcts.networks import (
@@ -294,6 +296,9 @@ class UCIMCTSEngine(UCIEngine):
             },
         }
         signal.signal(signal.SIGALRM, self.stop)
+        BaseManager.register('Node', Node)
+        self.manager = BaseManager()
+        self.manager.start()
 
     def init_model(self, name, path):
         model = models.create(name)
@@ -327,9 +332,9 @@ class UCIMCTSEngine(UCIEngine):
 
     def init_engine(self, board=None):
         if board:
-            root = Node(board=board)
+            root = self.manager.Node(board=board)
         else:
-            root = Node()
+            root = self.manager.Node()
         self.engine = MCTS(
             root,
             self.value,
@@ -343,14 +348,15 @@ class UCIMCTSEngine(UCIEngine):
     def new_position(self, fen, moves):
         board = chess.Board(fen=fen)
         for uci in moves:
-            if board == self.engine.root.board:
+            if board == self.engine.root.get_board():
                 self.engine.advance_root(chess.Move.from_uci(uci))
             board.push_uci(uci)
-        if board != self.engine.root.board:
+        if board != self.engine.root.get_board():
             self.init_engine(board=board)
 
     def go(self, args):
-        duration = self.time_manager.handle(self.engine.root.board.turn, args)
+        duration = self.time_manager.handle(
+            self.engine.root.get_board().turn, args)
         if not duration:
             self.unknown_handler(args)
             return
