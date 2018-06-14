@@ -71,6 +71,21 @@ resnet_settings = {
         'value_hidden': 128,
         'value_out_channels': 1,
     },
+    'ResNet.v1': {
+        'in_channels': 21,
+        'conv_block_out_channels': 256,
+        'conv_block_kernel': 3,
+        'conv_block_padding': 1,
+        'conv_block_stride': 1,
+        'res_block_out_channels': 256,
+        'res_block_kernel': 3,
+        'res_block_padding': 1,
+        'res_block_stride': 1,
+        'res_blocks': 10,
+        'policy_out_channels': 128,
+        'value_hidden': 256,
+        'value_out_channels': 1,
+    },
 }
 
 
