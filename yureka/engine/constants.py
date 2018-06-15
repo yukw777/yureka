@@ -35,33 +35,33 @@ DEFAULT_VALUE = 'Value.v2'
 DEFAULT_VALUE_FILE = os.path.join(
     root_path,
     'saved_models',
-    'Value.v2-2',
-    'Value.v2_2018-06-08_23:03:56_25.model',
+    'Value.v2',
+    'Value.v2_2018-06-12_15:11:36_6.model',
 )
 ZERO_VALUE = 'zero'
 DEFAULT_POLICY = 'Policy.v2'
 DEFAULT_POLICY_FILE = os.path.join(
     root_path,
     'saved_models',
-    'Policy.v2-2',
-    'Policy.v2_2018-06-08_22:28:30_25.model',
+    'Policy.v2',
+    'Policy.v2_2018-06-14_12:03:03_33.model',
 )
 DEFAULT_RESNET = 'ResNet.v0'
 DEFAULT_RESNET_TOWER_FILE = os.path.join(
     root_path,
     'saved_models',
     'ResNet.v0',
-    'Tower_2018-06-09_13:41:24_22.model',
+    'Tower_2018-06-14_22:32:44_12.model',
 )
 DEFAULT_RESNET_VALUE_FILE = os.path.join(
     root_path,
     'saved_models',
     'ResNet.v0',
-    'ValueHead_2018-06-09_13:41:24_22.model',
+    'ValueHead_2018-06-14_22:32:45_12.model',
 )
 DEFAULT_RESNET_POLICY_FILE = os.path.join(
     root_path,
     'saved_models',
     'ResNet.v0',
-    'PolicyHead_2018-06-09_13:41:24_22.model',
+    'PolicyHead_2018-06-14_22:32:44_12.model',
 )
