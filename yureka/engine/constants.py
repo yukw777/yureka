@@ -17,19 +17,20 @@ TC_KEYS = [
     TC_MOVETIME,
 ]
 
-# UCI Policy Engine
-DEFAULT_MODEL = 'Policy.v0'
-DEFAULT_MODEL_FILE = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)),
-    'saved_models',
-    'SL_endgame',
-    'Policy_2018-01-27_07:09:34_14.model',
-)
-
-# UCI MCTS Engine
 root_path = os.path.join(
     os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
+
+# UCI Policy Engine
+DEFAULT_MODEL = 'Policy.v2'
+DEFAULT_MODEL_FILE = os.path.join(
+    root_path,
+    'saved_models',
+    'Policy.v2',
+    'Policy.v2_2018-06-14_12:03:03_33.model',
+)
+
+# UCI MCTS Engine
 RANDOM_POLICY = 'random'
 DEFAULT_VALUE = 'Value.v2'
 DEFAULT_VALUE_FILE = os.path.join(
