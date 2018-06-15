@@ -178,13 +178,17 @@ class UCIPolicyEngine(UCIEngine):
         self.model = None
 
     def init_models(self):
-        self.model = models.create(self.model_name)
-        self.model.load_state_dict(
-            torch.load(os.path.expanduser(self.model_file)))
+        if self.model_name != constants.RANDOM_POLICY:
+            self.model = models.create(self.model_name)
+            self.model.load_state_dict(
+                torch.load(os.path.expanduser(self.model_file)))
 
     def init_engine(self):
-        self.engine = PolicyNetwork(
-            self.model, train=False, cuda_device=self.cuda_device)
+        if self.model_name == constants.RANDOM_POLICY:
+            self.engine = RandomPolicy()
+        else:
+            self.engine = PolicyNetwork(
+                self.model, train=False, cuda_device=self.cuda_device)
         self.board = chess.Board()
 
     def new_position(self, fen, moves):
