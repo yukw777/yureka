@@ -57,6 +57,7 @@ cnn_settings = {
 
 resnet_settings = {
     'ResNet.v0': {
+        'dropout': False,
         'in_channels': 21,
         'conv_block_out_channels': 128,
         'conv_block_kernel': 3,
@@ -72,6 +73,7 @@ resnet_settings = {
         'value_out_channels': 1,
     },
     'ResNet.v1': {
+        'dropout': True,
         'in_channels': 21,
         'conv_block_out_channels': 256,
         'conv_block_kernel': 3,
@@ -117,6 +119,8 @@ def create(model_name):
                 stride=setting['res_block_stride']
             ) for _ in range(setting['res_blocks'])
         ]
+        if setting['dropout']:
+            tower.append(nn.Dropout2d())
         tower = nn.Sequential(*tower)
 
         policy = res.PolicyHead(
