@@ -73,7 +73,7 @@ resnet_settings = {
         'value_out_channels': 1,
     },
     'ResNet.v1': {
-        'dropout': True,
+        'dropout': False,
         'in_channels': 21,
         'conv_block_out_channels': 256,
         'conv_block_kernel': 3,
@@ -83,7 +83,7 @@ resnet_settings = {
         'res_block_kernel': 3,
         'res_block_padding': 1,
         'res_block_stride': 1,
-        'res_blocks': 10,
+        'res_blocks': 7,
         'policy_out_channels': 128,
         'value_hidden': 256,
         'value_out_channels': 1,
