@@ -114,7 +114,6 @@ def get_tensor_from_row(row):
         np.full(SIZE, row['w_kingside_castling']),
         np.full(SIZE, row['w_queenside_castling']),
         np.full(SIZE, row['no_progress']),
-        np.full(SIZE, 0),
     ))).float()
 
 
@@ -156,7 +155,6 @@ def get_board_data(row):
     return np.vstack((
         black_data,
         white_data,
-        np.full(SIZE, 1),
         rep_2_data,
         rep_3_data,
     ))
