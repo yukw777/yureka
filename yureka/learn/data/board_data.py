@@ -60,9 +60,19 @@ def get_no_progress_data(board):
 
 
 def get_castling_data(board):
+    w_kingside = 1 if board.has_kingside_castling_rights(
+        chess.WHITE) else 0
+    w_queenside = 1 if board.has_queenside_castling_rights(
+        chess.WHITE) else 0
+    b_kingside = 1 if board.has_kingside_castling_rights(
+        chess.BLACK) else 0
+    b_queenside = 1 if board.has_queenside_castling_rights(
+        chess.BLACK) else 0
     return {
-        'w_castling': 1 if board.has_castling_rights(chess.WHITE) else 0,
-        'b_castling': 1 if board.has_castling_rights(chess.BLACK) else 0,
+        'w_kingside_castling': w_kingside,
+        'w_queenside_castling': w_queenside,
+        'b_kingside_castling': b_kingside,
+        'b_queenside_castling': b_queenside,
     }
 
 

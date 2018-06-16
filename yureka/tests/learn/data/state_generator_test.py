@@ -214,16 +214,22 @@ def test_castling_data():
             'game': get_castling_game(),
             'expected_data': pd.DataFrame([
                 {
-                    'w_castling': 1,
-                    'b_castling': 1,
+                    'w_kingside_castling': 1,
+                    'w_queenside_castling': 1,
+                    'b_kingside_castling': 1,
+                    'b_queenside_castling': 1,
                 },
                 {
-                    'w_castling': 0,
-                    'b_castling': 1,
+                    'w_kingside_castling': 0,
+                    'w_queenside_castling': 0,
+                    'b_kingside_castling': 1,
+                    'b_queenside_castling': 1,
                 },
                 {
-                    'w_castling': 0,
-                    'b_castling': 0,
+                    'w_kingside_castling': 0,
+                    'w_queenside_castling': 0,
+                    'b_kingside_castling': 0,
+                    'b_queenside_castling': 0,
                 },
             ]),
         },
@@ -232,16 +238,22 @@ def test_castling_data():
             'game': get_castling_game(king_side=False),
             'expected_data': pd.DataFrame([
                 {
-                    'w_castling': 1,
-                    'b_castling': 1,
+                    'w_kingside_castling': 1,
+                    'w_queenside_castling': 1,
+                    'b_kingside_castling': 1,
+                    'b_queenside_castling': 1,
                 },
                 {
-                    'w_castling': 0,
-                    'b_castling': 1,
+                    'w_kingside_castling': 0,
+                    'w_queenside_castling': 0,
+                    'b_kingside_castling': 1,
+                    'b_queenside_castling': 1,
                 },
                 {
-                    'w_castling': 0,
-                    'b_castling': 0,
+                    'w_kingside_castling': 0,
+                    'w_queenside_castling': 0,
+                    'b_kingside_castling': 0,
+                    'b_queenside_castling': 0,
                 },
             ]),
         },
@@ -250,8 +262,10 @@ def test_castling_data():
     for tc in test_cases:
         df = pd.DataFrame(state_gen.get_game_data(tc['game']))
         columns = [
-            'b_castling',
-            'w_castling',
+            'b_kingside_castling',
+            'b_queenside_castling',
+            'w_kingside_castling',
+            'w_queenside_castling',
         ]
         assert df[columns].equals(tc['expected_data'])
 
@@ -303,8 +317,8 @@ def test_generate():
     # repetition = 2 * 8
     # turn (color) = 1
     # move count = 1
-    # for each color, castling = 1 + 1
+    # for each color, king/queen castling = 2 + 2
     # no progress count = 1
     # move = 1
     # value = 1
-    assert df.shape == (165, 2*8+2*8+1+1+1+1+1+1+1)
+    assert df.shape == (165, 2*8+2*8+1+1+2+2+1+1+1)

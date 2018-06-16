@@ -113,8 +113,10 @@ def test_chess_dataset():
             'rep_3': 0,
             'turn': 0,  # black
             'move_count': 15,
-            'b_castling': 0,
-            'w_castling': 0,
+            'b_k_castling': 0,
+            'b_q_castling': 0,
+            'w_k_castling': 0,
+            'w_q_castling': 0,
             'no_progress': 0,
             'expected_move': 642,
             'expected_value': -1,
@@ -223,8 +225,10 @@ def test_chess_dataset():
             'rep_3': 0,
             'turn': 1,  # white
             'move_count': 6,
-            'b_castling': 1,
-            'w_castling': 0,
+            'b_k_castling': 1,
+            'b_q_castling': 1,
+            'w_k_castling': 0,
+            'w_q_castling': 0,
             'no_progress': 0,
             'expected_move': 817,
             'expected_value': 0,
@@ -238,12 +242,12 @@ def test_chess_dataset():
         # Repetitions = 2 * 8
         # Color = 1
         # Move count = 1
-        # White castling = 1
-        # Black castling = 1
+        # White castling = 2
+        # Black castling = 2
         # No-progress count = 1
         # Constnat plane filled with zeroe = 1
-        # Total = 119
-        assert tc['data'].shape == (119, 8, 8)
+        # Total = 121
+        assert tc['data'].shape == (121, 8, 8)
 
         assert tc['data'][0].equal(torch.from_numpy(tc['black_p']).float())
         assert tc['data'][1].equal(torch.from_numpy(tc['black_n']).float())
@@ -271,13 +275,17 @@ def test_chess_dataset():
         assert tc['data'][114].equal(
             torch.from_numpy(np.full(BOARD_SIZE, tc['move_count'])).float())
         assert tc['data'][115].equal(
-            torch.from_numpy(np.full(BOARD_SIZE, tc['b_castling'])).float())
+            torch.from_numpy(np.full(BOARD_SIZE, tc['b_k_castling'])).float())
         assert tc['data'][116].equal(
-            torch.from_numpy(np.full(BOARD_SIZE, tc['w_castling'])).float())
+            torch.from_numpy(np.full(BOARD_SIZE, tc['b_q_castling'])).float())
         assert tc['data'][117].equal(
+            torch.from_numpy(np.full(BOARD_SIZE, tc['w_k_castling'])).float())
+        assert tc['data'][118].equal(
+            torch.from_numpy(np.full(BOARD_SIZE, tc['w_q_castling'])).float())
+        assert tc['data'][119].equal(
             torch.from_numpy(np.full(BOARD_SIZE, tc['no_progress'])).float())
 
-        assert tc['data'][118].equal(
+        assert tc['data'][120].equal(
             torch.from_numpy(np.full(BOARD_SIZE, 0)).float())
 
         assert tc['move'] == tc['expected_move']
