@@ -1,10 +1,10 @@
 cmd: python -m yureka.learn.data.state_generator expert data/endgame.pgn data/csv/resnet/endgame.csv
   10000000
 deps:
-- md5: 4d4b32a2e9f13e7ccdb9f8f2954e9400
+- md5: c959299492478aaadef0ca23efa326b5
   path: data/endgame.pgn
-md5: 03888f5627c8d06b4923392c1bdbb4da
+md5: 6b473555df00fc43243aa3feb1f445a9
 outs:
 - cache: true
-  md5: 5846e927d2eb2bc8aaa7299ad8044dce
+  md5: c002d454a064442e609159acc35c0745
   path: data/csv/resnet/endgame.csv
