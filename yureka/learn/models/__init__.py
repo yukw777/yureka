@@ -83,7 +83,7 @@ resnet_settings = {
         'res_block_kernel': 3,
         'res_block_padding': 1,
         'res_block_stride': 1,
-        'res_blocks': 7,
+        'res_blocks': 10,
         'policy_out_channels': 128,
         'value_hidden': 256,
         'value_out_channels': 1,
