@@ -203,7 +203,7 @@ class UCIPolicyEngine(UCIEngine):
 
 @attr.s
 class UCIMCTSEngine(UCIEngine):
-    use_resnet = attr.ib(default=True)
+    use_resnet = attr.ib(default=False)
     resnet_name = attr.ib(default=constants.DEFAULT_RESNET)
     resnet_tower_file = attr.ib(default=constants.DEFAULT_RESNET_TOWER_FILE)
     resnet_value_file = attr.ib(default=constants.DEFAULT_RESNET_VALUE_FILE)
@@ -219,7 +219,7 @@ class UCIMCTSEngine(UCIEngine):
         self.options = {
             'Use ResNet': {
                 'type': 'check',
-                'default': 'true',
+                'default': 'false',
                 'attr_name': 'use_resnet',
                 'py_type': lambda x: x == 'true',
                 'model': True,
