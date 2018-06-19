@@ -27,7 +27,7 @@ DEFAULT_MODEL_FILE = os.path.join(
     root_path,
     'saved_models',
     'Policy.v2',
-    'Policy.v2_2018-06-14_12:03:03_33.model',
+    'Policy.v2_2018-06-19_21:08:58_19.model',
 )
 
 # UCI MCTS Engine
@@ -37,7 +37,7 @@ DEFAULT_VALUE_FILE = os.path.join(
     root_path,
     'saved_models',
     'Value.v2',
-    'Value.v2_2018-06-12_15:11:36_6.model',
+    'Value.v2_2018-06-19_18:16:43_18.model',
 )
 ZERO_VALUE = 'zero'
 DEFAULT_POLICY = 'Policy.v2'
