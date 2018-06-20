@@ -95,6 +95,9 @@ class MCTS():
             walker = walker.parent
 
     def search(self, duration):
+        if len(list(self.root.board.legal_moves)) == 1:
+            print_flush('info string only one legal move')
+            return
         search_time = continue_search(duration)
         count = 0
         for t in search_time:
