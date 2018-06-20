@@ -54,6 +54,7 @@ def test_parse_time_control():
 def test_time_manager():
     test_cases = [
         {
+            # plain movetime
             'data': [
                 {
                     'movetime': 10000,
@@ -67,6 +68,34 @@ def test_time_manager():
             'expected': [10, 20],
         },
         {
+            # regular fischer
+            'data': [
+                {
+                    'wtime': 40000,
+                    'btime': 50000,
+                    'winc': 1000,
+                    'binc': 1000,
+                    'color': chess.WHITE,
+                },
+                {
+                    'wtime': 50000,
+                    'btime': 60000,
+                    'winc': 1000,
+                    'binc': 1000,
+                    'color': chess.BLACK,
+                },
+                {
+                    'wtime': 50000,
+                    'btime': 50000,
+                    'winc': 1000,
+                    'binc': 1000,
+                    'color': chess.BLACK,
+                },
+            ],
+            'expected': [2.75, 4.5, 3.875],
+        },
+        {
+            # panic mode for fischer
             'data': [
                 {
                     'wtime': 10000,
@@ -83,51 +112,187 @@ def test_time_manager():
                     'color': chess.BLACK,
                 },
                 {
+                    'wtime': 1500,
+                    'btime': 20000,
+                    'winc': 1000,
+                    'binc': 1000,
+                    'color': chess.WHITE,
+                },
+                {
                     'wtime': 10000,
-                    'btime': 30000,
+                    'btime': 1500,
                     'winc': 1000,
                     'binc': 1000,
                     'color': chess.BLACK,
                 },
-            ],
-            'expected': [1.0625, 2.0, 2.625],
-        },
-        {
-            'data': [
                 {
-                    'wtime': 100000,
-                    'btime': 200000,
-                    'movestogo': 20,
+                    'wtime': 1500,
+                    'btime': 20000,
+                    'winc': 60,
+                    'binc': 1000,
                     'color': chess.WHITE,
                 },
                 {
-                    'wtime': 100000,
-                    'btime': 200000,
-                    'movestogo': 20,
+                    'wtime': 10000,
+                    'btime': 1500,
+                    'winc': 1000,
+                    'binc': 60,
                     'color': chess.BLACK,
                 },
                 {
-                    'wtime': 300000,
-                    'btime': 200000,
-                    'color': chess.WHITE,
-                },
-            ],
-            'expected': [5.0, 7.5, 10],
-        },
-        {
-            'data': [
-                {
-                    'wtime': 300000,
-                    'btime': 200000,
+                    'wtime': 700,
+                    'btime': 20000,
+                    'winc': 50,
+                    'binc': 1000,
                     'color': chess.WHITE,
                 },
                 {
-                    'wtime': 300000,
-                    'btime': 200000,
+                    'wtime': 10000,
+                    'btime': 700,
+                    'winc': 1000,
+                    'binc': 50,
+                    'color': chess.BLACK,
+                },
+                {
+                    'wtime': 400,
+                    'btime': 20000,
+                    'winc': 50,
+                    'binc': 1000,
+                    'color': chess.WHITE,
+                },
+                {
+                    'wtime': 10000,
+                    'btime': 400,
+                    'winc': 1000,
+                    'binc': 50,
                     'color': chess.BLACK,
                 },
             ],
-            'expected': [15.0, 10],
+            'expected': [
+                0.5,
+                1.0,
+                0.075,
+                0.075,
+                0.06,
+                0.06,
+                0.025,
+                0.025,
+                0.1,
+                0.1,
+            ],
+        },
+        {
+            # regular classic
+            'data': [
+                {
+                    'wtime': 100000,
+                    'btime': 100000,
+                    'movestogo': 25,
+                    'color': chess.WHITE,
+                },
+                {
+                    'wtime': 200000,
+                    'btime': 200000,
+                    'movestogo': 25,
+                    'color': chess.BLACK,
+                },
+            ],
+            'expected': [4.0, 6.0],
+        },
+        {
+            # regular classic when we have a lot less time than opponent
+            'data': [
+                {
+                    'wtime': 150000,
+                    'btime': 500000,
+                    'movestogo': 25,
+                    'color': chess.WHITE,
+                },
+                {
+                    'wtime': 1000000,
+                    'btime': 250000,
+                    'movestogo': 25,
+                    'color': chess.BLACK,
+                },
+            ],
+            'expected': [3.0, 4.0],
+        },
+        {
+            # panic mode for fischer
+            'data': [
+                {
+                    'wtime': 10000,
+                    'btime': 20000,
+                    'movestogo': 10,
+                    'color': chess.WHITE,
+                },
+                {
+                    'wtime': 10000,
+                    'btime': 20000,
+                    'movestogo': 10,
+                    'color': chess.BLACK,
+                },
+                {
+                    'wtime': 1500,
+                    'btime': 20000,
+                    'movestogo': 10,
+                    'color': chess.WHITE,
+                },
+                {
+                    'wtime': 10000,
+                    'btime': 1500,
+                    'movestogo': 10,
+                    'color': chess.BLACK,
+                },
+                {
+                    'wtime': 1500,
+                    'btime': 20000,
+                    'movestogo': 10,
+                    'color': chess.WHITE,
+                },
+                {
+                    'wtime': 10000,
+                    'btime': 1500,
+                    'movestogo': 10,
+                    'color': chess.BLACK,
+                },
+                {
+                    'wtime': 700,
+                    'btime': 20000,
+                    'movestogo': 10,
+                    'color': chess.WHITE,
+                },
+                {
+                    'wtime': 10000,
+                    'btime': 700,
+                    'movestogo': 10,
+                    'color': chess.BLACK,
+                },
+                {
+                    'wtime': 400,
+                    'btime': 20000,
+                    'movestogo': 10,
+                    'color': chess.WHITE,
+                },
+                {
+                    'wtime': 10000,
+                    'btime': 400,
+                    'movestogo': 10,
+                    'color': chess.BLACK,
+                },
+            ],
+            'expected': [
+                0.5,
+                1.0,
+                0.01,
+                0.01,
+                0.01,
+                0.01,
+                0.01,
+                0.01,
+                0.1,
+                0.1,
+            ],
         },
     ]
 

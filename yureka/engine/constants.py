@@ -16,6 +16,8 @@ TC_KEYS = [
     TC_MOVESTOGO,
     TC_MOVETIME,
 ]
+TC_OPPONENT_TIME_RATIO = 0.5
+TC_SUDDEN_DEATH_THRESHOLD = 30000  # 30 seconds left
 
 root_path = os.path.join(
     os.path.dirname(
