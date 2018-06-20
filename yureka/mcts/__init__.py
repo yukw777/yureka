@@ -96,7 +96,9 @@ class MCTS():
 
     def search(self, duration):
         if len(list(self.root.board.legal_moves)) == 1:
-            print_flush('info string only one legal move')
+            for move in self.root.board.legal_moves:
+                self.root.add_child(move)
+            print_flush('info string not searching b/c only one legal move')
             return
         search_time = continue_search(duration)
         count = 0
