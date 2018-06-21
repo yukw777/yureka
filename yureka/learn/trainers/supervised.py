@@ -35,6 +35,7 @@ class SupervisedTrainer():
     test_ratio = attr.ib()
     model_path = attr.ib()
     format = attr.ib(default='csv')
+    split_data = attr.ib(default=False)
     network = attr.ib(default='res')
     data_limit = attr.ib(default=None)
     logger = attr.ib(default=logging.getLogger(__name__))
@@ -61,8 +62,24 @@ class SupervisedTrainer():
                     m.to(self.device)
             else:
                 self.model.to(self.device)
-        self.train_data, self.test_data = self.split_train_test(
-            self.data, self.data_limit)
+        if self.split_data:
+            self.train_data, self.test_data = self.split_train_test(
+                self.data, self.data_limit)
+        else:
+            # first n-1 is training, the last is test
+            import pdb; pdb.set_trace()
+            self.train_data = data.DataLoader(
+                data.ConcatDataset([
+                    ChessDataset(f) for f in self.data[:-1]
+                ]),
+                batch_size=self.batch_size,
+                num_workers=4,
+                shuffle=True
+            )
+            self.test_data = data.DataLoader(
+                ChessDataset(self.data[-1]),
+                batch_size=self.batch_size
+            )
         self.logger.info(f'Train data len: {len(self.train_data)}')
         self.logger.info(f'Test data len: {len(self.test_data)}')
 
@@ -294,6 +311,7 @@ def run():
     parser.add_argument('model_path')
     parser.add_argument('--data-limit', type=int)
     parser.add_argument('-d', '--data', action='append', required=True)
+    parser.add_argument('--split-data', action='store_true')
     parser.add_argument('-f', '--format', default='csv')
     parser.add_argument('-i', '--log-interval', type=int)
     parser.add_argument('-b', '--batch-size', type=int)
@@ -359,6 +377,8 @@ def run():
         trainer_setting['learning_rate'] = args.learning_rate
     if args.data_limit:
         trainer_setting['data_limit'] = args.data_limit
+    if args.split_data:
+        trainer_setting['split_data'] = args.split_data
     trainer = SupervisedTrainer(**trainer_setting)
     trainer.run()
 
