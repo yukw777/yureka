@@ -67,7 +67,6 @@ class SupervisedTrainer():
                 self.data, self.data_limit)
         else:
             # first n-1 is training, the last is test
-            import pdb; pdb.set_trace()
             self.train_data = data.DataLoader(
                 data.ConcatDataset([
                     ChessDataset(f) for f in self.data[:-1]
