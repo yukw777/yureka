@@ -49,7 +49,7 @@ DEFAULT_POLICY_FILE = os.path.join(
     'Policy.v2',
     'Policy.v2_2018-06-19_21:08:58_19.model',
 )
-DEFAULT_RESNET = 'ResNet.v0'
+DEFAULT_RESNET = 'ResNet.v1'
 DEFAULT_RESNET_TOWER_FILE = os.path.join(
     root_path,
     'saved_models',
