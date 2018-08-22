@@ -106,4 +106,7 @@ ENV/
 # vim
 *.swp
 
+# vscode
+.vscode/
+
 opponent_pool/
