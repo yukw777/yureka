@@ -38,10 +38,10 @@ class UCIEngine():
         self.engine_option_changed = True
 
     def init_engine(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def init_models(self):
-        raise NotImplemented
+        raise NotImplementedError
 
     def uci(self, args):
         print_flush('id name Yureka 0.1')
@@ -111,10 +111,10 @@ class UCIEngine():
         self.new_position(fen, moves)
 
     def new_position(self, fen, moves):
-        raise NotImplemented
+        raise NotImplementedError
 
     def go(self, args):
-        raise NotImplemented
+        raise NotImplementedError
 
     def quit(self, args):
         sys.exit()
