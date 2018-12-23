@@ -3,7 +3,6 @@ jupyter==1.0.0
 lmdb==0.94
 numpy==1.14.0
 pandas==0.21.1
-pylint==2.2.2
 pytest==3.3.1
 python-chess==0.22.0
 sklearn==0.0
