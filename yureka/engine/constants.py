@@ -54,7 +54,7 @@ DEFAULT_RESNET_TOWER_FILE = os.path.join(
     root_path,
     'saved_models',
     'ResNet.v1',
-    'Tower_2018-06-26_17:36:08_11.model',
+    'Tower_2018-06-26_07:17:17_10.model',
 )
 DEFAULT_RESNET_VALUE_FILE = os.path.join(
     root_path,
