@@ -29,7 +29,7 @@ DEFAULT_MODEL_FILE = os.path.join(
     root_path,
     'saved_models',
     'Policy.v2',
-    'Policy.v2_2018-06-19_21:08:58_19.model',
+    'Policy.v2_2018-06-19_21_08_58_19.model',
 )
 
 # UCI MCTS Engine
@@ -39,7 +39,7 @@ DEFAULT_VALUE_FILE = os.path.join(
     root_path,
     'saved_models',
     'Value.v2',
-    'Value.v2_2018-06-19_18:16:43_18.model',
+    'Value.v2_2018-06-19_18_16_43_18.model',
 )
 ZERO_VALUE = 'zero'
 DEFAULT_POLICY = 'Policy.v2'
@@ -47,24 +47,24 @@ DEFAULT_POLICY_FILE = os.path.join(
     root_path,
     'saved_models',
     'Policy.v2',
-    'Policy.v2_2018-06-19_21:08:58_19.model',
+    'Policy.v2_2018-06-19_21_08_58_19.model',
 )
 DEFAULT_RESNET = 'ResNet.v1'
 DEFAULT_RESNET_TOWER_FILE = os.path.join(
     root_path,
     'saved_models',
     'ResNet.v1',
-    'Tower_2018-06-26_07:17:17_10.model',
+    'Tower_2018-06-26_07_17_17_10.model',
 )
 DEFAULT_RESNET_VALUE_FILE = os.path.join(
     root_path,
     'saved_models',
     'ResNet.v1',
-    'ValueHead_2018-06-26_17:36:08_11.model',
+    'ValueHead_2018-06-26_17_36_08_11.model',
 )
 DEFAULT_RESNET_POLICY_FILE = os.path.join(
     root_path,
     'saved_models',
     'ResNet.v1',
-    'PolicyHead_2018-06-26_17:36:08_11.model',
+    'PolicyHead_2018-06-26_17_36_08_11.model',
 )
